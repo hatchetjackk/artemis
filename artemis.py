@@ -371,4 +371,3 @@ if __name__ == '__main__':
             print('{0} cannot be loaded [{1}]'.format(extension, error))
 
     client.run(token)
-    main()
