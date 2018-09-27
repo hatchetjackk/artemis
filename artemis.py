@@ -80,9 +80,9 @@ async def on_message(message):
 
         """ Generate karma!
 
-        This section of code splits messages into lists. It then parses the lists for user mentions. If it finds a user ID
-        in the message, it will search for other keywords from the karma list to determine if a user is thanking another
-        user. Because of how mentions work, two variants of the user ID have to be passed to catch all users.
+        This section of code splits messages into lists. It then parses the lists for user mentions. If it finds a user 
+        ID in the message, it will search for other keywords from the karma list to determine if a user is thanking 
+        another user. Because of how mentions work, two variants of the user ID have to be passed to catch all users.
         """
         # generate lists
         responses = [":sparkles: You earned some karma, {0}!",
@@ -368,4 +368,3 @@ client.loop.create_task(change_status())
 
 if __name__ == "__main__":
     main()
-
