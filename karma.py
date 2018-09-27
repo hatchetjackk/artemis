@@ -57,7 +57,7 @@ class Karma:
             # check that message contains user names and words
             for user in user_list:
                 # format user IDs to match mentionable IDs
-                (user1, user2) = self.username_formatter(user.id)
+                (user1, user2) = await self.username_formatter(user.id)
 
                 if user1 in message_word_list:
                     karma_key = [item for item in karma_keywords if item in message_word_list]
@@ -98,6 +98,7 @@ class Karma:
                         fmt = random.choice(responses).format(user.mention)
                         await self.client.send_message(message.channel, fmt)
                         print("{0} received a karma point from {1}".format(user, message.author))
+        await self.client.process_commands(message)
 
     @staticmethod
     async def update_data(users, user):
@@ -109,8 +110,11 @@ class Karma:
     async def add_karma(users, user):
         users[user.id]['karma'] += 1
 
-    @staticmethod
-    async def username_formatter(username):
+    async def username_formatter(self, username):
         user1 = '<@!{0}>'.format(username)
         user2 = '<@{0}>'.format(username)
         return user1, user2
+
+
+def setup(client):
+    client.add_cog(Karma(client))
