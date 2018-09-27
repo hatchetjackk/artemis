@@ -110,7 +110,8 @@ class Karma:
     async def add_karma(users, user):
         users[user.id]['karma'] += 1
 
-    async def username_formatter(self, username):
+    @staticmethod
+    async def username_formatter(username):
         user1 = '<@!{0}>'.format(username)
         user2 = '<@{0}>'.format(username)
         return user1, user2
