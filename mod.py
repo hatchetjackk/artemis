@@ -41,7 +41,7 @@ class Mod:
 
     @commands.command(pass_context=True)
     async def displayembed(self, ctx):
-        if ctx.message.author.id == "477962137273106434":
+        if ctx.message.author.id == "193416878717140992":
             # hex colors
             # int(767,a76, 16)
             embed = discord.Embed(
