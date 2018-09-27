@@ -71,9 +71,6 @@ async def on_member_join(member):
 @client.event
 async def on_message(message):
     k = Karma(client)
-    # channel = message.channel
-    # author = message.author.id
-    # artemis = client.user.id
     with open('users.json', 'r') as f:
         users = json.load(f)
     members = [member for member in message.server.members]
