@@ -98,7 +98,7 @@ class Karma:
                         fmt = random.choice(responses).format(user.mention)
                         await self.client.send_message(message.channel, fmt)
                         print("{0} received a karma point from {1}".format(user, message.author))
-        await self.client.process_commands(message)
+            await self.client.process_commands(message)
 
     @staticmethod
     async def update_data(users, user):
