@@ -48,7 +48,7 @@ class Karma:
                                 "Sure thing, fellow human!",
                                 "*eats karma* Mmm."]
             bad_response = ["You can't give yourself karma.",
-                            "Let's keep things fair here {0}...",
+                            "Let's keep things fair here...",
                             "Looks like karma abuse over here."]
             # karma_database = read_csv("karma.csv")
             message_word_list = [word.lower() for word in message.content.split()]
