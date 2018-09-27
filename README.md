@@ -1,1 +1,2 @@
-RCBC_Bot
+# ARTEMIS
+Discord Bot
