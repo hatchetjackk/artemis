@@ -201,8 +201,19 @@ async def karma(ctx):
 
 @client.command()
 async def leaderboard():
-    """ todo make karma leaderboard with embed """
-    pass
+    """ todo make karma leaderboard with embed """ 
+        # hex colors
+    # int(767,a76, 16)
+    embed = discord.Embed(
+        title="Karma Leaderboard",
+        description="Description",
+        color=discord.Color.blue()
+    )
+    embed.set_image(url="http://promoboxx.com/compare/images/broken_robot.png")
+    embed.set_thumbnail(url="http://promoboxx.com/compare/images/broken_robot.png")
+    embed.set_author(name="Author Name", icon_url="http://promoboxx.com/compare/images/broken_robot.png")
+    embed.add_field(name="Field Name", value="Field Value", inline=False)
+    await client.say(embed=embed)
 
 
 @client.command()
