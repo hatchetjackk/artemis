@@ -11,8 +11,8 @@ class Mod:
     def __init__(self, client):
         self.client = client
 
-    async def on_message_delete(self, message):
-        await self.client.send_message(message.channel, "Message deleted.")
+    # async def on_message_delete(self, message):
+    #     await self.client.send_message(message.channel, "Message deleted.")
 
     @commands.command()
     async def load(self, extension):
