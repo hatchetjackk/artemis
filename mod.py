@@ -6,11 +6,27 @@ from discord.ext import commands
 
 
 class Mod:
+    extensions = []
+
     def __init__(self, client):
         self.client = client
 
     async def on_message_delete(self, message):
         await self.client.send_message(message.channel, "Message deleted.")
+
+    @commands.command()
+    async def load(self, extension):
+        try:
+            self.client.load_extension(extension)
+        except Exception as error:
+            print('{0} cannot be loaded [{1}]'.format(extension, error))
+
+    @commands.command()
+    async def unload(self, extension):
+        try:
+            self.client.load_extension(extension)
+        except Exception as error:
+            print('{0} cannot be loaded [{1}]'.format(extension, error))
 
     @commands.command(pass_context=True)
     async def clear(self, ctx, amount=2):
