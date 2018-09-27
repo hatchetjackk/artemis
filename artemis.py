@@ -14,10 +14,7 @@ token = credentials.tkn()
 client = commands.Bot(command_prefix='!')
 os.chdir(credentials.home_dir())
 client.remove_command('help')
-
-
-def main():
-    client.run(token)
+extensions = ['mod']
 
 
 def username_formatter(username):
@@ -272,30 +269,30 @@ async def roll(dice: str):
     await client.say(result)
 
 
-@client.command(pass_context=True)
-async def clear(ctx, amount=2):
-    channel = ctx.message.channel
-    messages = []
-    async for message in client.logs_from(channel, limit=int(amount)):
-        messages.append(message)
-    await client.delete_messages(messages)
+# @client.command(pass_context=True)
+# async def clear(ctx, amount=2):
+#     channel = ctx.message.channel
+#     messages = []
+#     async for message in client.logs_from(channel, limit=int(amount)):
+#         messages.append(message)
+#     await client.delete_messages(messages)
 
 
-@client.command()
-async def displayembed():
-    # hex colors
-    # int(767,a76, 16)
-    embed = discord.Embed(
-        title="Title",
-        description="Description",
-        color=discord.Color.blue()
-    )
-    embed.set_footer(text="Footer")
-    embed.set_image(url="http://promoboxx.com/compare/images/broken_robot.png")
-    embed.set_thumbnail(url="http://promoboxx.com/compare/images/broken_robot.png")
-    embed.set_author(name="Author Name", icon_url="http://promoboxx.com/compare/images/broken_robot.png")
-    embed.add_field(name="Field Name", value="Field Value", inline=False)
-    await client.say(embed=embed)
+# @client.command()
+# async def displayembed():
+#     # hex colors
+#     # int(767,a76, 16)
+#     embed = discord.Embed(
+#         title="Title",
+#         description="Description",
+#         color=discord.Color.blue()
+#     )
+#     embed.set_footer(text="Footer")
+#     embed.set_image(url="http://promoboxx.com/compare/images/broken_robot.png")
+#     embed.set_thumbnail(url="http://promoboxx.com/compare/images/broken_robot.png")
+#     embed.set_author(name="Author Name", icon_url="http://promoboxx.com/compare/images/broken_robot.png")
+#     embed.add_field(name="Field Name", value="Field Value", inline=False)
+#     await client.say(embed=embed)
 
 
 @client.command(pass_context=True)
@@ -332,7 +329,7 @@ async def leaderboard():
 
 @client.command()
 async def arena():
-    """ make duel arena """
+    """ todo make duel arena """
     pass
 
 
@@ -366,5 +363,11 @@ async def karma_test():
 client.loop.create_task(change_status())
 # client.loop.create_task(karma_test())
 
-if __name__ == "__main__":
-    main()
+if __name__ == '__main__':
+    for extension in extensions:
+        try:
+            client.load_extension(extension)
+        except Exception as error:
+            print('{0} cannot be loaded [{1}]'.format(extension, error))
+
+    client.run(token)

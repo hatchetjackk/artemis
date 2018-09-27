@@ -60,3 +60,7 @@ target/
 credentials\.py
 
 users\.json
+
+*.iml
+
+*.xml
