@@ -13,8 +13,12 @@ class Karma:
         self.client = client
 
     async def on_message(self, message):
+        author = message.author.id
+        artemis = self.client.user.id
+
         with open('users.json', 'r') as f:
             users = json.load(f)
+
         members = [member for member in message.server.members]
         for member in members:
             await self.update_data(users, member)
@@ -22,12 +26,7 @@ class Karma:
         with open('users.json', 'w') as f:
             json.dump(users, f)
 
-        author = message.author.id
-        artemis = self.client.user.id
-        # stop the client from looping with itself
-        # if message.author == client.user:
-        #     return
-        # only check messages that do not start with the command
+        # only check messages that do not start with the command prefix
         if not message.content.startswith("!"):
 
             """ Generate karma!
@@ -37,7 +36,7 @@ class Karma:
             thanking  another user. Because of how mentions work, two variants of the user ID have to be passed to 
             catch all users.
             """
-            # generate lists
+
             responses = [":sparkles: You earned some karma, {0}!",
                          ":sparkles: Cha-ching! You got some karma, {0}!",
                          ":sparkles: What's that? Sounds like that karma train, {0}!",
@@ -50,7 +49,6 @@ class Karma:
             bad_response = ["You can't give yourself karma.",
                             "Let's keep things fair here...",
                             "Looks like karma abuse over here."]
-            # karma_database = read_csv("karma.csv")
             message_word_list = [word.lower() for word in message.content.split()]
             karma_keywords = ["thanks", "thank", "gracias", "kudos", "thx", "appreciate"]
             user_list = [member for member in message.server.members]
@@ -68,15 +66,18 @@ class Karma:
                         if user.id == artemis:
                             await self.client.send_message(message.channel, random.choice(client_responses))
                             return
+
                         # check if someone is trying to give karma for their self
                         if user.id == author:
                             # todo determine why bad_response did not correctly use .format()
                             await self.client.send_message(message.channel, random.choice(bad_response).format(author))
                             return
+
                         # if karma is going to a user and not artemis
                         with open('users.json', 'r') as f:
                             users = json.load(f)
                         await self.add_karma(users, user)
+
                         with open('users.json', 'w') as f:
                             json.dump(users, f)
                         fmt = random.choice(responses).format(user.mention)
@@ -91,9 +92,11 @@ class Karma:
                         if user.id == author:
                             await self.client.send_message(message.channel, random.choice(bad_response))
                             return
+
                         with open('users.json', 'r') as f:
                             users = json.load(f)
                         await self.add_karma(users, user)
+
                         with open('users.json', 'w') as f:
                             json.dump(users, f)
                         fmt = random.choice(responses).format(user.mention)
