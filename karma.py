@@ -70,6 +70,7 @@ class Karma:
                             return
                         # check if someone is trying to give karma for their self
                         if user.id == author:
+                            # todo determine why bad_response did not correctly use .format()
                             await self.client.send_message(message.channel, random.choice(bad_response).format(author))
                             return
                         # if karma is going to a user and not artemis
