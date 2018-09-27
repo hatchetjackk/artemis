@@ -329,7 +329,7 @@ async def leaderboard():
 
 @client.command()
 async def arena():
-    """ make duel arena """
+    """ todo make duel arena """
     pass
 
 
