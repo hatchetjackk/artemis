@@ -12,97 +12,83 @@ class Karma:
     def __init__(self, client):
         self.client = client
 
-    async def on_message(self, message):
+    async def generate_karma(self, message):
         author = message.author.id
         artemis = self.client.user.id
 
-        with open('users.json', 'r') as f:
-            users = json.load(f)
+        """ Generate karma!
 
-        members = [member for member in message.server.members]
-        for member in members:
-            await self.update_data(users, member)
+        This section of code splits messages into lists. It then parses the lists for user mentions. If it finds a 
+        user ID in the message, it will search for other keywords from the karma list to determine if a user is 
+        thanking  another user. Because of how mentions work, two variants of the user ID have to be passed to 
+        catch all users.
+        """
 
-        with open('users.json', 'w') as f:
-            json.dump(users, f)
+        responses = [":sparkles: You earned some karma, {0}!",
+                     ":sparkles: Cha-ching! You got some karma, {0}!",
+                     ":sparkles: What's that? Sounds like that karma train, {0}!",
+                     ":sparkles: +1 karma for {0}!"]
+        client_responses = ["You're welcome!",
+                            "No problem.",
+                            "Anytime!",
+                            "Sure thing, fellow human!",
+                            "*eats karma* Mmm."]
+        bad_response = ["You can't give yourself karma.",
+                        "Let's keep things fair here...",
+                        "Looks like karma abuse over here."]
+        message_word_list = [word.lower() for word in message.content.split()]
+        karma_keywords = ["thanks", "thank", "gracias", "kudos", "thx", "appreciate"]
+        user_list = [member for member in message.server.members]
+        # check that message contains user names and words
+        for user in user_list:
+            # format user IDs to match mentionable IDs
+            (user1, user2) = await self.username_formatter(user.id)
 
-        # only check messages that do not start with the command prefix
-        if not message.content.startswith("!"):
+            if user1 in message_word_list:
+                karma_key = [item for item in karma_keywords if item in message_word_list]
+                # catch if one or more karma keyword has been passed
+                # this prevents a bug that allows  a user to pass karma multiple times in one post
+                if len(karma_key) > 0:
+                    # check if someone is trying to give artemis karma
+                    if user.id == artemis:
+                        await self.client.send_message(message.channel, random.choice(client_responses))
+                        return
 
-            """ Generate karma!
+                    # check if someone is trying to give karma for their self
+                    if user.id == author:
+                        # todo determine why bad_response did not correctly use .format()
+                        await self.client.send_message(message.channel, random.choice(bad_response).format(author))
+                        return
 
-            This section of code splits messages into lists. It then parses the lists for user mentions. If it finds a 
-            user ID in the message, it will search for other keywords from the karma list to determine if a user is 
-            thanking  another user. Because of how mentions work, two variants of the user ID have to be passed to 
-            catch all users.
-            """
+                    # if karma is going to a user and not artemis
+                    with open('users.json', 'r') as f:
+                        users = json.load(f)
+                    await self.add_karma(users, user)
 
-            responses = [":sparkles: You earned some karma, {0}!",
-                         ":sparkles: Cha-ching! You got some karma, {0}!",
-                         ":sparkles: What's that? Sounds like that karma train, {0}!",
-                         ":sparkles: +1 karma for {0}!"]
-            client_responses = ["You're welcome!",
-                                "No problem.",
-                                "Anytime!",
-                                "Sure thing, fellow human!",
-                                "*eats karma* Mmm."]
-            bad_response = ["You can't give yourself karma.",
-                            "Let's keep things fair here...",
-                            "Looks like karma abuse over here."]
-            message_word_list = [word.lower() for word in message.content.split()]
-            karma_keywords = ["thanks", "thank", "gracias", "kudos", "thx", "appreciate"]
-            user_list = [member for member in message.server.members]
-            # check that message contains user names and words
-            for user in user_list:
-                # format user IDs to match mentionable IDs
-                (user1, user2) = await self.username_formatter(user.id)
+                    with open('users.json', 'w') as f:
+                        json.dump(users, f)
+                    fmt = random.choice(responses).format(user.mention)
+                    await self.client.send_message(message.channel, fmt)
+                    print("{0} received a karma point from {1}".format(user, message.author))
 
-                if user1 in message_word_list:
-                    karma_key = [item for item in karma_keywords if item in message_word_list]
-                    # catch if one or more karma keyword has been passed
-                    # this prevents a bug that allows  a user to pass karma multiple times in one post
-                    if len(karma_key) > 0:
-                        # check if someone is trying to give artemis karma
-                        if user.id == artemis:
-                            await self.client.send_message(message.channel, random.choice(client_responses))
-                            return
+            if user2 in message_word_list:
+                karma_keys = [item for item in karma_keywords if item in message_word_list]
+                # catch if one or more karma keyword has been passed
+                # this prevents a bug that allows  a user to pass karma multiple times in one post
+                if len(karma_keys) > 0:
+                    if user.id == author:
+                        await self.client.send_message(message.channel, random.choice(bad_response))
+                        return
 
-                        # check if someone is trying to give karma for their self
-                        if user.id == author:
-                            # todo determine why bad_response did not correctly use .format()
-                            await self.client.send_message(message.channel, random.choice(bad_response).format(author))
-                            return
+                    with open('users.json', 'r') as f:
+                        users = json.load(f)
+                    await self.add_karma(users, user)
 
-                        # if karma is going to a user and not artemis
-                        with open('users.json', 'r') as f:
-                            users = json.load(f)
-                        await self.add_karma(users, user)
-
-                        with open('users.json', 'w') as f:
-                            json.dump(users, f)
-                        fmt = random.choice(responses).format(user.mention)
-                        await self.client.send_message(message.channel, fmt)
-                        print("{0} received a karma point from {1}".format(user, message.author))
-
-                if user2 in message_word_list:
-                    karma_keys = [item for item in karma_keywords if item in message_word_list]
-                    # catch if one or more karma keyword has been passed
-                    # this prevents a bug that allows  a user to pass karma multiple times in one post
-                    if len(karma_keys) > 0:
-                        if user.id == author:
-                            await self.client.send_message(message.channel, random.choice(bad_response))
-                            return
-
-                        with open('users.json', 'r') as f:
-                            users = json.load(f)
-                        await self.add_karma(users, user)
-
-                        with open('users.json', 'w') as f:
-                            json.dump(users, f)
-                        fmt = random.choice(responses).format(user.mention)
-                        await self.client.send_message(message.channel, fmt)
-                        print("{0} received a karma point from {1}".format(user, message.author))
-            await self.client.process_commands(message)
+                    with open('users.json', 'w') as f:
+                        json.dump(users, f)
+                    fmt = random.choice(responses).format(user.mention)
+                    await self.client.send_message(message.channel, fmt)
+                    print("{0} received a karma point from {1}".format(user, message.author))
 
     @staticmethod
     async def update_data(users, user):
