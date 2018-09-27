@@ -4,7 +4,7 @@ import discord
 import asyncio
 import datetime
 import random
-import karma
+from karma import Karma
 import os
 import json
 import credentials
@@ -16,12 +16,6 @@ client = commands.Bot(command_prefix='!')
 os.chdir(credentials.home_dir())
 client.remove_command('help')
 extensions = ['mod', 'karma']
-
-
-# def username_formatter(username):
-#     user1 = '<@!{0}>'.format(username)
-#     user2 = '<@{0}>'.format(username)
-#     return user1, user2
 
 
 @client.event
@@ -72,6 +66,26 @@ async def on_member_join(member):
 
     with open('users.json', 'w') as f:
         json.dump(users, f)
+
+
+@client.event
+async def on_message(message):
+    k = Karma(client)
+    # channel = message.channel
+    # author = message.author.id
+    # artemis = client.user.id
+    with open('users.json', 'r') as f:
+        users = json.load(f)
+    members = [member for member in message.server.members]
+    for member in members:
+        await k.update_data(users, member)
+    with open('users.json', 'w') as f:
+        json.dump(users, f)
+
+    if not message.content.startswith('!'):
+        await k.generate_karma(message)
+
+    await client.process_commands(message)
 
 
 @client.command(pass_context=True)
