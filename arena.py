@@ -14,26 +14,26 @@ class Arena:
         members = ctx.message.server.members
         channel = ctx.message.channel
         if channel != 'arena':
-            await ctx.client.send_message(ctx.message.channel, 'Sorry. Combat can only happen in #arena!')
+            await self.client.send_message(ctx.message.channel, 'Sorry. Combat can only happen in #arena!')
             return
 
-        await ctx.client.send_message(ctx.message.channel, 'Pick the first combatant:')
-        user_one = ctx.client.wait_for_message(author=author, timeout=30)
+        await self.client.send_message(ctx.message.channel, 'Pick the first combatant:')
+        user_one = self.client.wait_for_message(author=author, timeout=30)
         if user_one.id not in members:
-            await ctx.client.send_message(ctx.message.channel, '{0} is not a member of this server.'.format(user_one))
+            await self.client.send_message(ctx.message.channel, '{0} is not a member of this server.'.format(user_one))
             return
-        await ctx.client.send_message(ctx.message.channel, 'Pick the second combatant:')
+        await self.client.send_message(ctx.message.channel, 'Pick the second combatant:')
 
-        user_two = ctx.client.wait_for_message(author=author, timeout=30)
+        user_two = self.client.wait_for_message(author=author, timeout=30)
         if user_two.id not in members:
-            await ctx.client.send_message(ctx.message.channel, '{0} is not a member of this server.'.format(user_two))
+            await self.client.send_message(ctx.message.channel, '{0} is not a member of this server.'.format(user_two))
             return
 
-        await ctx.client.send_message(ctx.message.channel, 'Choose max HP:')
-        hp = ctx.client.wait_for_message(author=author, timeout=30)
+        await self.client.send_message(ctx.message.channel, 'Choose max HP:')
+        hp = self.client.wait_for_message(author=author, timeout=30)
 
-        await ctx.client.send_message(ctx.message.channel, 'Lastly, choose attack power from 1 to 10:')
-        atk_power = ctx.client.wait_for_message(author=author, timeout=30)
+        await self.client.send_message(ctx.message.channel, 'Lastly, choose attack power from 1 to 10:')
+        atk_power = self.client.wait_for_message(author=author, timeout=30)
 
         fighter_one = self.fighter(user_one, hp)
         fighter_two = self.fighter(user_two, hp)
@@ -48,20 +48,20 @@ class Arena:
 
     async def combat(self, ctx, fighter_one, fighter_two, atk_power):
         # randomly choose the first to go
-        await ctx.client.send_message(ctx.message.channel, 'Choosing which fighter goes first at random!')
+        await self.client.send_message(ctx.message.channel, 'Choosing which fighter goes first at random!')
         first = random.choice(fighter_one, fighter_two)
         if first == fighter_two:
             second = fighter_two
         else:
             second = fighter_one
-        await ctx.client.send_message(ctx.message.channel, '{0} goes first!\n'
+        await self.client.send_message(ctx.message.channel, '{0} goes first!\n'
                                                            'Attack with !attack <custom input>'.format(first))
 
         # begin attack loop
         while True:
             # first attacks
-            await ctx.client.send_message(ctx.message.channel, 'Go, {0}!'.format(first))
-            attack = ctx.client.wait_for_message(author=fighter_one, timeout=30)
+            await self.client.send_message(ctx.message.channel, 'Go, {0}!'.format(first))
+            attack = self.client.wait_for_message(author=fighter_one, timeout=30)
             if attack.message.content[:6] == '!attack':
                 attack = self.roll(atk_power)
                 second = second['HP'] - attack
@@ -72,8 +72,8 @@ class Arena:
                 await ctx.client.send_message(ctx.message.channel, 'You waited to long and lost your chance!')
 
             # second attacks
-            await ctx.client.send_message(ctx.message.channel, 'Go, {0}!'.format(second))
-            attack = ctx.client.wait_for_message(author=fighter_one, timeout=30)
+            await self.client.send_message(ctx.message.channel, 'Go, {0}!'.format(second))
+            attack = self.client.wait_for_message(author=fighter_one, timeout=30)
             if attack.message.content[:6] == '!attack':
                 attack = self.roll(atk_power)
                 first = first['HP'] - attack
@@ -81,7 +81,7 @@ class Arena:
                 if first['HP'] < 1:
                     break
             else:
-                await ctx.client.send_message(ctx.message.channel, 'You waited to long and lost your chance!')
+                await self.client.send_message(ctx.message.channel, 'You waited to long and lost your chance!')
 
     @staticmethod
     async def roll(atk_power):
