@@ -16,7 +16,7 @@ token = credentials.tkn()
 client = commands.Bot(command_prefix='!')
 os.chdir(credentials.home_dir())
 client.remove_command('help')
-extensions = ['mod', 'karma', 'fun', 'emotional_core']
+extensions = ['mod', 'karma', 'fun', 'emotional_core', 'arena']
 
 
 @client.event
