@@ -15,6 +15,17 @@ class Mod:
     #     await self.client.send_message(message.channel, "Message deleted.")
 
     @commands.command(pass_context=True)
+    async def test(self, ctx):
+        # owner only
+        if ctx.message.author.id == "193416878717140992":
+            counter = 0
+            tmp = await self.client.send_message(ctx.message.channel, "Calculating messages...")
+            async for log in self.client.logs_from(ctx.message.channel, limit=100):
+                if log.author == ctx.message.author:
+                    counter += 1
+            await self.client.edit_message(tmp, "You have {0} messages.".format(counter))
+
+    @commands.command(pass_context=True)
     async def load(self, ctx, extension):
         # owner only
         if ctx.message.author.id == "193416878717140992":

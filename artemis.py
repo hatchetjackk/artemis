@@ -117,16 +117,6 @@ async def status(ctx):
 
 
 @client.command(pass_context=True)
-async def test(ctx):
-    counter = 0
-    tmp = await client.send_message(ctx.message.channel, "Calculating messages...")
-    async for log in client.logs_from(ctx.message.channel, limit=100):
-        if log.author == ctx.message.author:
-            counter += 1
-    await client.edit_message(tmp, "You have {0} messages.".format(counter))
-
-
-@client.command(pass_context=True)
 async def karma(ctx):
     """ Check karma points """
     user = ctx.message.author.id
