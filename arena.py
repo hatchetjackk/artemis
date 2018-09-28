@@ -22,7 +22,6 @@ class Arena:
         todo make input @user1 @user2 instead of two seperate inputs
         """
         author = ctx.message.author
-        members = ctx.message.server.members
         channel = ctx.message.channel.name
 
         # ensure that combat can only happen in the arena channel
@@ -35,20 +34,28 @@ class Arena:
         # pick combatant one
         await self.client.send_message(ctx.message.channel, 'Pick the first combatant:')
         combatant_one = await self.client.wait_for_message(author=author, timeout=30)
-
-        # check if user in members
-
-        # if arg is not in members list, send message to channel
-        await self.client.send_message(ctx.message.channel, '{0} is not a member of this server.'.format(combatant_one.content))
-        # return
+        if combatant_one:
+            # check if user in members
+            if combatant_one.content not in [member.mention for member in ctx.message.server.members]:
+                # if arg is not in members list, send message to channel
+                await self.client.send_message(ctx.message.channel,
+                                               '{0} is not a member of this server.'.format(combatant_one.content))
+                return
+        else:
+            await self.client.send_message(ctx.message.channel, 'Timed out')
 
         # pick combatant two
         await self.client.send_message(ctx.message.channel, 'Pick the second combatant:')
         combatant_two = self.client.wait_for_message(author=author, timeout=30)
-
-        # if arg is not in members list, send message to channel
-        await self.client.send_message(ctx.message.channel, '{0} is not a member of this server.'.format(combatant_two.content))
-        # return
+        if combatant_two:
+            # check if user in members
+            if combatant_one.content not in [member.mention for member in ctx.message.server.members]:
+                # if arg is not in members list, send message to channel
+                await self.client.send_message(ctx.message.channel,
+                                               '{0} is not a member of this server.'.format(combatant_two.content))
+                return
+        else:
+            await self.client.send_message(ctx.message.channel, 'Timed out')
 
         # choose maximum hp
         await self.client.send_message(ctx.message.channel, 'Choose max HP:')
@@ -58,6 +65,7 @@ class Arena:
         await self.client.send_message(ctx.message.channel, 'Lastly, choose attack power from 1 to 10:')
         atk_power = self.client.wait_for_message(author=author, timeout=30)
 
+        # assign combatants to roles
         fighter_one = self.fighter(combatant_one, hp)
         fighter_two = self.fighter(combatant_two, hp)
 
