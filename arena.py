@@ -1,6 +1,7 @@
 import discord
 import random
 import json
+from karma import Karma
 from discord.ext import commands
 
 
@@ -15,16 +16,31 @@ class Arena:
         channel = ctx.message.channel.name
         if channel != 'arena':
             arena = discord.utils.get(self.client.get_all_channels(), name='arena')
-            await self.client.send_message(ctx.message.channel, 'Sorry. Combat can only happen in {0}!'.format(arena.mention))
+            await self.client.send_message(ctx.message.channel,
+                                           'Sorry. Combat can only happen in the {0}!'.format(arena.mention))
             return
 
         # pick combatant one
         await self.client.send_message(ctx.message.channel, 'Pick the first combatant:')
-        user_one = self.client.wait_for_message(author=author, timeout=30)
-        print(user_one.id)
-        if user_one not in members:
-            await self.client.send_message(ctx.message.channel, '{0} is not a member of this server.'.format(user_one))
-            return
+        user_one = await self.client.wait_for_message(author=author, timeout=30)
+        print('split', user_one.content.split())
+        user_one = user_one.content.split()
+        user_one = user_one[0]
+
+        for member in members:
+            if member in user_one.content.split():
+                pass
+        # check if user in members
+        for member in members:
+            # format user IDs to match mentionable IDs
+            if user1 not in user_one.content:
+                print('one', user1)
+                await self.client.send_message(ctx.message.channel, '{0} is not a member of this server.'.format(user_one.content))
+                return
+            if user2 not in user_one.content:
+                print(user2)
+                await self.client.send_message(ctx.message.channel, '{0} is not a member of this server.'.format(user_one.content))
+                return
         await self.client.send_message(ctx.message.channel, 'Pick the second combatant:')
 
         user_two = self.client.wait_for_message(author=author, timeout=30)

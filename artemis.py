@@ -39,8 +39,8 @@ async def on_ready():
     for channel in channels:
         ch = channel.name
         if ch in spam:
-            # pass
-            await client.send_message(channel, random.choice(responses))
+            pass
+            # await client.send_message(channel, random.choice(responses))
 
 
 @client.event
