@@ -1,5 +1,6 @@
 import discord
 import random
+import json
 from discord.ext import commands
 
 
@@ -7,9 +8,31 @@ class Emotions:
     def __init__(self, client):
         self.client = client
 
+    async def generate_points(self, message):
+        message = [word.lower() for word in message.content.split()]
+        good_keys = []
+        bad_keys = []
+        for value in good_keys:
+            if value in message:
+                good = 1
+                self.emotional_level(good)
+        for value in bad_keys:
+            if value in message:
+                bad = -1
+                self.emotional_level(bad)
+
+    @staticmethod
+    async def emotional_level(value):
+        with open('status.json') as f:
+            status = json.load(f)
+        status['status'] += value
+        with open('status.json') as f:
+            json.dump(status, f)
+        return status
+
     @commands.command(pass_context=True)
     async def status(self, ctx):
-        emotional_level = 50
+        level = self.emotional_level(0)
         great = ["Artemis is doing great!",
                  "Everything is optimal.",
                  "Everything looks good from here!",
@@ -27,13 +50,13 @@ class Emotions:
                     "Couldn't get any worse in here.",
                     "Artemis is operating at sub-optimal levels.",
                     "Everything is on fire!"]
-        if emotional_level > 80:
+        if level > 80:
             await self.client.send_message(ctx.message.channel, random.choice(great))
-        elif emotional_level > 60:
+        elif level > 60:
             await self.client.send_message(ctx.message.channel, random.choice(good))
-        elif emotional_level > 40:
+        elif level > 40:
             await self.client.send_message(ctx.message.channel, random.choice(ok))
-        elif emotional_level > 20:
+        elif level > 20:
             await self.client.send_message(ctx.message.channel, random.choice(bad))
         else:
             await self.client.send_message(ctx.message.channel, random.choice(terrible))
