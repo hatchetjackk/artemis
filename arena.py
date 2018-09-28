@@ -12,6 +12,10 @@ class Arena:
     async def start(self, ctx):
         author = ctx.message.author
         members = ctx.message.server.members
+        channel = ctx.message.channel
+        if channel != 'arena':
+            await ctx.client.send_message(ctx.message.channel, 'Sorry. Combat can only happen in #arena!')
+            return
 
         await ctx.client.send_message(ctx.message.channel, 'Pick the first combatant:')
         user_one = ctx.client.wait_for_message(author=author, timeout=30)
@@ -79,7 +83,8 @@ class Arena:
             else:
                 await ctx.client.send_message(ctx.message.channel, 'You waited to long and lost your chance!')
 
-    async def roll(self, atk_power):
+    @staticmethod
+    async def roll(atk_power):
         # roll first die for miss/hit/critical
         multiplier = random.randint(1, 20)
 
