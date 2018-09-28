@@ -4,10 +4,11 @@ import discord
 import asyncio
 import datetime
 import random
-from karma import Karma
 import os
 import json
 import credentials
+from karma import Karma
+from emotional_core import Emotions
 from itertools import cycle
 from discord.ext import commands
 
@@ -38,6 +39,7 @@ async def on_ready():
     for channel in channels:
         ch = channel.name
         if ch in spam:
+            # pass
             await client.send_message(channel, random.choice(responses))
 
 
@@ -77,6 +79,7 @@ async def on_member_join(member):
 @client.event
 async def on_message(message):
     k = Karma(client)
+    e = Emotions(client)
     with open('users.json', 'r') as f:
         users = json.load(f)
     members = [member for member in message.server.members]
@@ -87,7 +90,7 @@ async def on_message(message):
 
     if not message.content.startswith('!'):
         await k.generate_karma(message)
-
+        await e.generate_points(message)
 
     await client.process_commands(message)
 
