@@ -34,8 +34,9 @@ class Karma:
                             "Sure thing, fellow human!",
                             "*eats karma* Mmm."]
         bad_response = ["You can't give yourself karma.",
-                        "Let's keep things fair here...",
-                        "Looks like karma abuse over here."]
+                        "Let's keep things fair here, {0.author.mention}...",
+                        "Looks like karma abuse over here.",
+                        "{0.author.mention} is trying to farm karma!"]
         message_word_list = [word.lower() for word in message.content.split()]
         karma_keywords = ["thanks", "thank", "gracias", "kudos", "thx", "appreciate"]
         user_list = [member for member in message.server.members]
