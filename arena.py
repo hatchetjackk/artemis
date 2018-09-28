@@ -10,10 +10,12 @@ class Arena:
         self.client = client
 
     @commands.command(pass_context=True)
-    async def start(self, ctx):
+    async def arena(self, ctx):
         author = ctx.message.author
         members = ctx.message.server.members
         channel = ctx.message.channel.name
+
+        # ensure that combat can only happen in the arena channel
         if channel != 'arena':
             arena = discord.utils.get(self.client.get_all_channels(), name='arena')
             await self.client.send_message(ctx.message.channel,
@@ -22,42 +24,35 @@ class Arena:
 
         # pick combatant one
         await self.client.send_message(ctx.message.channel, 'Pick the first combatant:')
-        user_one = await self.client.wait_for_message(author=author, timeout=30)
-        print('split', user_one.content.split())
-        user_one = user_one.content.split()
-        user_one = user_one[0]
+        combatant_one = await self.client.wait_for_message(author=author, timeout=30)
 
-        for member in members:
-            if member in user_one.content.split():
-                pass
         # check if user in members
-        for member in members:
-            # format user IDs to match mentionable IDs
-            if user1 not in user_one.content:
-                print('one', user1)
-                await self.client.send_message(ctx.message.channel, '{0} is not a member of this server.'.format(user_one.content))
-                return
-            if user2 not in user_one.content:
-                print(user2)
-                await self.client.send_message(ctx.message.channel, '{0} is not a member of this server.'.format(user_one.content))
-                return
+
+        # if arg is not in members list, send message to channel
+        await self.client.send_message(ctx.message.channel, '{0} is not a member of this server.'.format(combatant_one.content))
+        # return
+
+        # pick combatant two
         await self.client.send_message(ctx.message.channel, 'Pick the second combatant:')
+        combatant_two = self.client.wait_for_message(author=author, timeout=30)
 
-        user_two = self.client.wait_for_message(author=author, timeout=30)
-        if user_two.id not in members:
-            await self.client.send_message(ctx.message.channel, '{0} is not a member of this server.'.format(user_two))
-            return
+        # if arg is not in members list, send message to channel
+        await self.client.send_message(ctx.message.channel, '{0} is not a member of this server.'.format(combatant_two.content))
+        # return
 
+        # choose maximum hp
         await self.client.send_message(ctx.message.channel, 'Choose max HP:')
         hp = self.client.wait_for_message(author=author, timeout=30)
 
+        # choose how many die to roll
         await self.client.send_message(ctx.message.channel, 'Lastly, choose attack power from 1 to 10:')
         atk_power = self.client.wait_for_message(author=author, timeout=30)
 
-        fighter_one = self.fighter(user_one, hp)
-        fighter_two = self.fighter(user_two, hp)
+        fighter_one = self.fighter(combatant_one, hp)
+        fighter_two = self.fighter(combatant_two, hp)
+
         # start combat
-        self.combat(ctx, fighter_one, fighter_two, atk_power)
+        await self.combat(ctx, fighter_one, fighter_two, atk_power)
 
     @staticmethod
     async def fighter(user, hp):
