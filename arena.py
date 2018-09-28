@@ -12,14 +12,17 @@ class Arena:
     async def start(self, ctx):
         author = ctx.message.author
         members = ctx.message.server.members
-        channel = ctx.message.channel
+        channel = ctx.message.channel.name
         if channel != 'arena':
-            await self.client.send_message(ctx.message.channel, 'Sorry. Combat can only happen in #arena!')
+            arena = discord.utils.get(self.client.get_all_channels(), name='arena')
+            await self.client.send_message(ctx.message.channel, 'Sorry. Combat can only happen in {0}!'.format(arena.mention))
             return
 
+        # pick combatant one
         await self.client.send_message(ctx.message.channel, 'Pick the first combatant:')
         user_one = self.client.wait_for_message(author=author, timeout=30)
-        if user_one.id not in members:
+        print(user_one.id)
+        if user_one not in members:
             await self.client.send_message(ctx.message.channel, '{0} is not a member of this server.'.format(user_one))
             return
         await self.client.send_message(ctx.message.channel, 'Pick the second combatant:')
