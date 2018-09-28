@@ -10,29 +10,31 @@ class Emotions:
 
     async def generate_points(self, message):
         message = [word.lower() for word in message.content.split()]
-        good_keys = []
-        bad_keys = []
-        for value in good_keys:
-            if value in message:
+        good_keys = ['nice', 'good', 'thanks', 'thank', 'love']
+        bad_keys = ['hate', 'bad']
+        for word in message:
+            if word in good_keys:
                 good = 1
-                self.emotional_level(good)
-        for value in bad_keys:
-            if value in message:
+                await self.emotional_level(good)
+            if word in bad_keys:
                 bad = -1
-                self.emotional_level(bad)
+                await self.emotional_level(bad)
 
     @staticmethod
     async def emotional_level(value):
-        with open('status.json') as f:
+        with open('status.json', 'r') as f:
             status = json.load(f)
-        status['status'] += value
-        with open('status.json') as f:
+        status["status"]["level"] += value
+        print('Artemis emotional level change: {0}'.format(status["status"]["level"]))
+        with open('status.json', 'w') as f:
             json.dump(status, f)
-        return status
 
     @commands.command(pass_context=True)
     async def status(self, ctx):
-        level = self.emotional_level(0)
+        with open('status.json', 'r') as f:
+            status = json.load(f)
+        level = status["status"]["level"]
+        print(level)
         great = ["Artemis is doing great!",
                  "Everything is optimal.",
                  "Everything looks good from here!",
