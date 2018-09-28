@@ -179,8 +179,6 @@ async def arena():
     pass
 
 
-# todo move on_message to artemis and refer to karma.py to generate karma
-
 async def change_status():
     # Change Artemis' play status every 5 minutes
     await client.wait_until_ready()
