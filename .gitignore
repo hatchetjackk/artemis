@@ -59,7 +59,7 @@ target/
 
 credentials\.py
 
-users\.json
+users.json
 
 *.iml
 
