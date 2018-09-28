@@ -59,6 +59,8 @@ target/
 
 credentials\.py
 
+__init__.py
+
 users.json
 
 *.iml
