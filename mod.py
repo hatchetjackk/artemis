@@ -16,6 +16,7 @@ class Mod:
 
     @commands.command(pass_context=True)
     async def load(self, ctx, extension):
+        # owner only
         if ctx.message.author.id == "193416878717140992":
             try:
                 self.client.load_extension(extension)
@@ -24,6 +25,7 @@ class Mod:
 
     @commands.command(pass_context=True)
     async def unload(self, ctx, extension):
+        # owner only
         if ctx.message.author.id == "193416878717140992":
             try:
                 self.client.load_extension(extension)
@@ -31,8 +33,9 @@ class Mod:
                 print('{0} cannot be loaded [{1}]'.format(extension, error))
 
     @commands.command(pass_context=True)
+    # mods
     async def clear(self, ctx, amount=2):
-        if ctx.message.author.id == "193416878717140992":
+        if "495187511698784257" or "193416878717140992" in [role.id for role in ctx.message.author.roles]:
             channel = ctx.message.channel
             messages = []
             async for message in self.client.logs_from(channel, limit=int(amount)):
@@ -40,9 +43,9 @@ class Mod:
             await self.client.delete_messages(messages)
 
     @commands.command(pass_context=True)
+    # mods
     async def displayembed(self, ctx):
-        if "495187511698784257" in [role.id for role in ctx.message.author.roles]:
-        # if ctx.message.author.id == "193416878717140992":
+        if "495187511698784257" or "193416878717140992" in [role.id for role in ctx.message.author.roles]:
             # hex colors
             # int(767,a76, 16)
             embed = discord.Embed(
