@@ -24,6 +24,10 @@ class Emotions:
     async def emotional_level(value):
         with open('status.json', 'r') as f:
             status = json.load(f)
+        if value < 0 and status["status"]["level"] == 0:
+            return
+        if value > 0 and status["status"]["level"] == 100:
+            return
         status["status"]["level"] += value
         print('Artemis emotional level change: {0}'.format(status["status"]["level"]))
         with open('status.json', 'w') as f:
