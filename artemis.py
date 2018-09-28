@@ -32,8 +32,13 @@ async def on_ready():
                  "Artemis is ready.",
                  "Artemis, reporting in.",
                  "Artemis, logging in."]
-    channel_id = discord.Object(id="477966302871289866")
-    await client.send_message(channel_id, random.choice(responses))
+    # report in to botspam for all servers
+    spam = ['botspam']
+    channels = client.get_all_channels()
+    for channel in channels:
+        ch = channel.name
+        if ch in spam:
+            await client.send_message(channel, random.choice(responses))
 
 
 @client.event
