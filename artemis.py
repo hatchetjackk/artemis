@@ -101,7 +101,7 @@ async def help(ctx):
     embed.add_field(
         name="How do I give karma?",
         value="Just say thanks and mention the target\n"
-              "Ex: 'Thanks @Hatchet Jackk#4501!",
+              "Ex: 'Thanks @Hatchet Jackk",
         inline=False)
     embed.add_field(name="!ping", value="Return pong", inline=False)
     embed.add_field(name="!roll", value="Roll NdN dice", inline=False)
