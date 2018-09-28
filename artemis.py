@@ -88,6 +88,7 @@ async def on_message(message):
     if not message.content.startswith('!'):
         await k.generate_karma(message)
 
+
     await client.process_commands(message)
 
 
@@ -111,7 +112,6 @@ async def help(ctx):
     embed.add_field(name="!leaderboard", value="Check karma levels (WIP)", inline=False)
     embed.set_footer(text="Author: Hatchet Jackk")
     await client.send_message(author, embed=embed)
-
 
 
 @client.command()
