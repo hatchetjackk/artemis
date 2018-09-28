@@ -53,6 +53,7 @@ async def on_error(event):
 
 @client.event
 async def on_member_join(member):
+    k = Karma(client)
     server = member.server
     fmt = ["Welcome {0.mention} to {1.name}.\nPlease make yourself at home."]
     await client.send_message(server, fmt.format(member, server))
@@ -62,7 +63,7 @@ async def on_member_join(member):
     with open('users.json', 'r') as f:
         users = json.load(f)
 
-    await karma.Karma.update_data(users, member)
+    await k.update_data(users, member)
 
     with open('users.json', 'w') as f:
         json.dump(users, f)
