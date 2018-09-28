@@ -11,6 +11,16 @@ class Arena:
 
     @commands.command(pass_context=True)
     async def arena(self, ctx):
+        """ Create an arena for two users to duke it out in
+
+        The arena takes input from a user to generate two fighters (typically the initiator and another). After the
+        !arena command is initiated, Artemis asks for two combatants. Then HP and attack power (dice rolls) are set.
+        The first attacker is chosen at random and the two fighters take turns using !attack <role play actions>. The
+        attack method will roll 1d20 for miss/hit/critical before using that multiplier against the attack power. The
+        actions loops until one user reaches 0 or less HP.
+
+        todo make input @user1 @user2 instead of two seperate inputs
+        """
         author = ctx.message.author
         members = ctx.message.server.members
         channel = ctx.message.channel.name
