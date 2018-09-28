@@ -145,7 +145,9 @@ class Karma:
             for user in users:
                 points = users[user]['karma']
                 user = ctx.message.server.get_member(user)
-                embed.add_field(name=user.name, value='Karma: {0}'.format(points), inline=False)
+                # todo find out why some users return None
+                embed.add_field(name=user, value='Karma: {0}'.format(points), inline=False)
+                # embed.add_field(name=user.name, value='Karma: {0}'.format(points), inline=False)
         # embed.set_image(url="http://promoboxx.com/compare/images/broken_robot.png")
         # embed.set_thumbnail(url="http://promoboxx.com/compare/images/broken_robot.png")
         # embed.set_author(name="Karma Leaderboard", icon_url="http://promoboxx.com/compare/images/broken_robot.png")
