@@ -15,7 +15,19 @@ class Mod:
     #     await self.client.send_message(message.channel, "Message deleted.")
 
     @commands.command(pass_context=True)
+    async def test(self, ctx):
+        # owner only
+        if ctx.message.author.id == "193416878717140992":
+            counter = 0
+            tmp = await self.client.send_message(ctx.message.channel, "Calculating messages...")
+            async for log in self.client.logs_from(ctx.message.channel, limit=100):
+                if log.author == ctx.message.author:
+                    counter += 1
+            await self.client.edit_message(tmp, "You have {0} messages.".format(counter))
+
+    @commands.command(pass_context=True)
     async def load(self, ctx, extension):
+        # owner only
         if ctx.message.author.id == "193416878717140992":
             try:
                 self.client.load_extension(extension)
@@ -24,6 +36,7 @@ class Mod:
 
     @commands.command(pass_context=True)
     async def unload(self, ctx, extension):
+        # owner only
         if ctx.message.author.id == "193416878717140992":
             try:
                 self.client.load_extension(extension)
@@ -31,8 +44,9 @@ class Mod:
                 print('{0} cannot be loaded [{1}]'.format(extension, error))
 
     @commands.command(pass_context=True)
+    # mods
     async def clear(self, ctx, amount=2):
-        if ctx.message.author.id == "193416878717140992":
+        if "495187511698784257" or "193416878717140992" in [role.id for role in ctx.message.author.roles]:
             channel = ctx.message.channel
             messages = []
             async for message in self.client.logs_from(channel, limit=int(amount)):
@@ -40,8 +54,9 @@ class Mod:
             await self.client.delete_messages(messages)
 
     @commands.command(pass_context=True)
+    # mods
     async def displayembed(self, ctx):
-        if ctx.message.author.id == "193416878717140992":
+        if "495187511698784257" or "193416878717140992" in [role.id for role in ctx.message.author.roles]:
             # hex colors
             # int(767,a76, 16)
             embed = discord.Embed(
