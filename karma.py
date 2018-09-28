@@ -134,9 +134,7 @@ class Karma:
             await self.client.wait_until_ready()
             for x in range(30):
                 await self.client.send_message(discord.Object(id="477966302871289866"), "thanks <@193416878717140992>")
-                await self.asyncio.sleep(2)
                 await self.client.send_message(discord.Object(id="477966302871289866"), "thanks <@355055661303988225>")
-                await self.asyncio.sleep(2)
 
 
 def setup(client):
