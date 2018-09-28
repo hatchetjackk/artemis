@@ -12,6 +12,31 @@ class Karma:
     def __init__(self, client):
         self.client = client
 
+    @commands.command(pass_context=True)
+    async def karma(self, ctx):
+        """ Check karma points """
+        user = ctx.message.author.id
+        target = ctx.message.author
+        message = ctx.message.content.split()
+        members = [member for member in ctx.message.server.members]
+        # check another user's karma
+        for member in members:
+            if member.mention in message:
+                target = member.name
+                user = member.id
+                with open('users.json', 'r') as f:
+                    users = json.load(f)
+                    if user in users:
+                        points = users[user]['karma']
+                        await self.client.send_message(ctx.message.channel, '{0} has {1} karma.'.format(target, points))
+                        return
+        # check message author's karma
+        with open('users.json', 'r') as f:
+            users = json.load(f)
+            if user in users:
+                points = users[user]['karma']
+                await self.client.send_message(ctx.message.channel, 'You have {1} karma.'.format(target, points))
+
     async def generate_karma(self, message):
         author = message.author.id
         artemis = self.client.user.id
