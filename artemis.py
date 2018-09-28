@@ -16,7 +16,7 @@ token = credentials.tkn()
 client = commands.Bot(command_prefix='!')
 os.chdir(credentials.home_dir())
 client.remove_command('help')
-extensions = ['mod', 'karma', 'fun', 'emotional_core']
+extensions = ['mod', 'karma', 'fun', 'emotional_core', 'arena']
 
 
 @client.event
@@ -39,8 +39,8 @@ async def on_ready():
     for channel in channels:
         ch = channel.name
         if ch in spam:
-            # pass
-            await client.send_message(channel, random.choice(responses))
+            pass
+            # await client.send_message(channel, random.choice(responses))
 
 
 @client.event
