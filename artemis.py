@@ -15,7 +15,7 @@ token = credentials.tkn()
 client = commands.Bot(command_prefix='!')
 os.chdir(credentials.home_dir())
 client.remove_command('help')
-extensions = ['mod', 'karma']
+extensions = ['mod', 'karma', 'fun']
 
 
 @client.event
@@ -108,19 +108,6 @@ async def help(ctx):
 
 
 @client.command(pass_context=True)
-async def hello(ctx):
-    responses = ["Hi, {0.author.mention}!",
-                 "Ahoy, {0.author.mention}!",
-                 "Hey there, {0.author.mention}!",
-                 "*[insert traditional greeting here]*",
-                 "*0100100001000101010011000100110001001111*\nAhem, I mean: hello!",
-                 "Hello. Fine weather we're having.",
-                 "Hello, fellow human!"]
-    msg = random.choice(responses).format(ctx.message)
-    await client.send_message(ctx.message.channel, msg)
-
-
-@client.command(pass_context=True)
 async def status(ctx):
     responses = ["Artemis is ok!",
                  "Artemis is currently online.",
@@ -137,25 +124,6 @@ async def test(ctx):
         if log.author == ctx.message.author:
             counter += 1
     await client.edit_message(tmp, "You have {0} messages.".format(counter))
-
-
-@client.command()
-async def ping():
-    print("ping/pong")
-    await client.say(':ping_pong: Pong')
-
-
-@client.command()
-async def roll(dice: str):
-    try:
-        rolls, limit = map(int, dice.split('d'))
-        print(rolls, limit)
-    except Exception as e:
-        print(e)
-        await client.say('Please use the format "NdN" when rolling dice. Thanks!')
-        return
-    result = ', '.join(str(random.randint(1, limit)) for value in range(rolls))
-    await client.say(result)
 
 
 @client.command(pass_context=True)
