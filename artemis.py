@@ -169,17 +169,7 @@ async def on_message_edit(before, after):
     await client.send_message(after.channel, fmt.format(after, before))
 
 
-async def karma_test():
-    # Change Artemis' play status every 5 minutes
-    await client.wait_until_ready()
-    while not client.is_closed:
-        await client.send_message(discord.Object(id="477966302871289866"), "thanks <@193416878717140992>")
-        await asyncio.sleep(2)
-        await client.send_message(discord.Object(id="477966302871289866"), "thanks <@355055661303988225>")
-        await asyncio.sleep(2)
-
 client.loop.create_task(change_status())
-# client.loop.create_task(karma_test())
 
 if __name__ == '__main__':
     for extension in extensions:
