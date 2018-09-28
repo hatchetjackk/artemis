@@ -113,14 +113,6 @@ async def help(ctx):
     await client.send_message(author, embed=embed)
 
 
-@client.command(pass_context=True)
-async def status(ctx):
-    responses = ["Artemis is ok!",
-                 "Artemis is currently online.",
-                 ":thumbsup:",
-                 "No problems, at the moment."]
-    await client.send_message(ctx.message.channel, random.choice(responses))
-
 
 @client.command()
 async def arena():

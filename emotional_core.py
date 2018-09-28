@@ -7,9 +7,13 @@ class Emotions:
     def __init__(self, client):
         self.client = client
 
-    @commands.command()
-    async def status(self):
-        pass
+    @commands.command(pass_context=True)
+    async def status(self, ctx):
+        responses = ["Artemis is ok!",
+                     "Artemis is currently online.",
+                     ":thumbsup:",
+                     "No problems, at the moment."]
+        await self.client.send_message(ctx.message.channel, random.choice(responses))
 
 
 def setup(client):
