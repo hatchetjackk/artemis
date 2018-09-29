@@ -62,7 +62,8 @@ class Mod:
     @commands.command(pass_context=True)
     # mods
     async def clear(self, ctx, amount=2):
-        if "495187511698784257" or "193416878717140992" in [role.id for role in ctx.message.author.roles]:
+        mod = '495187511698784257'
+        if mod or "193416878717140992" in [role.id for role in ctx.message.author.roles]:
             channel = ctx.message.channel
             messages = []
             async for message in self.client.logs_from(channel, limit=int(amount)):
@@ -72,7 +73,8 @@ class Mod:
     @commands.command(pass_context=True)
     # mods
     async def displayembed(self, ctx):
-        if "495187511698784257" or "193416878717140992" in [role.id for role in ctx.message.author.roles]:
+        mod = '495187511698784257'
+        if mod or "193416878717140992" in [role.id for role in ctx.message.author.roles]:
             # hex colors
             # int(767,a76, 16)
             embed = discord.Embed(
