@@ -27,9 +27,23 @@ class User:
     async def google(self):
         pass
 
-    @commands.command()
-    async def rps(self):
-        pass
+    @commands.command(pass_context=True)
+    async def rps(self, ctx, index: str):
+        rps = {1: 'rock', 2: 'paper', 3: 'scissors'}
+        num = random.randint(1, 3)
+        bot_choice = rps.get(num)
+        user_choice = index
+        # check for valid entry
+        if user_choice not in rps.get(user_choice):
+            self.client.send_message(ctx.message.channel, 'Invalid choice.')
+            return
+        # check choice against bot
+        if bot_choice == 'rock' and user_choice == 'rock' or bot_choice == 'paper' and user_choice == 'paper' or bot_choice == 'scissors' and user_choice == 'scissors':
+            self.client.send_message(ctx.message.channel, 'It\'s a tie!!')
+        if bot_choice == 'rock' and user_choice == 'paper' or bot_choice == 'paper' and user_choice == 'scissors' or bot_choice == 'scissors' and user_choice == 'rock':
+            self.client.send_message(ctx.message.channel, 'You win!')
+        if bot_choice == 'rock' and user_choice == 'scissors' or bot_choice == 'paper' and user_choice == 'rock' or bot_choice == 'scissors' and user_choice == 'paper':
+            self.client.send_message(ctx.message.channel, 'You lost!')
 
     @commands.command()
     async def server(self):
