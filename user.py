@@ -15,13 +15,11 @@ class User:
         pass
 
     @commands.command(pass_context=True)
-    async def flipcoin(self, ctx):
+    async def flip(self, ctx):
         # return heads or tails
-        coin = random.randint(1, 2)
-        if coin == 1:
-            await self.client.send_message(ctx.message.channel, 'Heads!')
-        if coin == 2:
-            await self.client.send_message(ctx.message.channel, 'Tails!')
+        choice = ['Heads!', 'Tails!']
+        coin = random.choice(choice)
+        await self.client.send_message(ctx.message.channel, coin)
 
     @commands.command()
     async def google(self):
