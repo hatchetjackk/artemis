@@ -64,7 +64,8 @@ class Karma:
                         "{0.author.mention} is trying to farm karma!"]
         message_word_list = [word.lower() for word in message.content.split()]
         karma_keywords = ["thanks", "thank", "gracias", "kudos", "thx", "appreciate"]
-        user_list = [member for member in message.server.members]
+        d = discord.Client
+        user_list = [member for member in d.get_all_members(self.client)]
         # check that message contains user names and words
         for user in user_list:
             # format user IDs to match mentionable IDs
