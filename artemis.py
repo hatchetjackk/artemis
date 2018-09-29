@@ -117,6 +117,7 @@ async def help(ctx):
     embed.add_field(name="!rps", value="Play Rock, Paper, Scissors against the bot", inline=False)
     embed.set_footer(text="Author: Hatchet Jackk")
     await client.send_message(author, embed=embed)
+    print('Artemis: Sent help to {0}'.format(author))
 
 
 async def change_status():
