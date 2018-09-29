@@ -1,7 +1,6 @@
 import discord
 import random
 import json
-from karma import Karma
 from discord.ext import commands
 
 
