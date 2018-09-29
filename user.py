@@ -1,6 +1,7 @@
 import discord
 import random
 import json
+from emotional_core import Emotions
 from discord.ext import commands
 
 
@@ -46,10 +47,36 @@ class User:
 
     @commands.command()
     async def server(self):
+        # e = Emotions(self.client)
+        # start = time.time() in artemis.py
+        # uptime = time.time() - start
+        # server_id = server id
+        # mood = e.status
+        # thumbnail = 'https://cdn0.iconfinder.com/data/icons/cosmo-medicine/40/eye_6-512.png'
+        # embed
+        # embed = discord.Embed(
+        #     color=discord.Color.blue()
+        # )
+        # embed.set_author(name="Artemis", icon_url=thumbnail)
+        # embed.add_field(name="Uptime", value=uptime, inline=False)
+        # embed.add_field(name="Server ID", value=server_id, inline=False)
+        # embed.add_field(name="Mood", value=mood, inline=False)
+        # await self.client.say(embed=embed)
         pass
 
-    @commands.command()
-    async def whois(self):
+    @commands.command(pass_context=True)
+    async def whois(self, ctx):
+        # read message for user or part of a username
+        # joined_discord = check when joined discord
+        # joined_server = check when joined server
+        # user_avatar = grab user avatar
+        # roles = grab roles from list
+        # make embed
+        # add joined_discord
+        # add joined_server
+        # add user_avatar
+        # add roles
+        # send to channel
         pass
 
 

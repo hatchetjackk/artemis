@@ -6,17 +6,12 @@ from discord.ext import commands
 
 
 class Mod:
-    extensions = []
-
     def __init__(self, client):
         self.client = client
 
-    # async def on_message_delete(self, message):
-    #     await self.client.send_message(message.channel, "Message deleted.")
-
+    # owner command
     @commands.command(pass_context=True)
     async def test(self, ctx):
-        # owner only
         if ctx.message.author.id == "193416878717140992":
             counter = 0
             tmp = await self.client.send_message(ctx.message.channel, "Calculating messages...")
@@ -28,9 +23,9 @@ class Mod:
             await self.client.say("You do not have permission to do that.")
             return
 
+    # owner command
     @commands.command(pass_context=True)
     async def load(self, ctx, extension):
-        # owner only
         if ctx.message.author.id == "193416878717140992":
             try:
                 self.client.load_extension(extension)
@@ -49,9 +44,9 @@ class Mod:
                 # pass
                 await self.client.say(ctx.channel.message, '{0} loaded.'.format(extension))
 
+    # owner command
     @commands.command(pass_context=True)
     async def unload(self, ctx, extension):
-        # owner only
         if ctx.message.author.id == "193416878717140992":
             try:
                 self.client.load_extension(extension)
@@ -70,9 +65,8 @@ class Mod:
                 # pass
                 await self.client.say(ctx.channel.message, '{0} unloaded.'.format(extension))
 
-
+    # mod command
     @commands.command(pass_context=True)
-    # mods
     async def clear(self, ctx, amount=2):
         mod = '495187511698784257'
         if mod or "193416878717140992" in [role.id for role in ctx.message.author.roles]:
@@ -84,8 +78,8 @@ class Mod:
         else:
             await self.client.say("You do not have permission to do that.")
 
+    # mod command
     @commands.command(pass_context=True)
-    # mods
     async def displayembed(self, ctx):
         mod = '495187511698784257'
         if mod or "193416878717140992" in [role.id for role in ctx.message.author.roles]:

@@ -38,7 +38,6 @@ class Emotions:
         with open('status.json', 'r') as f:
             status = json.load(f)
         level = status["status"]["level"]
-        print(level)
         great = ["Artemis is doing great!",
                  "Everything is optimal.",
                  "Everything looks good from here!",
@@ -58,14 +57,21 @@ class Emotions:
                     "Everything is on fire!"]
         if level > 80:
             await self.client.send_message(ctx.message.channel, random.choice(great))
+            mood = "Great"
         elif level > 60:
             await self.client.send_message(ctx.message.channel, random.choice(good))
+            mood = "Good"
         elif level > 40:
             await self.client.send_message(ctx.message.channel, random.choice(ok))
+            mood = 'OK'
         elif level > 20:
             await self.client.send_message(ctx.message.channel, random.choice(bad))
+            mood = 'Bad'
         else:
             await self.client.send_message(ctx.message.channel, random.choice(terrible))
+            mood = 'Terrible'
+        print('Mood: {0:<5} Level: {1}'.format(mood, level))
+        return mood
 
 
 def setup(client):
