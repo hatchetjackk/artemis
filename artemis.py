@@ -82,9 +82,8 @@ async def on_message(message):
     e = Emotions(client)
     with open('users.json', 'r') as f:
         users = json.load(f)
-    members = [member for member in message.server.members]
-    for member in members:
-        await k.update_data(users, member)
+    for member in client.get_all_members():
+        await update_data(users, member)
     with open('users.json', 'w') as f:
         json.dump(users, f)
 
@@ -120,12 +119,6 @@ async def help(ctx):
     await client.send_message(author, embed=embed)
 
 
-@client.command()
-async def arena():
-    """ todo make duel arena """
-    pass
-
-
 async def change_status():
     # Change Artemis' play status every 5 minutes
     await client.wait_until_ready()
@@ -144,7 +137,14 @@ async def on_message_edit(before, after):
     await client.send_message(after.channel, fmt.format(after, before))
 
 
+async def update_data(users, user):
+    if user.id not in users:
+        users[user.id] = {}
+        users[user.id]['karma'] = 0
+
+
 client.loop.create_task(change_status())
+
 
 if __name__ == '__main__':
     for extension in extensions:
