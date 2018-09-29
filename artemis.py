@@ -140,10 +140,22 @@ async def on_message_edit(before, after):
     await client.send_message(after.channel, fmt.format(after, before))
 
 
+async def jreader(f):
+    with open(f, 'r') as f:
+        data = json.load(f)
+    return data
+
+
+async def jwriter(data, f):
+    with open(f, 'w') as f:
+        json.dump(data, f)
+
+
 async def update_data(users, user):
     if user.id not in users:
         users[user.id] = {}
         users[user.id]['karma'] = 0
+        users[user.id]['todo'] = []
 
 
 client.loop.create_task(change_status())
