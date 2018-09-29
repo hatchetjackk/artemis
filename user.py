@@ -34,7 +34,7 @@ class User:
         user_choice = index
         # check for valid entry
         if user_choice not in rps:
-            self.client.send_message(ctx.message.channel, 'Invalid choice.')
+            await self.client.send_message(ctx.message.channel, 'That\'s not a valid choice.')
             return
         # check choice against bot
         if bot_choice == user_choice:

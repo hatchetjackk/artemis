@@ -24,6 +24,9 @@ class Mod:
                 if log.author == ctx.message.author:
                     counter += 1
             await self.client.edit_message(tmp, "You have {0} messages.".format(counter))
+        else:
+            await self.client.say("You do not have permission to do that.")
+            return
 
     @commands.command(pass_context=True)
     async def load(self, ctx, extension):
@@ -34,8 +37,12 @@ class Mod:
             except Exception as error:
                 print('{0} cannot be loaded [{1}]'.format(extension, error))
                 return
+        else:
+            await self.client.say("You do not have permission to do that.")
+            return
         spam = ['botspam']
-        channels = say.client.get_all_channels()
+        d = discord.Client
+        channels = d.client.get_all_channels()
         for channel in channels:
             ch = channel.name
             if ch in spam:
@@ -51,13 +58,18 @@ class Mod:
             except Exception as error:
                 print('{0} cannot be unloaded [{1}]'.format(extension, error))
                 return
+        else:
+            await self.client.say("You do not have permission to do that.")
+            return
         spam = ['botspam']
-        channels = say.client.get_all_channels()
+        d = discord.Client
+        channels = d.client.get_all_channels()
         for channel in channels:
             ch = channel.name
             if ch in spam:
                 # pass
                 await self.client.say(ctx.channel.message, '{0} unloaded.'.format(extension))
+
 
     @commands.command(pass_context=True)
     # mods
@@ -69,6 +81,8 @@ class Mod:
             async for message in self.client.logs_from(channel, limit=int(amount)):
                 messages.append(message)
             await self.client.delete_messages(messages)
+        else:
+            await self.client.say("You do not have permission to do that.")
 
     @commands.command(pass_context=True)
     # mods
