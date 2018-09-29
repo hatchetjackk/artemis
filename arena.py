@@ -82,12 +82,12 @@ class Arena:
         # randomly choose the first to go
         await self.client.send_message(ctx.message.channel, 'Choosing which fighter goes first at random!')
         first = random.choice(fighter_one, fighter_two)
-        if first == fighter_two:
+        if first == fighter_one:
             second = fighter_two
         else:
             second = fighter_one
         await self.client.send_message(ctx.message.channel, '{0} goes first!\n'
-                                                           'Attack with !attack <custom input>'.format(first))
+                                                            'Attack with !attack <custom input>'.format(first))
 
         # begin attack loop
         while True:
@@ -99,9 +99,12 @@ class Arena:
                 second = second['HP'] - attack
                 # break if mortal blow was dealt
                 if second['HP'] < 1:
+                    await self.client.send_message(ctx.message.channel,
+                                                   '{0} delivered a mortal blow to {1}!'.format(first, second))
                     break
             else:
-                await ctx.client.send_message(ctx.message.channel, 'You waited to long and lost your chance!')
+                await self.client.send_message(ctx.message.channel,
+                                               'You waited to long and lost your chance to strike!')
 
             # second attacks
             await self.client.send_message(ctx.message.channel, 'Go, {0}!'.format(second))
@@ -111,9 +114,12 @@ class Arena:
                 first = first['HP'] - attack
                 # break if mortal blow was dealt
                 if first['HP'] < 1:
+                    await self.client.send_message(ctx.message.channel,
+                                                   '{0} delivered a mortal blow to {1}!'.format(second, first))
                     break
             else:
-                await self.client.send_message(ctx.message.channel, 'You waited to long and lost your chance!')
+                await self.client.send_message(ctx.message.channel,
+                                               'You waited to long and lost your chance to strike!')
 
     @staticmethod
     async def roll(atk_power):
