@@ -10,19 +10,18 @@ class User:
 
     @commands.command()
     async def afk(self):
+        # set status to away with a message to respond to users that mention the afk user
+        # return from afk when sending a message
         pass
 
-    @commands.command()
-    async def afk_set(self):
-        pass
-
-    @commands.command()
-    async def afk_ignore(self):
-        pass
-
-    @commands.command()
-    async def flipcoin(self):
-        pass
+    @commands.command(pass_context=True)
+    async def flipcoin(self, ctx):
+        # return heads or tails
+        coin = random.randint(1,2)
+        if coin == 1:
+            self.client.send_message(ctx.message.channel, 'Heads!')
+        if coin == 2:
+            self.client.send_message(ctx.message.channel, 'Tails!')
 
     @commands.command()
     async def google(self):
