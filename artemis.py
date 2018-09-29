@@ -3,7 +3,6 @@
 import discord
 import asyncio
 import datetime
-import random
 import os
 import json
 import credentials
@@ -16,7 +15,8 @@ token = credentials.tkn()
 client = commands.Bot(command_prefix='!')
 os.chdir(credentials.home_dir())
 client.remove_command('help')
-extensions = ['mod', 'karma', 'fun', 'emotional_core', 'arena']
+extensions = ['mod', 'karma', 'fun',
+              'emotional_core', 'arena', 'user']
 
 
 @client.event
