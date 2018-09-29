@@ -45,8 +45,8 @@ class User:
         if user_choice == win.get(bot_choice):
             await self.client.send_message(ctx.message.channel, 'Artemis chose {0}! You win!'.format(bot_choice))
 
-    @commands.command()
-    async def server(self):
+    @commands.command(pass_context=True)
+    async def server(self, ctx):
         # e = Emotions(self.client)
         # start = time.time() in artemis.py
         # uptime = time.time() - start
@@ -62,7 +62,7 @@ class User:
         # embed.add_field(name="Server ID", value=server_id, inline=False)
         # embed.add_field(name="Mood", value=mood, inline=False)
         # await self.client.say(embed=embed)
-        pass
+        await ctx.client.message_send(ctx.messagel.channel, 'This command is not ready yet.')
 
     @commands.command(pass_context=True)
     async def whois(self, ctx):
@@ -77,7 +77,7 @@ class User:
         # add user_avatar
         # add roles
         # send to channel
-        pass
+        await ctx.client.message_send(ctx.messagel.channel, 'This command is not ready yet.')
 
 
 def setup(client):

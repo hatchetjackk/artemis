@@ -115,6 +115,8 @@ async def help(ctx):
     embed.add_field(name="!arena", value="Settle the score (WIP)", inline=False)
     embed.add_field(name="!flip", value="Flip a coin", inline=False)
     embed.add_field(name="!rps <choice>", value="Play Rock, Paper, Scissors against the bot", inline=False)
+    embed.add_field(name="!whois <user>", value="Find user details (WIP)", inline=False)
+    embed.add_field(name="!server", value="Check server information (WIP)", inline=False)
     embed.set_footer(text="Author: Hatchet Jackk")
     await client.send_message(author, embed=embed)
     print('Artemis: Sent help to {0}'.format(author))
