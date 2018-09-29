@@ -6,6 +6,7 @@ import datetime
 import os
 import json
 import credentials
+import random
 from karma import Karma
 from emotional_core import Emotions
 from itertools import cycle
@@ -17,6 +18,8 @@ os.chdir(credentials.home_dir())
 client.remove_command('help')
 extensions = ['mod', 'karma', 'fun',
               'emotional_core', 'arena', 'user']
+
+verbose = False
 
 
 @client.event
@@ -34,28 +37,25 @@ async def on_ready():
                  "Artemis, reporting in.",
                  "Artemis, logging in."]
     # report in to botspam for all servers
-    spam = ['botspam']
-    channels = client.get_all_channels()
-    for channel in channels:
-        ch = channel.name
-        if ch in spam:
-            pass
-            # await client.send_message(channel, random.choice(responses))
+    if verbose:
+        await botspam(random.choice(responses))
 
 
 @client.event
 async def on_resumed():
-    print("Artemis: Back online")
-    await client.send_message(discord.Object(id="477966302871289866"), "Artemis is back online.")
+    message = 'Artemis is back online.'
+    print(message)
+    if verbose:
+        await botspam(message)
 
 
 @client.event
 async def on_error(event):
     now = datetime.datetime.now()
-    print("Artemis: An error has occurred")
-    print("[{0}] Error: {1}".format(now, event))
-    channel_id = discord.Object(id="493904844592250882")
-    await client.send_message(channel_id, "Warning! An error occurred!\nError: {0}".format(event))
+    message = "An error has occurred.\n[{0}] Error: {1}".format(now, event)
+    print(message)
+    if verbose:
+        await botspam(message)
 
 
 @client.event
@@ -67,25 +67,20 @@ async def on_member_join(member):
     role = discord.utils.get(member.server.roles, name="Test Role")
     await client.add_roles(member, role)
 
-    with open('users.json', 'r') as f:
-        users = json.load(f)
-
+    users = jreader('users.json')
     await k.update_data(users, member)
-
-    with open('users.json', 'w') as f:
-        json.dump(users, f)
+    await jwriter(users, 'users.json')
 
 
 @client.event
 async def on_message(message):
     k = Karma(client)
     e = Emotions(client)
-    with open('users.json', 'r') as f:
-        users = json.load(f)
+
+    users = jreader('users.json')
     for member in client.get_all_members():
         await update_data(users, member)
-    with open('users.json', 'w') as f:
-        json.dump(users, f)
+    await jwriter(users, 'users.json')
 
     if not message.content.startswith('!'):
         await k.generate_karma(message)
@@ -127,7 +122,9 @@ async def change_status():
     await client.wait_until_ready()
     status_response = ['type !help',
                        'with 1\'s and 0\'s',
-                       'with fellow humans']
+                       'with fellow humans',
+                       'with infinite loops',
+                       'with Python']
     msg = cycle(status_response)
     while not client.is_closed:
         current_status = next(msg)
@@ -136,8 +133,9 @@ async def change_status():
 
 
 async def on_message_edit(before, after):
-    fmt = '**{0.author}** edited their message:\n{1.content}'
-    await client.send_message(after.channel, fmt.format(after, before))
+    message = '**{0.author}** edited their message:\n{1.content}'
+    if verbose:
+        await botspam(message.format(after, before))
 
 
 async def jreader(f):
@@ -158,6 +156,13 @@ async def update_data(users, user):
         users[user.id]['todo'] = []
 
 
+async def botspam(message):
+    spam = ['botspam']
+    for channel in [channel.name for channel in client.get_all_channels()]:
+        if channel in spam:
+            await client.send_message(channel, message)
+
+
 client.loop.create_task(change_status())
 
 
@@ -167,5 +172,4 @@ if __name__ == '__main__':
             client.load_extension(extension)
         except Exception as error:
             print('{0} cannot be loaded [{1}]'.format(extension, error))
-
     client.run(token)
