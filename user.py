@@ -38,11 +38,14 @@ class User:
             self.client.send_message(ctx.message.channel, 'Invalid choice.')
             return
         # check choice against bot
-        if bot_choice == 'rock' and user_choice == 'rock' or bot_choice == 'paper' and user_choice == 'paper' or bot_choice == 'scissors' and user_choice == 'scissors':
+        if bot_choice == 'rock' and user_choice == 'rock' or bot_choice == 'paper' and user_choice == 'paper' or \
+                bot_choice == 'scissors' and user_choice == 'scissors':
             self.client.send_message(ctx.message.channel, 'It\'s a tie!!')
-        if bot_choice == 'rock' and user_choice == 'paper' or bot_choice == 'paper' and user_choice == 'scissors' or bot_choice == 'scissors' and user_choice == 'rock':
+        if bot_choice == 'rock' and user_choice == 'paper' or bot_choice == 'paper' and user_choice == 'scissors' or \
+                bot_choice == 'scissors' and user_choice == 'rock':
             self.client.send_message(ctx.message.channel, 'You win!')
-        if bot_choice == 'rock' and user_choice == 'scissors' or bot_choice == 'paper' and user_choice == 'rock' or bot_choice == 'scissors' and user_choice == 'paper':
+        if bot_choice == 'rock' and user_choice == 'scissors' or bot_choice == 'paper' and user_choice == 'rock' or \
+                bot_choice == 'scissors' and user_choice == 'paper':
             self.client.send_message(ctx.message.channel, 'You lost!')
 
     @commands.command()
