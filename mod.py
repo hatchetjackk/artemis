@@ -33,6 +33,14 @@ class Mod:
                 self.client.load_extension(extension)
             except Exception as error:
                 print('{0} cannot be loaded [{1}]'.format(extension, error))
+                return
+        spam = ['botspam']
+        channels = say.client.get_all_channels()
+        for channel in channels:
+            ch = channel.name
+            if ch in spam:
+                # pass
+                await self.client.say(ctx.channel.message, '{0} loaded.'.format(extension))
 
     @commands.command(pass_context=True)
     async def unload(self, ctx, extension):
@@ -41,7 +49,15 @@ class Mod:
             try:
                 self.client.load_extension(extension)
             except Exception as error:
-                print('{0} cannot be loaded [{1}]'.format(extension, error))
+                print('{0} cannot be unloaded [{1}]'.format(extension, error))
+                return
+        spam = ['botspam']
+        channels = say.client.get_all_channels()
+        for channel in channels:
+            ch = channel.name
+            if ch in spam:
+                # pass
+                await self.client.say(ctx.channel.message, '{0} unloaded.'.format(extension))
 
     @commands.command(pass_context=True)
     # mods
