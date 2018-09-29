@@ -15,13 +15,11 @@ class User:
         pass
 
     @commands.command(pass_context=True)
-    async def flipcoin(self, ctx):
+    async def flip(self, ctx):
         # return heads or tails
-        coin = random.randint(1, 2)
-        if coin == 1:
-            await self.client.send_message(ctx.message.channel, 'Heads!')
-        if coin == 2:
-            await self.client.send_message(ctx.message.channel, 'Tails!')
+        choice = ['Heads!', 'Tails!']
+        coin = random.choice(choice)
+        await self.client.send_message(ctx.message.channel, coin)
 
     @commands.command()
     async def google(self):
@@ -29,24 +27,22 @@ class User:
 
     @commands.command(pass_context=True)
     async def rps(self, ctx, index: str):
-        rps = {1: 'rock', 2: 'paper', 3: 'scissors'}
-        num = random.randint(1, 3)
-        bot_choice = rps.get(num)
+        rps = ['rock', 'paper', 'scissors']
+        lose = {'rock': 'paper', 'paper': 'scissors', 'scissors': 'rock'}
+        win = {'paper': 'rock', 'rock': 'scissors', 'scissors': 'paper'}
+        bot_choice = random.choice(rps)
         user_choice = index
         # check for valid entry
-        if user_choice not in rps.get:
+        if user_choice not in rps:
             self.client.send_message(ctx.message.channel, 'Invalid choice.')
             return
         # check choice against bot
-        if bot_choice == 'rock' and user_choice == 'rock' or bot_choice == 'paper' and user_choice == 'paper' or \
-                bot_choice == 'scissors' and user_choice == 'scissors':
-            self.client.send_message(ctx.message.channel, 'It\'s a tie!!')
-        if bot_choice == 'rock' and user_choice == 'paper' or bot_choice == 'paper' and user_choice == 'scissors' or \
-                bot_choice == 'scissors' and user_choice == 'rock':
-            self.client.send_message(ctx.message.channel, 'You win!')
-        if bot_choice == 'rock' and user_choice == 'scissors' or bot_choice == 'paper' and user_choice == 'rock' or \
-                bot_choice == 'scissors' and user_choice == 'paper':
-            self.client.send_message(ctx.message.channel, 'You lost!')
+        if bot_choice == user_choice:
+            await self.client.send_message(ctx.message.channel, 'Artemis chose {0}! It\'s a tie!'.format(bot_choice))
+        if user_choice == lose.get(bot_choice):
+            await self.client.send_message(ctx.message.channel, 'Artemis chose {0}! You lost!'.format(bot_choice))
+        if user_choice == win.get(bot_choice):
+            await self.client.send_message(ctx.message.channel, 'Artemis chose {0}! You win!'.format(bot_choice))
 
     @commands.command()
     async def server(self):
