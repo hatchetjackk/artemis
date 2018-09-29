@@ -62,7 +62,7 @@ class User:
         # embed.add_field(name="Server ID", value=server_id, inline=False)
         # embed.add_field(name="Mood", value=mood, inline=False)
         # await self.client.say(embed=embed)
-        await ctx.client.message_send(ctx.messagel.channel, 'This command is not ready yet.')
+        await self.client.send_message(ctx.message.channel, 'This command is not ready yet.')
 
     @commands.command(pass_context=True)
     async def whois(self, ctx):
@@ -77,7 +77,7 @@ class User:
         # add user_avatar
         # add roles
         # send to channel
-        await ctx.client.message_send(ctx.messagel.channel, 'This command is not ready yet.')
+        await self.client.send_message(ctx.message.channel, 'This command is not ready yet.')
 
 
 def setup(client):

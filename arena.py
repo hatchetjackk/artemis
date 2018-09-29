@@ -70,7 +70,7 @@ class Arena:
         #
         # # start combat
         # await self.combat(ctx, fighter_one, fighter_two, atk_power)
-        await ctx.client.message_send(ctx.messagel.channel, 'This command is not ready yet.')
+        await self.client.send_message(ctx.message.channel, 'This command is not ready yet.')
 
     @staticmethod
     async def fighter(user, hp):
