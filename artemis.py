@@ -113,6 +113,9 @@ async def help(ctx):
     embed.add_field(name='!hello', value='Say hi to Artemis!', inline=False)
     embed.add_field(name="!status", value="Check Artemis' status", inline=False)
     embed.add_field(name="!leaderboard", value="Check karma levels (WIP)", inline=False)
+    embed.add_field(name="!arena", value="Settle the score (WIP)", inline=False)
+    embed.add_field(name="!flip", value="Flip a coin", inline=False)
+    embed.add_field(name="!rps", value="Play Rock, Paper, Scissors against the bot", inline=False)
     embed.set_footer(text="Author: Hatchet Jackk")
     await client.send_message(author, embed=embed)
 
