@@ -17,11 +17,11 @@ class User:
     @commands.command(pass_context=True)
     async def flipcoin(self, ctx):
         # return heads or tails
-        coin = random.randint(1,2)
+        coin = random.randint(1, 2)
         if coin == 1:
-            self.client.send_message(ctx.message.channel, 'Heads!')
+            await self.client.send_message(ctx.message.channel, 'Heads!')
         if coin == 2:
-            self.client.send_message(ctx.message.channel, 'Tails!')
+            await self.client.send_message(ctx.message.channel, 'Tails!')
 
     @commands.command()
     async def google(self):
