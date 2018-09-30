@@ -2,6 +2,7 @@
 Mod module for administrator commands
 """
 import discord
+import json
 from discord.ext import commands
 
 
@@ -96,6 +97,18 @@ class Mod:
             embed.set_author(name="Author Name", icon_url="http://promoboxx.com/compare/images/broken_robot.png")
             embed.add_field(name="Field Name", value="Field Value", inline=False)
             await self.client.say(embed=embed)
+        else:
+            await self.client.say("You do not have permission to do that.")
+
+    # owner command
+    @commands.command(pass_context=True)
+    async def prefix(self, ctx, arg):
+        if '193416878717140992' in [role.id for role in ctx.message.author.roles]:
+            with open('bot.json', 'r') as f:
+                bot = json.load(f)
+            bot['artemis']['prefix'] = arg
+            with open('bot.json', 'w') as f:
+                json.dump(bot, f)
         else:
             await self.client.say("You do not have permission to do that.")
 
