@@ -135,11 +135,10 @@ class Karma:
 
     @commands.command(pass_context=True)
     async def leaderboard(self, ctx):
-        print(str(ctx.message.server))
         # todo order top 10 users from most to least karma
         embed = discord.Embed(
-            # title="Karma Leaderboard",
-            # description="Description",
+            title="Karma Leaderboard",
+            description="This is a work in progress",
             color=discord.Color.blue()
         )
         with open('users.json', 'r') as f:
@@ -148,12 +147,7 @@ class Karma:
                 if str(ctx.message.server) in users[user]['server']:
                     points = users[user]['karma']
                     user = ctx.message.server.get_member(user)
-                    embed.add_field(name=user.name, value='Karma: {0}'.format(points), inline=False)
-                    # embed.add_field(name=user.name, value='Karma: {0}'.format(points), inline=False)
-        # embed.set_image(url="http://promoboxx.com/compare/images/broken_robot.png")
-        # embed.set_thumbnail(url="http://promoboxx.com/compare/images/broken_robot.png")
-        # embed.set_author(name="Karma Leaderboard", icon_url="http://promoboxx.com/compare/images/broken_robot.png")
-        # embed.add_field(name="Field Name", value="Field Value", inline=False)
+                    embed.add_field(name=user.name, value=points, inline=False)
         await self.client.say(embed=embed)
 
     @commands.command(pass_context=True)
