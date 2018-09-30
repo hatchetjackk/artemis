@@ -12,8 +12,8 @@ from emotional_core import Emotions
 from itertools import cycle
 from discord.ext import commands
 
-with open('bot.json', 'r') as f:
-    bot = json.load(f)
+with open('bot.json', 'r') as jf:
+    bot = json.load(jf)
 command_prefix = bot['artemis']['prefix']
 
 token = credentials.tkn()
@@ -71,20 +71,27 @@ async def on_member_join(member):
     role = discord.utils.get(member.server.roles, name="Test Role")
     await client.add_roles(member, role)
 
-    users = jreader('users.json')
-    await k.update_data(users, member)
-    await jwriter(users, 'users.json')
+    jfile = 'users.json'
+    with open(jfile, 'r') as f:
+        users = json.load(f)
+
+    await update_data(users, member)
+
+    with open(jfile, 'w') as f:
+        json.dump = (users, f)
 
 
 @client.event
 async def on_message(message):
     k = Karma(client)
     e = Emotions(client)
-
-    users = jreader('users.json')
-    for member in client.get_all_members():
+    with open('users.json', 'r') as f:
+        users = json.load(f)
+    members = [member for member in message.server.members]
+    for member in members:
         await update_data(users, member)
-    await jwriter(users, 'users.json')
+    with open('users.json', 'w') as f:
+        json.dump(users, f)
 
     if not message.content.startswith('!'):
         await k.generate_karma(message)
@@ -140,17 +147,6 @@ async def on_message_edit(before, after):
     message = '**{0.author}** edited their message:\n{1.content}'
     if verbose:
         await botspam(message.format(after, before))
-
-
-async def jreader(f):
-    with open(f, 'r') as f:
-        data = json.load(f)
-    return data
-
-
-async def jwriter(data, f):
-    with open(f, 'w') as f:
-        json.dump(data, f)
 
 
 async def update_data(users, user):
