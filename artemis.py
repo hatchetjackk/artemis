@@ -64,7 +64,6 @@ async def on_error(event):
 
 @client.event
 async def on_member_join(member):
-    k = Karma(client)
     server = member.server
     fmt = ["Welcome {0.mention} to {1.name}.\nPlease make yourself at home."]
     await client.send_message(server, fmt.format(member, server))
@@ -154,13 +153,10 @@ async def update_data(users, user, srv):
     if user.id not in users:
         users[user.id] = {}
         users[user.id]['server'] = []
-        # users[user.id]['username'] = user.name
         users[user.id]['karma'] = 0
         users[user.id]['todo'] = []
     if srv not in users[user.id]['server']:
         users[user.id]['server'].append(srv)
-
-
 
 
 async def botspam(message):
