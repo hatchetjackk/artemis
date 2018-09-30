@@ -85,11 +85,12 @@ async def on_member_join(member):
 async def on_message(message):
     k = Karma(client)
     e = Emotions(client)
+    srv = str(message.server)
     with open('users.json', 'r') as f:
         users = json.load(f)
     members = [member for member in message.server.members]
     for member in members:
-        await update_data(users, member)
+        await update_data(users, member, srv)
     with open('users.json', 'w') as f:
         json.dump(users, f)
 
@@ -149,11 +150,17 @@ async def on_message_edit(before, after):
         await botspam(message.format(after, before))
 
 
-async def update_data(users, user):
+async def update_data(users, user, srv):
     if user.id not in users:
         users[user.id] = {}
+        users[user.id]['server'] = []
+        # users[user.id]['username'] = user.name
         users[user.id]['karma'] = 0
         users[user.id]['todo'] = []
+    if srv not in users[user.id]['server']:
+        users[user.id]['server'].append(srv)
+
+
 
 
 async def botspam(message):
