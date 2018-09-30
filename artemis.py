@@ -12,8 +12,12 @@ from emotional_core import Emotions
 from itertools import cycle
 from discord.ext import commands
 
+with open('bot.json', 'r') as f:
+    bot = json.load(f)
+command_prefix = bot['artemis']['prefix']
+
 token = credentials.tkn()
-client = commands.Bot(command_prefix='!')
+client = commands.Bot(command_prefix=command_prefix)
 os.chdir(credentials.home_dir())
 client.remove_command('help')
 extensions = ['mod', 'karma', 'fun',
