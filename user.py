@@ -107,6 +107,57 @@ class User:
         await self.client.send_message(ctx.message.channel, "http://www.youtube.com/watch?v=" + search_results[0])
         print('{0} searched Youtube for "{1}".'.format(ctx.message.author.name, ' '.join(args)))
 
+    @commands.command(pass_context=True)
+    async def card(self, ctx):
+        """ draw a random card from a deck """
+        if ctx.message.author.id == '193416878717140992':
+            # card = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 'Ace', 'King', 'Queen', 'Jack']
+            # style = ['Spades', 'Hearts', 'Clubs', 'Diamonds']
+            card = ['Ace']
+            style = ['Clubs']
+            rcard = random.choice(card)
+            rstyle = random.choice(style)
+
+            fmt = 'You drew the {0} of {1}!'
+            if rcard == 'Ace':
+                if rstyle == 'Spades':
+                    await self.clemmy(ctx)
+                if rstyle == 'Diamonds':
+                    await self.ccolorchange(ctx)
+                if rstyle == 'Clubs':
+                    await self.ctrapcard(ctx)
+                if rstyle == 'Hearts':
+                    await self.cchange_nick(ctx)
+            else:
+                await self.client.send_message(ctx.message.channel, fmt.format(rcard, rstyle))
+            print('{0} drew the {1} of {2}.'.format(ctx.message.author.name, rcard, rstyle))
+
+    async def clemmy(self, ctx):
+        await self.client.send_message(ctx.message.channel, '***IT\'S THE ACE OF SPADES! THE ACE OF SPADES!!!***')
+
+    async def ccolorchange(self, ctx):
+        d = discord.Client
+        role = discord.Role.name('Sparkle!')
+        await self.client.send_message(ctx.message.channel, ':sparkles: *Sparkle, Sparkle!*:sparkles: ')
+        # await d.add_roles(ctx.message.author, role)
+
+    async def ctrapcard(self, ctx):
+        # todo fix this method
+        d = discord.Client
+        await self.client.send_message(ctx.message.channel, 'You\'ve activated my trap card!')
+        for server in self.client.servers:
+            for channel in server.channels:
+                if channel.name == 'general':
+                    link = await self.client.create_invite(destination=channel)
+                    fmt = 'You activated my trap card!\n{0}'.format(link)
+                    await self.client.send_message(ctx.message.author, fmt)
+        d.kick(member=ctx.message.author)
+
+    async def cchange_nick(self, ctx):
+        d = discord.Client
+        await self.client.send_message(ctx.message.channel, ':sparkling_heart: :kissing_heart: :two_hearts: ')
+        # await d.change_nickname(ctx.message.author, nickname='💖 {0} 💖'.format(ctx.message.author.name))
+
 
 def setup(client):
     client.add_cog(User(client))
