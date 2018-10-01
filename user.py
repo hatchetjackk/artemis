@@ -79,6 +79,20 @@ class User:
         # send to channel
         await self.client.send_message(ctx.message.channel, 'This command is not ready yet.')
 
+    @commands.command(pass_context=True)
+    async def yt(self, ctx, arg):
+        import urllib.request
+        import urllib.parse
+        import re
+
+        query_string = urllib.parse.urlencode({"search_query": arg})
+        html_content = urllib.request.urlopen("http://www.youtube.com/results?" + query_string)
+        search_results = re.findall(r'href=\"\/watch\?v=(.{11})', html_content.read().decode())
+
+        await self.client.send_message(ctx.message.channel, "http://www.youtube.com/watch?v=" + search_results[0])
+
+        pass
+
 
 def setup(client):
     client.add_cog(User(client))
