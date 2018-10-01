@@ -87,8 +87,9 @@ async def on_message(message):
     srv = str(message.server)
     with open('users.json', 'r') as f:
         users = json.load(f)
-    members = [member for member in message.server.members]
-    for member in members:
+    # members = [member for member in message.server.members]
+    # for member in members:
+    for member in message.server.members:
         await update_data(users, member, srv)
     with open('users.json', 'w') as f:
         json.dump(users, f)
@@ -96,6 +97,21 @@ async def on_message(message):
     if not message.content.startswith('!'):
         await k.generate_karma(message)
         await e.generate_points(message)
+
+    bot_kudos = ['good bot', 'good job bot', 'good job, bot',
+                 'good artemis', 'thanks artemis', 'thank you, artemis',
+                 'good, artie', 'good artie']
+    bad_bot = ['bad bot', 'bad artie', 'bad artemis', 'damnit artie',
+               'damn it, artemis', 'you suck, Artemis']
+    for value in bot_kudos:
+        if value in message.content.lower():
+            responses = ['I try!', 'I do it for the kudos!', ':wink:'
+                         'Appreciate it!', 'You got it!', ':smile:']
+            await client.send_message(message.channel, random.choice(responses))
+    for value in bad_bot:
+        if value in message.content.lower():
+            responses = [':sob:', ':cry:', 'Oh... ok', 'S-sorry.']
+            await client.send_message(message.channel, random.choice(responses))
 
     await client.process_commands(message)
 

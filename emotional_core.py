@@ -10,7 +10,7 @@ class Emotions:
 
     async def generate_points(self, message):
         message = [word.lower() for word in message.content.split()]
-        good_keys = ['nice', 'good', 'thanks', 'thank', 'love']
+        good_keys = ['nice', 'good', 'love']
         bad_keys = ['hate', 'bad']
         for word in message:
             if word in good_keys:
