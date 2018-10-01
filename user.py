@@ -31,16 +31,26 @@ class User:
         pass
 
     @commands.command(pass_context=True)
-    async def rps(self, ctx, index: str):
+    async def rps(self, ctx, *args):
+        print(' '.join(args))
         rps = ['rock', 'paper', 'scissors']
         lose = {'rock': 'paper', 'paper': 'scissors', 'scissors': 'rock'}
         win = {'paper': 'rock', 'rock': 'scissors', 'scissors': 'paper'}
-        bot_choice = random.choice(rps)
-        user_choice = index
+
         # check for valid entry
-        if user_choice not in rps:
+        if len(args) < 1:
+            await self.client.send_message(ctx.message.channel, 'You didn\'t say what you picked!')
+            return
+        if len(args) > 1:
+            await self.client.send_message(ctx.message.channel,
+                                           "It's Rock, Paper, Scissors not Rock, Paper, \"*Whateverthehellyouwant*.\" :joy:")
+            return
+        if args[0] not in rps:
             await self.client.send_message(ctx.message.channel, 'That\'s not a valid choice.')
             return
+
+        bot_choice = random.choice(rps)
+        user_choice = args[0]
         # check choice against bot
         if bot_choice == user_choice:
             await self.client.send_message(ctx.message.channel, 'Artemis chose {0}! It\'s a tie!'.format(bot_choice))
