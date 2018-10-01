@@ -106,7 +106,7 @@ async def on_message(message):
     for value in bot_kudos:
         if value in message.content.lower():
             responses = ['I try!', 'I do it for the kudos!', ':wink:'
-                         'Appreciate it!', 'You got it!', ':smile:']
+                         'Appreciate it!', 'You got it!', ':smile:', 'Yeet!']
             await client.send_message(message.channel, random.choice(responses))
     for value in bad_bot:
         if value in message.content.lower():
