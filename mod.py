@@ -12,7 +12,7 @@ class Mod:
 
     # owner command
     @commands.command(pass_context=True)
-    async def test(self, ctx):
+    async def log(self, ctx):
         if ctx.message.author.id == "193416878717140992":
             counter = 0
             tmp = await self.client.send_message(ctx.message.channel, "Calculating messages...")
@@ -23,6 +23,20 @@ class Mod:
         else:
             await self.client.say("You do not have permission to do that.")
             return
+
+    # owner command
+    @commands.command(pass_context=True)
+    async def test(self, ctx):
+        if ctx.message.author.id == '193416878717140992':
+            c = discord.Channel
+            m = discord.Message
+            print('author', ctx.message.author)
+            print('channel', ctx.message.channel)
+            print('server', ctx.message.server)
+            print('dchannel', c.name)
+
+            x = str(m.channel)
+            print('dchannel', str(ctx.message.channel))
 
     # owner command
     @commands.command(pass_context=True)
