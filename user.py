@@ -1,6 +1,9 @@
 import discord
 import random
 import json
+import urllib.request
+import urllib.parse
+import re
 from emotional_core import Emotions
 from discord.ext import commands
 
@@ -20,6 +23,7 @@ class User:
         # return heads or tails
         choice = ['Heads!', 'Tails!']
         coin = random.choice(choice)
+        print('{0} flipped a coin.'.format(ctx.message.author.name))
         await self.client.send_message(ctx.message.channel, coin)
 
     @commands.command()
@@ -40,10 +44,13 @@ class User:
         # check choice against bot
         if bot_choice == user_choice:
             await self.client.send_message(ctx.message.channel, 'Artemis chose {0}! It\'s a tie!'.format(bot_choice))
+            print('{0} played rock, paper, scissors and tied with Artemis.'.format(ctx.message.author.name))
         if user_choice == lose.get(bot_choice):
             await self.client.send_message(ctx.message.channel, 'Artemis chose {0}! You lost!'.format(bot_choice))
+            print('{0} played rock, paper, scissors and lost to Artemis.'.format(ctx.message.author.name))
         if user_choice == win.get(bot_choice):
             await self.client.send_message(ctx.message.channel, 'Artemis chose {0}! You win!'.format(bot_choice))
+            print('{0} played rock, paper, scissors and beat Artemis!'.format(ctx.message.author.name))
 
     @commands.command(pass_context=True)
     async def server(self, ctx):
@@ -63,6 +70,7 @@ class User:
         # embed.add_field(name="Mood", value=mood, inline=False)
         # await self.client.say(embed=embed)
         await self.client.send_message(ctx.message.channel, 'This command is not ready yet.')
+        print('{0} tried to use the server command.'.format(ctx.message.author.name))
 
     @commands.command(pass_context=True)
     async def whois(self, ctx):
@@ -78,20 +86,16 @@ class User:
         # add roles
         # send to channel
         await self.client.send_message(ctx.message.channel, 'This command is not ready yet.')
+        print('{0} tried to use the whois command.'.format(ctx.message.author.name))
 
     @commands.command(pass_context=True)
-    async def yt(self, ctx, arg):
-        import urllib.request
-        import urllib.parse
-        import re
-
-        query_string = urllib.parse.urlencode({"search_query": arg})
+    async def yt(self, ctx, *args):
+        query_string = urllib.parse.urlencode({"search_query": ' '.join(args)})
         html_content = urllib.request.urlopen("http://www.youtube.com/results?" + query_string)
         search_results = re.findall(r'href=\"\/watch\?v=(.{11})', html_content.read().decode())
 
         await self.client.send_message(ctx.message.channel, "http://www.youtube.com/watch?v=" + search_results[0])
-
-        pass
+        print('{0} searched Youtube for "{1}".'.format(ctx.message.author.name, ' '.join(args)))
 
 
 def setup(client):
