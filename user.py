@@ -126,7 +126,7 @@ class User:
                 if rstyle == 'Spades':
                     await self.spades(ctx)
                 if rstyle == 'Diamonds':
-                    await self.ccolorchange(ctx)
+                    await self.diamonds(ctx)
                 if rstyle == 'Clubs':
                     await self.clubs(ctx)
                 if rstyle == 'Hearts':
@@ -138,12 +138,9 @@ class User:
     async def spades(self, ctx):
         await self.client.send_message(ctx.message.channel, '***IT\'S THE ACE OF SPADES! THE ACE OF SPADES!!!***')
 
-    async def ccolorchange(self, ctx):
-        # todo fix this method
-        d = discord.Client
-        role = discord.Role.name('Sparkle!')
-        await self.client.send_message(ctx.message.channel, ':sparkles: *Sparkle, Sparkle!*:sparkles: ')
-        # await d.add_roles(ctx.message.author, role)
+    async def diamonds(self, ctx):
+        await self.client.send_message(ctx.message.channel, ':sparkles: *Sparkle, Sparkle! *:sparkles: ')
+        await discord.Client.add_roles(self.client, ctx.message.author, discord.utils.get(ctx.message.server.roles, name='Sparkle, Sparkle!'))
 
     async def clubs(self, ctx):
         """ send a channel invite to the user then kick them! """
