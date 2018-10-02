@@ -119,7 +119,7 @@ class User:
         fmt = 'You drew the {0} of {1}!'
         if ctx.message.author.id == '193416878717140992':
             card = ['Ace']
-            style = ['Diamonds']
+            style = ['Hearts']
             rcard = random.choice(card)
             rstyle = random.choice(style)
             if rcard == 'Ace':
@@ -130,7 +130,7 @@ class User:
                 if rstyle == 'Clubs':
                     await self.clubs(ctx)
                 if rstyle == 'Hearts':
-                    await self.cchange_nick(ctx)
+                    await self.hearts(ctx)
                 return
         await self.client.send_message(ctx.message.channel, fmt.format(rcard, rstyle))
         print('{0} drew the {1} of {2}.'.format(ctx.message.author.name, rcard, rstyle))
@@ -139,6 +139,7 @@ class User:
         await self.client.send_message(ctx.message.channel, '***IT\'S THE ACE OF SPADES! THE ACE OF SPADES!!!***')
 
     async def diamonds(self, ctx):
+        """ Move user to the Sparkle, Sparkle role """
         await self.client.send_message(ctx.message.channel, ':sparkles: *Sparkle, Sparkle! *:sparkles: ')
         await discord.Client.add_roles(self.client, ctx.message.author, discord.utils.get(ctx.message.server.roles, name='Sparkle, Sparkle!'))
 
@@ -159,10 +160,11 @@ class User:
         # kick!
         await d.kick(self.client, member=ctx.message.author)
 
-    async def cchange_nick(self, ctx):
-        d = discord.Client
+    async def hearts(self, ctx):
+        # todo fix member call
         await self.client.send_message(ctx.message.channel, ':sparkling_heart: :kissing_heart: :two_hearts: ')
-        # await d.change_nickname(ctx.message.author, nickname='💖 {0} 💖'.format(ctx.message.author.name))
+        await self.client.change_nickname(ctx.message.author, '💖_{0}_💖'.format(discord.utils.get(ctx.message.server.members, name='testie')))
+        # await discord.Client.change_nickname(self.client, ctx.message.author, nickname='💖 {0} 💖'.format(ctx.message.author.name))
 
 
 def setup(client):
