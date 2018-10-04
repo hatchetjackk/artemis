@@ -146,6 +146,7 @@ async def help(ctx):
     embed.add_field(name="!whois <user>", value="Find user details (WIP)", inline=False)
     embed.add_field(name="!server", value="Check server information (WIP)", inline=False)
     embed.add_field(name='!yt <search>', value='Return the first YouTube video based for <search>.', inline=False)
+    embed.add_field(name='!time <timezone>', value='Find the time in a US-based timezone.', inline=False)
     embed.set_footer(text="Author: Hatchet Jackk")
     await client.send_message(author, embed=embed)
     print('Artemis: Sent help to {0}'.format(author))
