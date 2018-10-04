@@ -33,9 +33,12 @@ class Mod:
             print('author', ctx.message.author)
             print('channel', ctx.message.channel)
             print('server', ctx.message.server)
-            print('dchannel', c.name)
-
-            x = str(m.channel)
+            print('member', discord.Object(id='496516622903803905'))
+            # for role in ctx.message.server.roles:
+            #     print('role', role)
+            print('roles', discord.utils.get(ctx.message.server.roles, name='Sparkle!, Sparkle!'))
+            # print('role', discord.utils.get(name='Sparkle!'))
+            # print('role', ctx.message.server.roles(name='Sparkle!'))
             print('dchannel', str(ctx.message.channel))
 
     # owner command
