@@ -2,26 +2,30 @@
 
 import discord
 import asyncio
-import datetime
 import os
 import json
-import credentials
+import datetime
+import logging
+from files import credentials
 import random
-from karma import Karma
-from emotional_core import Emotions
+from cogs.karma import Karma
+from cogs.emotional_core import Emotions
 from itertools import cycle
 from discord.ext import commands
 
-with open('bot.json', 'r') as jf:
+with open('files/bot.json', 'r') as jf:
     bot = json.load(jf)
 command_prefix = bot['artemis']['prefix']
+
+logging.basicConfig(filename='artemis.log', format='%(asctime)s %(message)s', level=logging.DEBUG)
+logging.INFO('Starting')
 
 token = credentials.tkn()
 client = commands.Bot(command_prefix=command_prefix)
 os.chdir(credentials.home_dir())
 client.remove_command('help')
-extensions = ['mod', 'karma', 'fun',
-              'emotional_core', 'arena', 'user']
+extensions = ['cogs.mod', 'cogs.karma', 'cogs.fun',
+              'cogs.emotional_core', 'cogs.arena', 'cogs.user']
 
 verbose = False
 
@@ -29,10 +33,10 @@ verbose = False
 @client.event
 async def on_ready():
     # log login
+    now = datetime.datetime.now()
     print("{0:<15} {1}".format("Logged in as", client.user.name))
     print("{0:<15} {1}".format("User ID:", client.user.id))
     print("---------------------------------------")
-    now = datetime.datetime.now()
     print("[{0}] Artemis is online.".format(now))
 
     # tell a channel that Artemis has logged in
@@ -47,7 +51,8 @@ async def on_ready():
 
 @client.event
 async def on_resumed():
-    message = 'Artemis is back online.'
+    now = datetime.datetime.now()
+    message = '[{0}] Artemis is back online.'.format(now)
     print(message)
     if verbose:
         await botspam(message)
@@ -74,7 +79,7 @@ async def on_member_join(member):
     with open(jfile, 'r') as f:
         users = json.load(f)
 
-    await update_data(users, member)
+    await update_data(users, member, member.server)
 
     with open(jfile, 'w') as f:
         json.dump = (users, f)
@@ -85,13 +90,13 @@ async def on_message(message):
     k = Karma(client)
     e = Emotions(client)
     srv = str(message.server)
-    with open('users.json', 'r') as f:
+    with open('files/users.json', 'r') as f:
         users = json.load(f)
     # members = [member for member in message.server.members]
     # for member in members:
     for member in message.server.members:
         await update_data(users, member, srv)
-    with open('users.json', 'w') as f:
+    with open('files/users.json', 'w') as f:
         json.dump(users, f)
 
     if not message.content.startswith('!'):
