@@ -17,6 +17,7 @@ with open('files/bot.json', 'r') as jf:
     bot = json.load(jf)
 command_prefix = bot['artemis']['prefix']
 
+# todo check logging
 logging.basicConfig(filename='artemis.log', format='%(asctime)s %(message)s', level=logging.DEBUG)
 logging.info('Starting')
 
