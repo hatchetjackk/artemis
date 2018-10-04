@@ -18,7 +18,7 @@ with open('files/bot.json', 'r') as jf:
 command_prefix = bot['artemis']['prefix']
 
 logging.basicConfig(filename='artemis.log', format='%(asctime)s %(message)s', level=logging.DEBUG)
-logging.INFO('Starting')
+logging.info('Starting')
 
 token = credentials.tkn()
 client = commands.Bot(command_prefix=command_prefix)
