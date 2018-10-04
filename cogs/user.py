@@ -1,5 +1,6 @@
 import discord
 import random
+import datetime
 import urllib.request
 import urllib.parse
 import re
@@ -26,11 +27,35 @@ class User:
 
     @commands.command()
     async def google(self):
+        # pull the first link from a google search (ie feeling lucky)
+        pass
+
+    @commands.command()
+    async def image(self):
+        # pull the first image from a google search
         pass
 
     @commands.command(pass_context=True)
+    async def time(self, ctx, *args):
+        # return current time zones
+        # todo convert to hours and minutes
+        if len(args) > 1:
+            await self.client.send_message(ctx.message.channel, 'You\'ve passed too many arguments.')
+        timezones = {'utc': datetime.datetime.utcnow(),
+                     'est': datetime.datetime.utcnow() - datetime.timedelta(hours=5),
+                     'cst': datetime.datetime.utcnow() - datetime.timedelta(hours=6),
+                     'mst': datetime.datetime.utcnow() - datetime.timedelta(hours=7),
+                     'pst': datetime.datetime.utcnow() - datetime.timedelta(hours=8)}
+        if len(args) < 1:
+            await self.client.send_message(ctx.message.channel, 'UTC: {0}'.format(timezones['utc']))
+        zone = args[0].lower()
+        if zone not in timezones:
+            await self.client.send_message(ctx.message.channel, 'You did not pick a valid timezone. Try EST or PST.')
+            return
+        await self.client.send_message(ctx.message.channel, 'The time is: {0}'.format(timezones[zone]))
+
+    @commands.command(pass_context=True)
     async def rps(self, ctx, *args):
-        print(' '.join(args))
         rps = ['rock', 'paper', 'scissors']
         lose = {'rock': 'paper', 'paper': 'scissors', 'scissors': 'rock'}
         win = {'paper': 'rock', 'rock': 'scissors', 'scissors': 'paper'}
