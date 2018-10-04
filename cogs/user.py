@@ -1,10 +1,8 @@
 import discord
 import random
-import json
 import urllib.request
 import urllib.parse
 import re
-from emotional_core import Emotions
 from discord.ext import commands
 
 
