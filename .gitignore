@@ -62,6 +62,7 @@ credentials\.py
 __init__.py
 
 users.json
+credentials.py
 
 *.iml
 
