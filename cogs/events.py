@@ -1,10 +1,8 @@
 import discord
-import random
 import datetime
-import urllib.request
-import urllib.parse
-import re
 import pytz
+import json
+import random
 from discord.ext import commands
 
 # todo event planning, time zone setting, ETA against current time, time zone comparison, check event time compared to custom input
@@ -55,18 +53,54 @@ class Events:
             await self.client.send_message(ctx.message.channel,
                                            '{0} is not a valid timezone.\n'
                                            'Use setevent <time> <zone> <event> to set an event.'.format(zone))
-
         event = ' '.join(args[2:])
 
-        # create an embed
-        embed = discord.Embed(
-            title='NEW EVENT CREATED',
-            color=discord.Color.blue()
-        )
-        embed.set_thumbnail(url=ctx.message.author.avatar_url)
-        embed.add_field(name='Event', value=event, inline=False)
-        embed.add_field(name='Time', value='{0} {1}'.format(time_raw, zone.upper()), inline=False)
-        await self.client.send_message(ctx.message.channel, embed=embed)
+        # write to json file
+        with open('files/events.json', 'r') as f:
+            data = json.load(f)
+            event_id = random.randint(1, 9999)
+            # check if event already exists
+            if event not in data:
+                data[event] = {'time': '{0}:{1} {2}'.format(hours, minutes, zone),
+                               'user_id': ctx.message.author.id,
+                               'id': event_id}
+                embed = discord.Embed(
+                    title='NEW EVENT CREATED',
+                    color=discord.Color.blue()
+                )
+                embed.set_thumbnail(url=ctx.message.author.avatar_url)
+                embed.add_field(name=event, value='(id: {0})'.format(event_id), inline=False)
+                embed.add_field(name='Time', value='{0} {1}'.format(time_raw, zone.upper()))
+                await self.client.send_message(ctx.message.channel, embed=embed)
+
+            # if event exists and creator is the same user, update time
+            elif event in data and data[event]['user_id'] == ctx.message.author.id:
+                data[event]['time'] = '{0}:{1} {2}'.format(hours, minutes, zone)
+                embed = discord.Embed(
+                    title='EVENT UPDATED',
+                    color=discord.Color.blue()
+                )
+                embed.set_thumbnail(url=ctx.message.author.avatar_url)
+                embed.add_field(name=event, value='(id: {0})'.format(data[event]['id']), inline=False)
+                embed.add_field(name='Time', value='{0} {1}'.format(time_raw, zone.upper()))
+                await self.client.send_message(ctx.message.channel, embed=embed)
+
+            # else create the event with the current author
+            else:
+                data[event] = {'time': '{0}:{1} {2}'.format(hours, minutes, zone),
+                               'user_id': ctx.message.author.id,
+                               'id': event_id}
+                embed = discord.Embed(
+                    title='NEW EVENT CREATED',
+                    color=discord.Color.blue()
+                )
+                embed.set_thumbnail(url=ctx.message.author.avatar_url)
+                embed.add_field(name=event, value='(id: {0})'.format(event_id), inline=False)
+                embed.add_field(name='Time', value='{0} {1}'.format(time_raw, zone.upper()))
+                await self.client.send_message(ctx.message.channel, embed=embed)
+
+        with open('files/events.json', 'w') as f:
+            json.dump(data, f)
 
     @commands.command(pass_context=True)
     async def delevent(self, ctx, args):
@@ -74,9 +108,20 @@ class Events:
         pass
 
     @commands.command(pass_context=True)
-    async def checkevent(self, ctx, args):
+    async def checkevents(self, ctx, arg):
         # check current events that are active from current time into the future
-        pass
+        # todo a specific event can be called via its ID
+        embed = discord.Embed(
+            title='UPCOMING EVENTS',
+            color=discord.Color.blue()
+        )
+        with open('files/events.json', 'r') as f:
+            data = json.load(f)
+            for key, value in data.items():
+                embed.add_field(name=key,
+                                value='Time: {1} (id: {0})'.format(value['id'], value['time'].upper()),
+                                inline=False)
+        await self.client.send_message(ctx.message.channel, embed=embed)
 
     @commands.command(pass_context=True)
     async def nextevent(self, ctx, args):
