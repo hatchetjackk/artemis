@@ -63,8 +63,12 @@ __init__.py
 
 users.json
 credentials.py
-
+test.py
 *.iml
 
 *.xml
 
+
+files/credentials\.json
+
+files/events\.json
