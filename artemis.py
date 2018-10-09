@@ -5,7 +5,7 @@ import asyncio
 # import os
 import json
 import datetime
-import logging
+# import logging
 # from files import credentials
 import random
 from cogs.karma import Karma
@@ -22,14 +22,15 @@ with open('files/credentials.json', 'r') as c:
 token = data['token']
 
 # todo check logging
-logging.basicConfig(filename='artemis.log', format='%(asctime)s %(message)s', level=logging.DEBUG)
-logging.info('Starting')
+# logging.basicConfig(filename='artemis.log', format='%(asctime)s %(message)s', level=logging.DEBUG)
+# logging.info('Starting')
 
 client = commands.Bot(command_prefix=command_prefix)
 # os.chdir(credentials.home_dir())
 client.remove_command('help')
 extensions = ['cogs.mod', 'cogs.karma', 'cogs.fun',
-              'cogs.emotional_core', 'cogs.arena', 'cogs.user']
+              'cogs.emotional_core', 'cogs.arena', 'cogs.user',
+              'cogs.events']
 
 verbose = False
 
