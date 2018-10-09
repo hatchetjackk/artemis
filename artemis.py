@@ -2,28 +2,31 @@
 
 import discord
 import asyncio
-import os
+# import os
 import json
 import datetime
 import logging
-from files import credentials
+# from files import credentials
 import random
 from cogs.karma import Karma
 from cogs.emotional_core import Emotions
 from itertools import cycle
 from discord.ext import commands
 
-with open('files/bot.json', 'r') as jf:
-    bot = json.load(jf)
-command_prefix = bot['artemis']['prefix']
+with open('files/bot.json', 'r') as b:
+    bot = json.load(b)
+command_prefix = bot['prefix']
+
+with open('files/credentials.json', 'r') as c:
+    data = json.load(c)
+token = data['token']
 
 # todo check logging
 logging.basicConfig(filename='artemis.log', format='%(asctime)s %(message)s', level=logging.DEBUG)
 logging.info('Starting')
 
-token = credentials.tkn()
 client = commands.Bot(command_prefix=command_prefix)
-os.chdir(credentials.home_dir())
+# os.chdir(credentials.home_dir())
 client.remove_command('help')
 extensions = ['cogs.mod', 'cogs.karma', 'cogs.fun',
               'cogs.emotional_core', 'cogs.arena', 'cogs.user']
@@ -154,6 +157,7 @@ async def help(ctx):
 
 async def change_status():
     # Change Artemis' play status every 5 minutes
+    # todo time between 24 and 12 hour
     await client.wait_until_ready()
     status_response = ['type !help',
                        'with 1\'s and 0\'s',

@@ -24,14 +24,14 @@ class Karma:
             if member.mention in message:
                 target = member.name
                 user = member.id
-                with open('users.json', 'r') as f:
+                with open('files/users.json', 'r') as f:
                     users = json.load(f)
                     if user in users:
                         points = users[user]['karma']
                         await self.client.send_message(ctx.message.channel, '{0} has {1} karma.'.format(target, points))
                         return
         # check message author's karma
-        with open('users.json', 'r') as f:
+        with open('files/users.json', 'r') as f:
             users = json.load(f)
             if user in users:
                 points = users[user]['karma']
@@ -88,11 +88,11 @@ class Karma:
                         return
 
                     # if karma is going to a user and not artemis
-                    with open('users.json', 'r') as f:
+                    with open('files/users.json', 'r') as f:
                         users = json.load(f)
                     await self.add_karma(users, user)
 
-                    with open('users.json', 'w') as f:
+                    with open('files/users.json', 'w') as f:
                         json.dump(users, f)
                     fmt = random.choice(responses).format(user.mention)
                     await self.client.send_message(message.channel, fmt)
@@ -107,11 +107,11 @@ class Karma:
                         await self.client.send_message(message.channel, random.choice(bad_response))
                         return
 
-                    with open('users.json', 'r') as f:
+                    with open('files/users.json', 'r') as f:
                         users = json.load(f)
                     await self.add_karma(users, user)
 
-                    with open('users.json', 'w') as f:
+                    with open('files/users.json', 'w') as f:
                         json.dump(users, f)
                     fmt = random.choice(responses).format(user.mention)
                     await self.client.send_message(message.channel, fmt)
@@ -141,7 +141,7 @@ class Karma:
             description="This is a work in progress",
             color=discord.Color.blue()
         )
-        with open('users.json', 'r') as f:
+        with open('files/users.json', 'r') as f:
             users = json.load(f)
             for user in users:
                 if str(ctx.message.server) in users[user]['server']:
