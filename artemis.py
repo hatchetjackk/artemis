@@ -94,15 +94,13 @@ async def on_member_join(member):
 async def on_message(message):
     k = Karma(client)
     e = Emotions(client)
-    srv = str(message.server)
-    with open('files/users.json', 'r') as f:
-        users = json.load(f)
-    # members = [member for member in message.server.members]
-    # for member in members:
-    for member in message.server.members:
-        await update_data(users, member, srv)
-    with open('files/users.json', 'w') as f:
-        json.dump(users, f)
+    # srv = str(message.server)
+    # with open('files/users.json', 'r') as f:
+    #     users = json.load(f)
+    # for member in message.server.members:
+    #     await update_data(users, member, srv)
+    # with open('files/users.json', 'w') as f:
+    #     json.dump(users, f)
 
     if not message.content.startswith('!'):
         await k.generate_karma(message)
