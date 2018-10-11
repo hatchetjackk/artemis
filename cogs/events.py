@@ -58,18 +58,10 @@ class Events:
                  'utc/gmt': now(pytz.timezone('GMT')),
                  'bst': now(pytz.timezone('Europe/London'))}
 
-        embed = discord.Embed(
-            title='──────────────── [ Time ] ────────────────',
-            color=discord.Color.blue())
-        embed.add_field(
-            name='Zone',
-            value='\n'.join([zone.upper() for zone in zones]),
-            inline=True)
-        embed.add_field(
-            name='Time',
-            value='\n'.join(zones[zone].strftime('%H:%M') for zone in zones))
-        embed.set_footer(
-            text='──────────────────────────────────────────')
+        embed = discord.Embed(title='──────────────── [ Time ] ────────────────', color=discord.Color.blue())
+        embed.add_field(name='Zone', value='\n'.join([zone.upper() for zone in zones]), inline=True)
+        embed.add_field(name='Time', value='\n'.join(zones[zone].strftime('%H:%M') for zone in zones))
+        embed.set_footer(text='──────────────────────────────────────────')
         await self.client.send_message(ctx.message.channel, embed=embed)
 
     @commands.command(pass_context=True)
@@ -168,18 +160,14 @@ class Events:
             time = data[event_id]['time']
             zone = data[event_id]['zone'].upper()
             event_title = ':sparkles: Upcoming Event'
-            embed = discord.Embed(
-                title='──────────────── [Events] ────────────────',
-                color=discord.Color.blue()
-            )
+            embed = discord.Embed(title='──────────────── [Events] ────────────────', color=discord.Color.blue())
             embed.set_thumbnail(url=thumb_url)
-            embed.add_field(name=event_title,
-                            value='**Event** [{0}]: {1}'.format(event_id, event),
-                            inline=False)
-            embed.add_field(name='Time',
-                            value='{0} {1} | {2} {3}'.format(time, zone, await self.time_handler(time, zone), 'UTC'))
-            embed.add_field(name='ETA',
-                            value='placeholder')
+            embed.add_field(name=event_title, value='**Event** [{0}]: {1}'.format(event_id, event), inline=False)
+            embed.add_field(
+                name='Time',
+                value='{0} {1} | {2} {3}'.format(time, zone, await self.time_handler(time, zone), 'UTC')
+            )
+            embed.add_field(name='ETA', value='placeholder')
             embed.set_footer(text='──────────────────────────────────────────')
             await self.client.send_message(ctx.message.channel, embed=embed)
 
@@ -189,10 +177,7 @@ class Events:
             if len(data) < 1:
                 await self.client.send_message(ctx.message.channel, 'There are currently no scheduled events.')
                 return
-            embed = discord.Embed(
-                title='──────────────── [Events] ────────────────',
-                color=discord.Color.blue()
-            )
+            embed = discord.Embed(title='──────────────── [Events] ────────────────', color=discord.Color.blue())
             embed.set_thumbnail(url=thumb_url)
             embed.set_footer(text='──────────────────────────────────────────')
 
@@ -203,11 +188,12 @@ class Events:
                 utc = ''
                 if value['zone'].lower() != 'utc':
                     utc = '| *placeholder* UTC'
-                embed.add_field(name='{0}. {1}'.format(num, value['event'][:50]),
-                                value='Time: {0} {1} {2} | ({3})\nETA {4}'.format(value['time'],
-                                                                                  value['zone'].upper(),
-                                                                                  utc, event_id, '*placeholder*'),
-                                inline=False)
+                embed.add_field(
+                    name='{0}. {1}'.format(num, value['event'][:50]),
+                    value='Time: {0} {1} {2} | ({3})\nETA {4}'.format(value['time'], value['zone'].upper(),
+                                                                      utc, event_id, '*placeholder*'),
+                    inline=False
+                )
             await self.client.send_message(ctx.message.channel, embed=embed)
 
     async def event_handler_one(self, dt, tz, event, ctx):
@@ -306,29 +292,16 @@ class Events:
                     'https/i.imgur.com/JK61b19.png?width=676&height=676'
         foot = int((39 - len(ctx.message.author.name)) / 2) * '─'
 
-        embed = discord.Embed(
-            title='──────────────── [Events] ────────────────',
-            color=discord.Color.blue())
-        embed.set_thumbnail(
-            url=thumb_url)
-        embed.add_field(
-            name=event_title,
-            value='**Event** [{0}]: {1}'.format(event_id, event),
-            inline=False)
+        embed = discord.Embed(title='──────────────── [Events] ────────────────', color=discord.Color.blue())
+        embed.set_thumbnail(url=thumb_url)
+        embed.add_field(name=event_title, value='**Event** [{0}]: {1}'.format(event_id, event), inline=False)
         if tz2 is None:
-            embed.add_field(
-                name='Time',
-                value='{0} {1}'.format(dt1.upper(), tz1))
+            embed.add_field(name='Time', value='{0} {1}'.format(dt1.upper(), tz1))
         else:
-            embed.add_field(
-                name='Time',
-                value='{0} {1} | {2} {3}'.format(dt1.upper(), tz1.upper(), dt2, tz2.upper()))
+            embed.add_field(name='Time', value='{0} {1} | {2} {3}'.format(dt1.upper(), tz1.upper(), dt2, tz2.upper()))
         embed.add_field(name='ETA', value='{0}'.format('placeholder'))
-        embed.set_footer(
-            text=foot + '[Created by: {0}]'.format(ctx.message.author.name) + foot)
+        embed.set_footer(text=foot + '[Created by: {0}]'.format(ctx.message.author.name) + foot)
         return embed
-
-
 
 
 def setup(client):
