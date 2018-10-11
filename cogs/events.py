@@ -5,13 +5,16 @@ import json
 import random
 from discord.ext import commands
 
-# todo event planning, time zone setting, ETA against current time, time zone comparison, check event time compared to custom input
-# todo make it all embedded with set image depending on time called.
+# todo time zone setting, ETA against current time, time zone comparison
 
 
 class Events:
     def __init__(self, client):
         self.client = client
+
+    @commands.command(pass_context=True)
+    async def setevents(self, ctx):
+        await self.client.send_message(ctx.message.channel, 'Did you mean to use ``setevent``?')
 
     @commands.command(pass_context=True)
     async def setevent(self, ctx, *args):
@@ -117,11 +120,30 @@ class Events:
             json.dump(data, f, indent=2)
         dt2 = None
         tz2 = None
-        embed = self.embed_handler(data[event_id]['event'], event_id, time, dt2, zone, tz2, ctx, 'update')
-        await self.client.send_message(ctx.message.channel, embed=embed)
+        try:
+            # embed = discord.Embed(
+            #     title='──────────────── [Events] ────────────────',
+            #     color=discord.Color.blue()
+            # )
+            # thumb_url = 'https://images-ext-1.discordapp.net/external/veD-zTXyh96Zn-MB2t3vXqiZrRlihx4r5DCnrJ0nEh0/https/' \
+            #             'i.imgur.com/JK61b19.png?width=676&height=676'
+            # embed.set_thumbnail(url=thumb_url)
+            # embed.add_field(name=event_title,
+            #                 value='**Event** [{0}]: {1}'.format(event_id, event),
+            #                 inline=False)
+            # embed.add_field(name='Time',
+            #                 value='{0} {1} | {2} {3}'.format(time, zone, await self.time_handler(time, zone), 'UTC'))
+            # embed.add_field(name='ETA',
+            #                 value='placeholder')
+            # embed.set_footer(text='──────────────────────────────────────────')
+            embed = await self.embed_handler(data[event_id]['event'], event_id, time, dt2, zone, tz2, ctx, 'update')
+            await self.client.send_message(ctx.message.channel, embed=embed)
+        except Exception as e:
+            print(e)
 
     @commands.command(pass_context=True)
     async def events(self, ctx, *args):
+        # todo allow a call to 'all' to pull all events
         # check current events that are active from current time into the future
         thumb_url = 'https://images-ext-1.discordapp.net/external/veD-zTXyh96Zn-MB2t3vXqiZrRlihx4r5DCnrJ0nEh0/https/' \
                     'i.imgur.com/JK61b19.png?width=676&height=676'
@@ -164,6 +186,9 @@ class Events:
         # if no arguments are passed or event_id is not in data, return all events
         else:
             # todo allow the user to page through other events
+            if len(data) < 1:
+                await self.client.send_message(ctx.message.channel, 'There are currently no scheduled events.')
+                return
             embed = discord.Embed(
                 title='──────────────── [Events] ────────────────',
                 color=discord.Color.blue()
@@ -183,9 +208,7 @@ class Events:
                                                                                   value['zone'].upper(),
                                                                                   utc, event_id, '*placeholder*'),
                                 inline=False)
-                if num % 5 == 0:
-                    await self.client.send_message(ctx.message.channel, embed=embed)
-                    break
+            await self.client.send_message(ctx.message.channel, embed=embed)
 
     async def event_handler_one(self, dt, tz, event, ctx):
         if type(dt) != datetime.datetime:
@@ -265,17 +288,22 @@ class Events:
             return dt1
         return dt
 
-    @staticmethod
-    def embed_handler(event, event_id, dt1, dt2, tz1, tz2, ctx, method):
+    async def embed_handler(self, event, event_id, dt1, dt2, tz1, tz2, ctx, method):
         event_title = ':sparkles: Upcoming Event'
         if method == 'update':
             event_title = ':sparkles: Event Updated'
         if type(dt1) != datetime.datetime:
-            dt1 = datetime.datetime.strptime(dt1, '%H:%M')
-            dt1 = dt1.strftime('%H:%M')
+            try:
+                dt1 = datetime.datetime.strptime(dt1, '%H:%M')
+                dt1 = dt1.strftime('%H:%M')
+            except ValueError as e:
+                print(e)
+                await self.client.send_message(ctx.message.channel, '{0} is not a valid time.'.format(dt1))
+                return
         else:
             dt1 = dt1.strftime('%H:%M')
-        thumb_url = 'https://images-ext-1.discordapp.net/external/veD-zTXyh96Zn-MB2t3vXqiZrRlihx4r5DCnrJ0nEh0/https/i.imgur.com/JK61b19.png?width=676&height=676'
+        thumb_url = 'https://images-ext-1.discordapp.net/external/veD-zTXyh96Zn-MB2t3vXqiZrRlihx4r5DCnrJ0nEh0/' \
+                    'https/i.imgur.com/JK61b19.png?width=676&height=676'
         foot = int((39 - len(ctx.message.author.name)) / 2) * '─'
 
         embed = discord.Embed(
@@ -290,15 +318,17 @@ class Events:
         if tz2 is None:
             embed.add_field(
                 name='Time',
-                value='{0} {1}'.format(dt1, tz1))
+                value='{0} {1}'.format(dt1.upper(), tz1))
         else:
             embed.add_field(
                 name='Time',
-                value='{0} {1} | {2} {3}'.format(dt1, tz1.upper(), dt2, tz2.upper()))
+                value='{0} {1} | {2} {3}'.format(dt1.upper(), tz1.upper(), dt2, tz2.upper()))
         embed.add_field(name='ETA', value='{0}'.format('placeholder'))
         embed.set_footer(
             text=foot + '[Created by: {0}]'.format(ctx.message.author.name) + foot)
         return embed
+
+
 
 
 def setup(client):
