@@ -125,11 +125,15 @@ async def on_message(message):
 
 
 @client.command(pass_context=True)
-async def help(ctx):
+async def help(ctx, *args):
+    if len(args) > 1:
+        await client.send_message(ctx.message.channel, 'You\'ve passed too many arguments.')
+    if args[0] == 'events':
+        await events_help(ctx)
+        return
+
     author = ctx.message.author
-    embed = discord.Embed(
-        color=discord.Color.blue()
-    )
+    embed = discord.Embed(color=discord.Color.blue())
     embed.set_author(name="Help Page")
     embed.add_field(
         name="How do I give karma?",
@@ -148,10 +152,48 @@ async def help(ctx):
     embed.add_field(name="!whois <user>", value="Find user details (WIP)", inline=False)
     embed.add_field(name="!server", value="Check server information (WIP)", inline=False)
     embed.add_field(name='!yt <search>', value='Return the first YouTube video based for <search>.', inline=False)
-    embed.add_field(name='!time <timezone>', value='Find the time in a US-based timezone.', inline=False)
+    embed.add_field(name='help events', value='See available options for events.', inline=False)
     embed.set_footer(text="Author: Hatchet Jackk")
     await client.send_message(author, embed=embed)
     print('Artemis: Sent help to {0}'.format(author))
+
+
+async def events_help(ctx):
+    embed = discord.Embed(
+        title='Events Help',
+        color=discord.Color.blue()
+    )
+    embed.add_field(
+        name='setevent',
+        value='Create a new event\n'
+              '``setevent <time> <zone> <event>``',
+        inline=False
+    )
+    embed.add_field(
+        name='events',
+        value='Check current events. Passing an event id will load that specific event only.\n'
+              '``events <optional: event id>``',
+        inline=False
+    )
+    embed.add_field(
+        name='delevent',
+        value='Delete an event\n'
+              '``delevent <event id>``',
+        inline=False
+    )
+    embed.add_field(
+        name='update',
+        value='Update an event with a new time and zone.\n'
+              '``update <event id> <time> <zone>``',
+        inline=False
+    )
+    embed.add_field(
+        name='time',
+        value='Show current timezones.\n'
+              '``time``',
+        inline=False
+    )
+    await client.send_message(ctx.message.author, embed=embed)
 
 
 async def change_status():
