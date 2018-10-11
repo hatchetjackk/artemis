@@ -164,7 +164,7 @@ class Events:
             data = json.load(f)
 
         # if an event id is passed, attempt to return that event
-        if event_id in data:
+        if event_id in data and data[event_id]['server_id'] == ctx.message.server.id:
             event = data[event_id]['event']
             time = data[event_id]['time']
             zone = data[event_id]['zone'].upper()
@@ -190,24 +190,24 @@ class Events:
             embed.set_thumbnail(url=thumb_url)
             embed.set_footer(text='──────────────────────────────────────────')
             embed.add_field(name=':sparkles: Upcoming Events', value='\u200b')
-
             # iterate through events and truncate event names longer than 50 characters
             num = 0
             for event_id, value in data.items():
-                num = num + 1
-                diamond = ':small_orange_diamond:'
-                if num % 2 == 0:
-                    diamond = ':small_blue_diamond:'
-                utc = ''
-                # dt =
-                if value['zone'].lower() != 'utc':
-                    utc = '| {0} UTC'.format(await self.time_handler(value['time'], value['zone']))
-                embed.add_field(
-                    name='{0}{1}'.format(diamond, value['event'][:50]),
-                    value='Time: {0} {1} {2} | ({3})\nETA {4}'.format(value['time'], value['zone'].upper(),
-                                                                      utc, event_id, '*placeholder*'),
-                    inline=False
-                )
+                if data[event_id]['server_id'] == ctx.message.server.id:
+                    num = num + 1
+                    diamond = ':small_orange_diamond:'
+                    if num % 2 == 0:
+                        diamond = ':small_blue_diamond:'
+                    utc = ''
+                    # dt =
+                    if value['zone'].lower() != 'utc':
+                        utc = '| {0} UTC'.format(await self.time_handler(value['time'], value['zone']))
+                    embed.add_field(
+                        name='{0}{1}'.format(diamond, value['event'][:50]),
+                        value='Time: {0} {1} {2} | ({3})\nETA {4}'.format(value['time'], value['zone'].upper(),
+                                                                          utc, event_id, '*placeholder*'),
+                        inline=False
+                    )
             await self.client.send_message(ctx.message.channel, embed=embed)
 
     async def event_handler_one(self, dt, tz, event, ctx):
@@ -241,7 +241,8 @@ class Events:
                     data[event_id] = {'event': event,
                                       'time': dt.strftime('%H:%M'),
                                       'zone': tz,
-                                      'user_id': ctx.message.author.id}
+                                      'user_id': ctx.message.author.id,
+                                      'server_id': ctx.message.server.id}
                     embed = await self.embed_handler(event, event_id, dt, dt2, tz, tz2, ctx, 'new')
                     await self.client.send_message(ctx.message.channel, embed=embed)
                     break
