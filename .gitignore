@@ -72,3 +72,5 @@ test.py
 files/credentials\.json
 
 files/events\.json
+
+files/servers\.json
