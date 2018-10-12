@@ -33,7 +33,6 @@ class Events:
                                                                 'Use ``setevent <time> <zone> <event>`` to set an event.')
             return
         dt = args[0]
-        print(dt)
         tz = args[1].lower()
         event = ' '.join(args[2:])
 
@@ -149,7 +148,10 @@ class Events:
     async def events(self, ctx, *args):
         # todo allow a call to 'all' to pull all events
         # check current events that are active from current time into the future
-        thumb_url = ctx.message.server.icon_url
+        if ctx.message.server.icon_url is '':
+            thumb_url = self.client.user.avatar_url
+        else:
+            thumb_url = ctx.message.server.icon_url
         event_id = ''
         try:
             event_id = int(args[0])
@@ -255,23 +257,6 @@ class Events:
         with open('files/events.json', 'w') as f:
             json.dump(data, f, indent=2)
 
-    # @staticmethod
-    # async def event_handler_two(ctx, args):
-    #     # # handle input for hours and minutes
-    #     # print(args)
-    #     # utc = datetime.datetime.now(pytz.timezone('UTC'))
-    #     # print(utc)
-    #     # time = args[0]
-    #     # print(time)
-    #     # time = time.split('h')
-    #     # print(time)
-    #     # hours = time[0]
-    #     # minutes = time[1].strip('m')
-    #     # print(hours, minutes)
-    #     # zone = args[1]
-    #     # event = ' '.join(args[2:])
-    #     pass
-
     @staticmethod
     async def time_handler(dt_d, tz):
         # take a time and converts to utc datetime
@@ -304,7 +289,10 @@ class Events:
     async def embed_handler(self, event, event_id, dt1, dt2, tz1, tz2, ctx, method):
         event_title = ':sparkles: Upcoming Event'
         foot = int((39 - len(ctx.message.author.name)) / 2) * '─'
-        thumb_url = ctx.message.server.icon_url
+        if ctx.message.server.icon_url is '':
+            thumb_url = self.client.user.avatar_url
+        else:
+            thumb_url = ctx.message.server.icon_url
 
         if method == 'update':
             event_title = ':sparkles: Event Updated'
@@ -344,7 +332,6 @@ class Events:
         utc_d, utc_s = await self.time_handler(dt, tz)
         utc_now = datetime.datetime.utcnow()
         utc_now = utc_now.replace(tzinfo=None)
-        # diff = utc_now - utc_d
         diff = utc_d - utc_now
         hours, remainder = divmod(diff.seconds, 3600)
         minutes, seconds = divmod(remainder, 60)
