@@ -20,9 +20,9 @@ class Help:
                 return
         except IndexError:
             pass
-        author = ctx.message.author
         embed = discord.Embed(color=discord.Color.blue())
         embed.set_author(name="Help Page")
+        embed.add_field(name='Artemis is in Beta', value='Things are likely to break, be broken, or be removed.\n')
         embed.add_field(
             name="How do I give karma?",
             value="Just say thanks and mention the target\nEx: 'Thanks @Hatchet Jackk'",
@@ -30,7 +30,7 @@ class Help:
         )
         embed.add_field(name="ping", value="Return pong", inline=False)
         embed.add_field(name="roll", value="Roll NdN dice", inline=False)
-        embed.add_field(name="karma <user>", value="Check your or another <user>'s current level of karma",
+        embed.add_field(name="karma <@user>", value="Check your or another <@user>'s current level of karma",
                         inline=False)
         embed.add_field(name='hello', value='Say hi to Artemis!', inline=False)
         embed.add_field(name="status", value="Check Artemis' status", inline=False)
@@ -43,8 +43,8 @@ class Help:
         embed.add_field(name='yt <search>', value='Return the first YouTube video based for <search>.', inline=False)
         embed.add_field(name='help events', value='See available options for events.', inline=False)
         embed.set_footer(text="Author: Hatchet Jackk")
-        await self.client.send_message(author, embed=embed)
-        print('Artemis: Sent help to {0}'.format(author))
+        await self.client.send_message(ctx.message.author, embed=embed)
+        print('Artemis: Sent help to {0}'.format(ctx.message.author))
 
     async def events_help(self, ctx):
         embed = discord.Embed(
