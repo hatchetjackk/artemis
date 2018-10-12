@@ -93,7 +93,7 @@ class Karma:
                     await self.add_karma(users, user)
 
                     with open('files/users.json', 'w') as f:
-                        json.dump(users, f)
+                        json.dump(users, f, indent=2)
                     fmt = random.choice(responses).format(user.mention)
                     await self.client.send_message(message.channel, fmt)
                     print("{0} received a karma point from {1}".format(user, message.author))
@@ -112,7 +112,7 @@ class Karma:
                     await self.add_karma(users, user)
 
                     with open('files/users.json', 'w') as f:
-                        json.dump(users, f)
+                        json.dump(users, f, indent=2)
                     fmt = random.choice(responses).format(user.mention)
                     await self.client.send_message(message.channel, fmt)
                     print("{0} received a karma point from {1}".format(user, message.author))
