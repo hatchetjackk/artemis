@@ -5,7 +5,7 @@ import json
 import random
 from discord.ext import commands
 
-# todo time zone setting, ETA against current time, time zone comparison
+# todo time zone setting
 
 
 class Events:
@@ -21,7 +21,6 @@ class Events:
         # when a user calls !setevent, they can create an event and a time based on specified timezone. only members
         # should be able to do this once every five minutes. The result is sent to an embed and displayed in the channel
         # that it was created in
-        # todo add 'hours from now'
 
         now = datetime.datetime.now
         zones = {'pst': now(pytz.timezone('US/Alaska')), 'pdt': now(pytz.timezone('US/Alaska')),
@@ -34,21 +33,23 @@ class Events:
                                                                 'Use ``setevent <time> <zone> <event>`` to set an event.')
             return
         dt = args[0]
-        zone = args[1].lower()
+        print(dt)
+        tz = args[1].lower()
         event = ' '.join(args[2:])
 
         # check for legitimate time zone
-        if zone not in zones:
+        if tz not in zones:
             await self.client.send_message(ctx.message.channel,
                                            '{0} is not a valid timezone.\n'
-                                           'Use ``setevent <time> <zone> <event>`` to set an event.'.format(zone))
+                                           'Use ``setevent <time> <zone> <event>`` to set an event.'.format(tz))
             return
 
         # try/except will check for valid time formats
         try:
-            dt = datetime.datetime.strptime(dt, '%H:%M')
-            await self.event_handler_one(dt, zone, event, ctx)
-        except ValueError:
+            dt_d = datetime.datetime.strptime(dt, '%H:%M')
+            await self.event_handler(dt_d, tz, event, ctx)
+        except ValueError as e:
+            print(e)
             await self.client.send_message(ctx.message.channel, '{0} is not a valid time.'.format(dt))
             return
 
@@ -110,10 +111,12 @@ class Events:
             datetime.datetime.strptime(args[1], '%H:%M')
             time = args[1]
             if args[2].lower() not in zones:
+                print('Zone not in zones')
                 await self.client.send_message(ctx.message.channel, '{0} is not a valid time zone.'.format(args[2]))
                 return
             zone = args[2]
-        except ValueError:
+        except ValueError as e:
+            print(e)
             await self.client.send_message(ctx.message.channel, '{0} is not a valid time.'.format(args[1]))
             return
         except IndexError:
@@ -146,9 +149,8 @@ class Events:
     async def events(self, ctx, *args):
         # todo allow a call to 'all' to pull all events
         # check current events that are active from current time into the future
-        thumb_url = 'https://images-ext-1.discordapp.net/external/veD-zTXyh96Zn-MB2t3vXqiZrRlihx4r5DCnrJ0nEh0/https/' \
-                    'i.imgur.com/JK61b19.png?width=676&height=676'
-        event_id = 0
+        thumb_url = ctx.message.server.icon_url
+        event_id = ''
         try:
             event_id = int(args[0])
         except IndexError:
@@ -164,6 +166,7 @@ class Events:
             data = json.load(f)
 
         # if an event id is passed, attempt to return that event
+        event_id = str(event_id)
         if event_id in data and data[event_id]['server_id'] == ctx.message.server.id:
             event = data[event_id]['event']
             time = data[event_id]['time']
@@ -172,103 +175,106 @@ class Events:
             embed = discord.Embed(title='──────────────── [Events] ────────────────', color=discord.Color.blue())
             embed.set_thumbnail(url=thumb_url)
             embed.add_field(name=event_title, value='**Event** [{0}]: {1}'.format(event_id, event), inline=False)
+            utc_d, utc_s = await self.time_handler(time, zone)
+            utc = ''
+            if data[event_id]['zone'].lower() != 'utc':
+                utc = '| {0} UTC'.format(utc_s)
             embed.add_field(
                 name='Time',
-                value='{0} {1} | {2} {3}'.format(time, zone, await self.time_handler(time, zone), 'UTC')
+                value='{0} {1} {2}'.format(time, zone, utc)
             )
-            embed.add_field(name='ETA', value='placeholder')
+            eta = await self.eta(time, zone)
+            embed.add_field(name='ETA', value=eta)
             embed.set_footer(text='──────────────────────────────────────────')
             await self.client.send_message(ctx.message.channel, embed=embed)
-
+            return
+        if event_id != '':
+            await self.client.send_message(ctx.message.channel,
+                                           '{0} is not a valid event ID.\nDisplaying all events...'.format(event_id))
         # if no arguments are passed or event_id is not in data, return all events
-        else:
-            # todo allow the user to page through other events
-            if len(data) < 1:
-                await self.client.send_message(ctx.message.channel, 'There are currently no scheduled events.')
-                return
-            embed = discord.Embed(title='──────────────── [Events] ────────────────', color=discord.Color.blue())
-            embed.set_thumbnail(url=thumb_url)
-            embed.set_footer(text='──────────────────────────────────────────')
-            embed.add_field(name=':sparkles: Upcoming Events', value='\u200b')
-            # iterate through events and truncate event names longer than 50 characters
-            num = 0
-            for event_id, value in data.items():
-                if data[event_id]['server_id'] == ctx.message.server.id:
-                    num = num + 1
-                    diamond = ':small_orange_diamond:'
-                    if num % 2 == 0:
-                        diamond = ':small_blue_diamond:'
-                    utc = ''
-                    # dt =
-                    if value['zone'].lower() != 'utc':
-                        utc = '| {0} UTC'.format(await self.time_handler(value['time'], value['zone']))
-                    embed.add_field(
-                        name='{0}{1}'.format(diamond, value['event'][:50]),
-                        value='Time: {0} {1} {2} | ({3})\nETA {4}'.format(value['time'], value['zone'].upper(),
-                                                                          utc, event_id, '*placeholder*'),
-                        inline=False
-                    )
-            await self.client.send_message(ctx.message.channel, embed=embed)
+        # todo allow the user to page through other events
+        if len(data) < 1:
+            await self.client.send_message(ctx.message.channel, 'There are currently no scheduled events.')
+            return
+        embed = discord.Embed(title='──────────────── [Events] ────────────────', color=discord.Color.blue())
+        embed.set_thumbnail(url=thumb_url)
+        embed.set_footer(text='──────────────────────────────────────────')
+        embed.add_field(name=':sparkles: Upcoming Events', value='\u200b')
+        # iterate through events and truncate event names longer than 50 characters
+        num = 0
+        for event_id, value in data.items():
+            if data[event_id]['server_id'] == ctx.message.server.id:
+                num = num + 1
+                diamond = ':small_orange_diamond:'
+                if num % 2 == 0:
+                    diamond = ':small_blue_diamond:'
+                utc = ''
+                eta = await self.eta(value['time'], value['zone'])
 
-    async def event_handler_one(self, dt, tz, event, ctx):
-        if type(dt) != datetime.datetime:
-            dt = datetime.datetime.strptime(dt, '%H:%M')
-            dt = dt.strftime('%H:%M')
-        else:
-            dt = dt.strftime('%H:%M')
+                if value['zone'].lower() != 'utc':
+                    utc_d, utc_s = await self.time_handler(value['time'], value['zone'])
+                    utc = '| {0} UTC'.format(utc_s)
+                embed.add_field(
+                    name='{0}{1}'.format(diamond, value['event'][:50]),
+                    value='Time: {0} {1} {2} | ({3})\nETA {4}'.format(value['time'], value['zone'].upper(),
+                                                                      utc, event_id, eta),
+                    inline=False
+                )
+        await self.client.send_message(ctx.message.channel, embed=embed)
 
+    async def event_handler(self, dt, tz, event, ctx):
+        # take in times, zones, and events then add them to events.json
         try:
-            dt = datetime.datetime.strptime(dt, '%H:%M')
-            if tz == 'utc':
-                dt2 = await self.utc_handler(dt, tz)
-                tz2 = None
+            if type(dt) != datetime.datetime:
+                dt_d = datetime.datetime.strptime(dt, '%H:%M')
+                dt_s = dt.strftime('%H:%M')
             else:
-                dt2 = await self.time_handler(dt, tz)
-                tz2 = 'utc'
-                dt2 = dt2.strftime('%H:%M')
+                dt_d = dt
+                dt_s = dt.strftime('%H:%M')
+            utc_d, utc_s = await self.time_handler(dt_d, tz)
         except ValueError:
-            await self.client.send_message(ctx.message.channel, '{0} is not a valid time.'.format(dt))
             return
         except AttributeError as e:
             print(e)
             return
 
+        # add event to events.json
         with open('files/events.json', 'r') as f:
             data = json.load(f)
             while True:
                 event_id = random.randint(1, 99999)
                 if event_id not in data:
                     data[event_id] = {'event': event,
-                                      'time': dt.strftime('%H:%M'),
+                                      'time': dt_s,
                                       'zone': tz,
                                       'user_id': ctx.message.author.id,
                                       'server_id': ctx.message.server.id}
-                    embed = await self.embed_handler(event, event_id, dt, dt2, tz, tz2, ctx, 'new')
+                    embed = await self.embed_handler(event, event_id, dt, utc_s, tz, 'UTC', ctx, 'new')
                     await self.client.send_message(ctx.message.channel, embed=embed)
                     break
         with open('files/events.json', 'w') as f:
             json.dump(data, f, indent=2)
 
-    @staticmethod
-    async def event_handler_two(ctx, args):
-        # # handle input for hours and minutes
-        # print(args)
-        # utc = datetime.datetime.now(pytz.timezone('UTC'))
-        # print(utc)
-        # time = args[0]
-        # print(time)
-        # time = time.split('h')
-        # print(time)
-        # hours = time[0]
-        # minutes = time[1].strip('m')
-        # print(hours, minutes)
-        # zone = args[1]
-        # event = ' '.join(args[2:])
-        pass
+    # @staticmethod
+    # async def event_handler_two(ctx, args):
+    #     # # handle input for hours and minutes
+    #     # print(args)
+    #     # utc = datetime.datetime.now(pytz.timezone('UTC'))
+    #     # print(utc)
+    #     # time = args[0]
+    #     # print(time)
+    #     # time = time.split('h')
+    #     # print(time)
+    #     # hours = time[0]
+    #     # minutes = time[1].strip('m')
+    #     # print(hours, minutes)
+    #     # zone = args[1]
+    #     # event = ' '.join(args[2:])
+    #     pass
 
     @staticmethod
-    async def time_handler(dt, tz):
-        # take a time and convert to utc
+    async def time_handler(dt_d, tz):
+        # take a time and converts to utc datetime
         tz = tz.lower()
         tdelta = datetime.timedelta
         zones = {'est': 4, 'edt': 4,
@@ -276,37 +282,29 @@ class Events:
                  'pst': 7, 'pdt': 7,
                  'gmt': 0, 'bst': -1,
                  'utc': 0}
-        if tz in zones and tz != 'utc':
-            if type(dt) != datetime.datetime:
+        if tz in zones:
+            if type(dt_d) != datetime.datetime:
                 try:
-                    dt = datetime.datetime.strptime(dt, '%H:%M')
-                    dt1 = dt + tdelta(hours=zones[tz])
-                    dt1 = dt1.strftime('%H:%M')
-                    return dt1
+                    dt_d = datetime.datetime.strptime(dt_d, '%H:%M')
+                    utc_d = dt_d + tdelta(hours=zones[tz])
+                    utc_s = utc_d.strftime('%H:%M')
+                    return utc_d, utc_s
                 except ValueError as e:
                     print(e)
                     return
-            dt1 = dt + tdelta(hours=zones[tz])
-            return dt1
-
-    @staticmethod
-    async def utc_handler(dt, tz):
-        tdelta = datetime.timedelta
-        zones = {'est': 4, 'edt': 4,
-                 'cst': 5, 'cdt': 5,
-                 'pst': 7, 'pdt': 7,
-                 'gmt': 0, 'bst': -1,
-                 'utc': 0}
-        if tz in zones and tz != 'utc':
-            dt1 = dt - tdelta(hours=zones[tz])
-            return dt1
-        return dt
+            if type(dt_d) == datetime.datetime:
+                try:
+                    utc_d = dt_d + tdelta(hours=zones[tz])
+                    utc_s = utc_d.strftime('%H:%M')
+                    return utc_d, utc_s
+                except ValueError as e:
+                    print(e)
+                    return
 
     async def embed_handler(self, event, event_id, dt1, dt2, tz1, tz2, ctx, method):
         event_title = ':sparkles: Upcoming Event'
         foot = int((39 - len(ctx.message.author.name)) / 2) * '─'
-        thumb_url = 'https://images-ext-1.discordapp.net/external/veD-zTXyh96Zn-MB2t3vXqiZrRlihx4r5DCnrJ0nEh0/' \
-                    'https/i.imgur.com/JK61b19.png?width=676&height=676'
+        thumb_url = ctx.message.server.icon_url
 
         if method == 'update':
             event_title = ':sparkles: Event Updated'
@@ -323,19 +321,35 @@ class Events:
         else:
             dt1 = dt1.strftime('%H:%M')
 
-        embed = discord.Embed(title='──────────────── [Events] ────────────────', color=discord.Color.blue())
-        embed.set_thumbnail(url=thumb_url)
-        embed.add_field(name=event_title, value='**Event** [{0}]: {1}'.format(event_id, event), inline=False)
-        if tz2 is None:
-            embed.add_field(name='Time', value='{0} {1}'.format(dt1, tz1.upper()))
-        else:
-            if method == 'update':
-                embed.add_field(name='Time', value='{0} {1} -> {2} {3}'.format(dt2, tz2.upper(), dt1, tz1.upper()))
+        try:
+            embed = discord.Embed(title='──────────────── [Events] ────────────────', color=discord.Color.blue())
+            embed.set_thumbnail(url=thumb_url)
+            embed.add_field(name=event_title, value='**Event** [{0}]: {1}'.format(event_id, event), inline=False)
+            if tz2 is None:
+                embed.add_field(name='Time', value='{0} {1}'.format(dt1, tz1.upper()))
             else:
-                embed.add_field(name='Time', value='{0} {1} | {2} {3}'.format(dt1, tz1.upper(), dt2, tz2.upper()))
-        embed.add_field(name='ETA', value='{0}'.format('placeholder'))
-        embed.set_footer(text=foot + '[Created by: {0}]'.format(ctx.message.author.name) + foot)
-        return embed
+                if method == 'update':
+                    embed.add_field(name='Time', value='{0} {1} -> {2} {3}'.format(dt2, tz2.upper(), dt1, tz1.upper()))
+                else:
+                    embed.add_field(name='Time', value='{0} {1} | {2} {3}'.format(dt1, tz1.upper(), dt2, tz2.upper()))
+            eta = await self.eta(dt1, tz1)
+            embed.add_field(name='ETA', value='{0}'.format(eta))
+            embed.set_footer(text=foot + '[Created by: {0}]'.format(ctx.message.author.name) + foot)
+            return embed
+        except Exception as e:
+            print(e)
+
+    async def eta(self, dt, tz):
+        # calculate the difference between the set time and the current time using UTC
+        utc_d, utc_s = await self.time_handler(dt, tz)
+        utc_now = datetime.datetime.utcnow()
+        utc_now = utc_now.replace(tzinfo=None)
+        # diff = utc_now - utc_d
+        diff = utc_d - utc_now
+        hours, remainder = divmod(diff.seconds, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        _eta = '{0}h {1}m'.format(hours, minutes)
+        return _eta
 
 
 def setup(client):
