@@ -2,11 +2,10 @@
 
 import discord
 import asyncio
-# import os
 import json
 import datetime
+import traceback
 # import logging
-# from files import credentials
 import random
 from cogs.karma import Karma
 from cogs.emotional_core import Emotions
@@ -52,6 +51,20 @@ async def on_ready():
     # report in to botspam for all servers
     if verbose:
         await botspam(random.choice(responses))
+    try:
+        with open('files/servers.json') as f:
+            d = json.load(f)
+        servers = [server for server in client.servers]
+        for server in servers:
+            s_id = server.id
+            server = server.name
+            if s_id not in d:
+                d[s_id] = {'server_name': server,
+                           'thumb_url': ''}
+        with open('files/servers.json', 'w') as f:
+            json.dump(d, f, indent=2)
+    except Exception as e:
+        print(e)
 
 
 @client.event
@@ -93,18 +106,22 @@ async def on_member_join(member):
 @client.event
 async def on_message(message):
     k = Karma(client)
-    e = Emotions(client)
-    # srv = str(message.server)
-    # with open('files/users.json', 'r') as f:
-    #     users = json.load(f)
-    # for member in message.server.members:
-    #     await update_data(users, member, srv)
-    # with open('files/users.json', 'w') as f:
-    #     json.dump(users, f)
-
+    emotion = Emotions(client)
+    srv = str(message.server)
     if not message.content.startswith('!'):
+        try:
+            with open('files/users.json', 'r') as f:
+                users = json.load(f)
+            for member in message.server.members:
+                await update_data(users, member, srv)
+            with open('files/users.json', 'w') as f:
+                json.dump(users, f, indent=2)
+        except ValueError as e:
+            print(e)
+        except AttributeError as e:
+            print(e)
         await k.generate_karma(message)
-        await e.generate_points(message)
+        await emotion.generate_points(message)
 
     bot_kudos = ['good bot', 'good job bot', 'good job, bot',
                  'good artemis', 'thanks artemis', 'thank you, artemis',
@@ -149,6 +166,7 @@ async def on_message_edit(before, after):
 async def update_data(users, user, srv):
     if user.id not in users:
         users[user.id] = {}
+        users[user.id]['username'] = user.name
         users[user.id]['server'] = []
         users[user.id]['karma'] = 0
         users[user.id]['todo'] = []
