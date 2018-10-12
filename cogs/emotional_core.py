@@ -22,7 +22,7 @@ class Emotions:
 
     @staticmethod
     async def emotional_level(value):
-        with open('status.json', 'r') as f:
+        with open('files/status.json', 'r') as f:
             status = json.load(f)
         if value < 0 and status["status"]["level"] == 0:
             return
