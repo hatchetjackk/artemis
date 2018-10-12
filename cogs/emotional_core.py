@@ -35,7 +35,7 @@ class Emotions:
 
     @commands.command(pass_context=True)
     async def status(self, ctx):
-        with open('status.json', 'r') as f:
+        with open('files/status.json', 'r') as f:
             status = json.load(f)
         level = status["status"]["level"]
         great = ["Artemis is doing great!",
