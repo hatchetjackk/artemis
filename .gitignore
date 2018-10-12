@@ -74,3 +74,7 @@ files/credentials\.json
 files/events\.json
 
 files/servers\.json
+
+files/moderation\.json
+
+status\.json
