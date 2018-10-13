@@ -5,7 +5,7 @@ import json
 import random
 from discord.ext import commands
 
-# todo time zone setting
+""" All times in events are handled as UTC and then converted to set zone times for local reference """
 
 
 class Events:
@@ -87,7 +87,6 @@ class Events:
             data = json.load(f)
         if event_id in data:
             orgnl_dt = data[event_id]['time']
-            print(orgnl_dt)
             orgnl_tz = data[event_id]['zone']
             data[event_id]['time'] = datetime_string_full
             data[event_id]['zone'] = tz
@@ -105,7 +104,6 @@ class Events:
                                              data[event_id]['event'],
                                              datetime_string_short,
                                              tz,
-                                             utc_conversion,
                                              'update',
                                              original_short,
                                              orgnl_tz)
@@ -118,6 +116,16 @@ class Events:
         # todo allow a call to 'all' to pull all events
         # check current events that are active from current time into the future
         # detect server avatar
+        time_to_utc = {'est': 4, 'edt': 4,
+                       'cst': 5, 'cdt': 5,
+                       'pst': 7, 'pdt': 7,
+                       'gmt': 0, 'bst': -1,
+                       'utc': 0}
+        zones = {'pst': pytz.timezone('US/Alaska'), 'pdt': pytz.timezone('US/Alaska'),
+                 'cst': pytz.timezone('US/Mountain'), 'cdt': pytz.timezone('US/Mountain'),
+                 'est': pytz.timezone('US/Eastern'), 'edt': pytz.timezone('US/Eastern'),
+                 'gmt': pytz.timezone('GMT'), 'bst': pytz.timezone('Europe/London'),
+                 'utc': pytz.timezone('UTC')}
         event_title = ':sparkles: Upcoming Event'
         event_id = ''
 
@@ -182,35 +190,40 @@ class Events:
         embed.set_footer(text='──────────────────────────────────────────')
         embed.add_field(name=':sparkles: Upcoming Events', value='\u200b')
         # iterate through events and truncate event names longer than 50 characters
-        num = 0
+        num = 1
         for event_id, value in data.items():
             if data[event_id]['server_id'] == ctx.message.server.id:
-                time = await self.make_datetime(data[event_id]['time'])
-                utc = time.astimezone(tz=pytz.UTC)
-                time_full, time_short = await self.make_string(time)
+                tz = value['zone']
+                # take time from json and convert it back to utc
+                utc = await self.make_datetime(data[event_id]['time']) - datetime.timedelta(hours=time_to_utc[value['zone']])
+                utc = utc.astimezone(pytz.UTC)
+                # convert datetimes to string
+                local_full, local_short = await self.make_string(utc.astimezone(zones[tz]))
                 utc_full, utc_short = await self.make_string(utc)
-                num = num + 1
                 diamond = ':small_orange_diamond:'
                 if num % 2 == 0:
                     diamond = ':small_blue_diamond:'
                 eta = await self.eta(event_id)
                 utc = ''
-                if value['zone'].lower() != 'utc':
+                if tz.lower() != 'utc':
                     utc = '| {0} UTC'.format(utc_short)
                 embed.add_field(
                     name='{0}{1}'.format(diamond, value['event'][:50]),
-                    value='Time: {0} {1} {2} | ({3})\nETA {4}'.format(time_short,
-                                                                      value['zone'].upper(),
-                                                                      utc,
-                                                                      event_id,
-                                                                      eta),
+                    value='Time: {0} {1} {2} | ({3})\n'
+                          'ETA {4}'.format(local_short,
+                                           value['zone'].upper(),
+                                           utc, event_id, eta),
                     inline=False
                 )
+                num += 1
+
         await self.client.send_message(ctx.message.channel, embed=embed)
 
     async def event_handler(self, ctx, h, m, tz, event):
-        dt_user_set, utc_conversion, diff = await self.time_handler(ctx, h, m, tz)
-        datetime_string_full, datetime_string_short = await self.make_string(dt_user_set)
+        # get utc time
+        utc_set = await self.time_handler(ctx, h, m, tz)
+        # return utc as a string for json
+        datetime_string_full, datetime_string_short = await self.make_string(utc_set)
         # add event to events.json
         with open('files/events.json', 'r') as f:
             data = json.load(f)
@@ -227,24 +240,29 @@ class Events:
                     break
         with open('files/events.json', 'w') as f:
             json.dump(data, f, indent=2)
-
+        # dump information into an embed. The time here stays in form datetime
         embed = await self.embed_handler(
             ctx,
             event_id,
             data[event_id]['event'],
-            datetime_string_short,
+            utc_set,
             tz,
-            utc_conversion,
             'new',
             None, None
         )
         await self.client.send_message(ctx.message.channel, embed=embed)
 
     async def time_handler(self, ctx, h, m, tz):
+        # take user input and convert it to UTC time for storage and recall
         d = datetime.datetime.now
         try:
             h = int(h)
             m = int(m)
+            time_to_utc = {'est': 4, 'edt': 4,
+                           'cst': 5, 'cdt': 5,
+                           'pst': 7, 'pdt': 7,
+                           'gmt': 0, 'bst': -1,
+                           'utc': 0}
             zones = {'pst': (pytz.timezone('US/Alaska')), 'pdt': (pytz.timezone('US/Alaska')),
                      'cst': (pytz.timezone('US/Mountain')), 'cdt': (pytz.timezone('US/Mountain')),
                      'est': (pytz.timezone('US/Eastern')), 'edt': (pytz.timezone('US/Eastern')),
@@ -254,34 +272,33 @@ class Events:
             if tz not in zones:
                 await self.client.send_message(ctx.message.channel, '{} is not a valid timezone.'.format(tz))
                 return
+            # convert to utc
+            if tz.lower() != 'utc':
+                h = h + time_to_utc[tz]
             # time set by the user using today's date
-            dt_user_set = datetime.datetime(year=d().year, month=d().month, day=d().day,
-                                            hour=h, minute=m, second=d().second,
-                                            microsecond=d().microsecond, tzinfo=zones[tz])
-            # current time in the tz set by the user
-            dt_current_time = d(zones[tz])
-            # utc time based on time input by the user
-            if zones[tz] == 'utc':
-                utc_conversion = None
-            else:
-                utc_conversion = dt_user_set.astimezone(pytz.timezone('UTC'))
-            # difference between current time and set time
-            diff = dt_user_set - dt_current_time
+            utc = datetime.datetime(year=d().year, month=d().month, day=d().day,
+                                    hour=h, minute=m, second=d().second,
+                                    microsecond=d().microsecond, tzinfo=zones['utc'])
+            # find difference between current time and set time to determine if set time is tomorrow
+            td = utc - datetime.datetime.now(pytz.UTC)
             # if the difference is less than 0 days, the set time is considered to be for tomorrow
             # thus we will add 24 hours to the time.
-            if diff.days < 0:
-                dt_user_set = dt_user_set + datetime.timedelta(hours=24)
-            diff = dt_user_set - dt_current_time
-            hours, remainder = divmod(diff.seconds, 3600)
-            minutes, seconds = divmod(remainder, 60)
-            diff = '{0}h {1}m'.format(hours, minutes)
-            return dt_user_set, utc_conversion, diff
+            if td.days < 0:
+                utc = utc + datetime.timedelta(hours=24)
+            return utc
         except ValueError as v:
             print(v)
             await self.client.send_message(ctx.message.channel, '{0}:{1} is not a valid time.'.format(h, m))
 
-    async def embed_handler(self, ctx, event_id, event, dt_string, tz, utc_conversion, method, orgnl_dt, orgnl_tz):
+    async def embed_handler(self, ctx, event_id, event, dt, tz, method, orgnl_dt, orgnl_tz):
         # set thumbnail icon
+        zones = {'pst': pytz.timezone('US/Alaska'), 'pdt': pytz.timezone('US/Alaska'),
+                 'cst': pytz.timezone('US/Mountain'), 'cdt': pytz.timezone('US/Mountain'),
+                 'est': pytz.timezone('US/Eastern'), 'edt': pytz.timezone('US/Eastern'),
+                 'gmt': pytz.timezone('GMT'), 'bst': pytz.timezone('Europe/London'),
+                 'utc': pytz.timezone('UTC')}
+        utc_full, utc_short = await self.make_string(dt)
+        local_full, local_short = await self.make_string(dt.astimezone(zones[tz]))
         eta = await self.eta(event_id)
         if ctx.message.server.icon_url is '':
             thumb_url = self.client.user.avatar_url
@@ -294,17 +311,18 @@ class Events:
             event_title = ':sparkles: Event Updated'
 
         try:
+            # create the embed
             embed = discord.Embed(title='──────────────── [Events] ────────────────', color=discord.Color.blue())
             embed.set_thumbnail(url=thumb_url)
             embed.add_field(name=event_title, value='**Event** [{0}]: {1}'.format(event_id, event), inline=False)
-            if utc_conversion is None:
-                embed.add_field(name='Time', value='{0} {1}'.format(dt_string, tz.upper()))
+            # if timezone is utc, do not pass any other times
+            if tz == 'utc':
+                embed.add_field(name='Time', value='{0} {1}'.format(local_short, tz.upper()))
             else:
-                utc_string_full, utc_string_short = await self.make_string(utc_conversion)
                 if method == 'update':
-                    embed.add_field(name='Time', value='{0} {1} -> {2} {3}'.format(orgnl_dt, orgnl_tz.upper(), dt_string, tz.upper()))
+                    embed.add_field(name='Time', value='{0} {1} -> {2} {3}'.format(orgnl_dt, orgnl_tz.upper(), utc_short, tz.upper()))
                 else:
-                    embed.add_field(name='Time', value='{0} {1} | {2} UTC'.format(dt_string, tz.upper(), utc_string_short))
+                    embed.add_field(name='Time', value='{0} {1} | {2} UTC'.format(local_short, tz.upper(), utc_short))
             embed.add_field(name='ETA', value='{0}'.format(eta))
             foot = int((39 - len(ctx.message.author.name)) / 2) * '─'
             embed.set_footer(text=foot + '[Created by: {0}]'.format(ctx.message.author.name) + foot)
@@ -314,24 +332,35 @@ class Events:
 
     async def eta(self, event_id):
         # use event_id to pull time string
-        zones = {'pst': pytz.timezone('US/Alaska'), 'pdt': pytz.timezone('US/Alaska'),
-                 'cst': pytz.timezone('US/Mountain'), 'cdt': pytz.timezone('US/Mountain'),
-                 'est': pytz.timezone('US/Eastern'), 'edt': pytz.timezone('US/Eastern'),
-                 'gmt': pytz.timezone('GMT'), 'bst': pytz.timezone('Europe/London'),
-                 'utc': pytz.timezone('UTC')}
+        time_to_utc = {'est': 4, 'edt': 4,
+                       'cst': 5, 'cdt': 5,
+                       'pst': 7, 'pdt': 7,
+                       'gmt': 0, 'bst': -1,
+                       'utc': 0}
+        zones = {'pst': (pytz.timezone('US/Alaska')), 'pdt': (pytz.timezone('US/Alaska')),
+                 'cst': (pytz.timezone('US/Mountain')), 'cdt': (pytz.timezone('US/Mountain')),
+                 'est': (pytz.timezone('US/Eastern')), 'edt': (pytz.timezone('US/Eastern')),
+                 'gmt': (pytz.timezone('GMT')), 'bst': (pytz.timezone('Europe/London')),
+                 'utc': (pytz.timezone('UTC'))}
         with open('files/events.json') as f:
             data = json.load(f)
         # use time string to generate datetime object and convert to UTC
         # subtract the datetime objects to get a difference
-        time_full = await self.make_datetime(data[str(event_id)]['time'])
-        time_full = time_full.astimezone(tz=pytz.UTC)
-        diff = time_full - datetime.datetime.now(tz=pytz.UTC)
-        if diff.days < 0:
-            eta = 0
+        tz = data[str(event_id)]['zone']
+        time = await self.make_datetime(data[str(event_id)]['time']) - datetime.timedelta(hours=time_to_utc[data[str(event_id)]['zone']])
+        time = time.astimezone(zones[tz])
+        time = time.astimezone(pytz.UTC)
+        td = time - datetime.datetime.now(tz=pytz.UTC)
+        if td.days < 0:
+            eta = '0h 0m'
             return eta
-        hours, remainder = divmod(diff.seconds, 3600)
+        days = td.days
+        hours, remainder = divmod(td.seconds, 3600)
         minutes, seconds = divmod(remainder, 60)
-        eta = '{0}h {1}m'.format(hours, minutes)
+        if days < 1:
+            eta = '{0}h {1}m'.format(hours, minutes)
+            return eta
+        eta = '{0}d {1}h {2}m'.format(days, hours, minutes)
         return eta
 
     @staticmethod
