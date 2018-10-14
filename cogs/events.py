@@ -40,7 +40,9 @@ class Events:
                     'event': event,
                     'time': dt_long,
                     'user_id': ctx.message.author.id,
-                    'server_id': ctx.message.server.id
+                    'server_id': ctx.message.server.id,
+                    'notify': False,
+                    'member_notify': []
                 }
                 break
 
@@ -93,10 +95,9 @@ class Events:
             await self.client.send_message(ctx.message.channel, 'Event ID {} not found.'.format(event_id))
             return
         event = data[event_id]['event']
-        await self.dump_events(data)
-
         embed = await self.embed_handler(ctx, dt, event, event_id, update=True)
         await self.client.send_message(ctx.message.channel, embed=embed)
+        await self.dump_events(data)
 
     @commands.command(pass_context=True)
     async def events(self, ctx, *args):
@@ -196,7 +197,7 @@ class Events:
     @commands.command(pass_context=True)
     async def time(self, ctx):
         # returns an embed with set time zones
-        now = datetime.datetime.now
+        now = datetime.now
         zones = {'pst/pdt': now(pytz.timezone('US/Alaska')),
                  'cst/cdt': now(pytz.timezone('US/Mountain')),
                  'est/edt': now(pytz.timezone('US/Eastern')),
@@ -207,6 +208,20 @@ class Events:
         embed.add_field(name='Time', value='\n'.join(zones[zone].strftime('%H:%M') for zone in zones))
         embed.set_footer(text='──────────────────────────────────────────')
         await self.client.send_message(ctx.message.channel, embed=embed)
+
+    @commands.command(pass_context=True)
+    async def notify(self, ctx, *args):
+        event_id = str(args[0])
+        channel = str(ctx.message.channel.id)
+        author = ctx.message.author
+        group = {author.id: channel}
+        data = await self.load_events()
+        if event_id in data:
+            data[event_id]['notify'] = True
+            data[event_id]['member_notify'].append(group)
+        await self.client.send_message(ctx.message.channel, 'Set to notify {author} when *{event}* is 1 hour away from '
+                                                            'starting!'.format(author=author.name, event=data[event_id]['event']))
+        await self.dump_events(data)
 
     async def time_formatter(self, ctx, day, month, h, m):
         # takes hours and minutes and formats it to a datetime with UTC tz
