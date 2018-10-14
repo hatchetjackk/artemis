@@ -12,14 +12,14 @@ class Help:
         if len(args) > 1:
             await self.client.send_message(ctx.message.channel, 'You\'ve passed too many arguments.')
         try:
-            if args[0] == 'events':
+            if args[0] == 'events' or 'event':
                 await self.events_help(ctx)
                 return
-            else:
-                await self.client.send_message(ctx.message.channel, '{0} is not an option.'.format(args[0]))
-                return
+            await self.client.send_message(ctx.message.channel, '{0} is not an option.'.format(args[0]))
+            return
         except IndexError:
             pass
+
         embed = discord.Embed(color=discord.Color.blue())
         embed.set_author(name="Help Page")
         embed.add_field(name='Artemis is in Beta', value='Things are likely to break, be broken, or be removed.\n')
@@ -53,8 +53,8 @@ class Help:
         )
         embed.add_field(
             name='setevent',
-            value='Create a new event\n'
-                  '``setevent <time> <zone> <event>``',
+            value='Create a new event. Defaults to UTC time.\n'
+                  '``setevent <hour:minutes> <day/month> <event>``',
             inline=False
         )
         embed.add_field(
@@ -72,13 +72,19 @@ class Help:
         embed.add_field(
             name='update',
             value='Update an event with a new time and zone.\n'
-                  '``update <event id> <time> <zone>``',
+                  '``update <event id> <hour:minutes> <day/month>``',
             inline=False
         )
         embed.add_field(
             name='time',
             value='Show current timezones.\n'
                   '``time``',
+            inline=False
+        )
+        embed.add_field(
+            name='mytime',
+            value='Show an event in a specified timezone.\n'
+                  '``mytime <event id> <timezone>``',
             inline=False
         )
         await self.client.send_message(ctx.message.author, embed=embed)

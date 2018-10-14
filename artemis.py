@@ -116,12 +116,12 @@ async def on_message(message):
                 await update_data(users, member, srv)
             with open('files/users.json', 'w') as f:
                 json.dump(users, f, indent=2)
+            await k.generate_karma(message)
+            await emotion.generate_points(message)
         except ValueError as e:
             print(e)
         except AttributeError as e:
             print(e)
-        await k.generate_karma(message)
-        await emotion.generate_points(message)
 
     bot_kudos = ['good bot', 'good job bot', 'good job, bot',
                  'good artemis', 'thanks artemis', 'thank you, artemis',
