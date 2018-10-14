@@ -4,7 +4,7 @@ import discord
 import asyncio
 import json
 import datetime
-import traceback
+# import traceback
 # import logging
 import random
 from cogs.karma import Karma
