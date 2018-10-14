@@ -48,11 +48,11 @@ class Karma:
                      ":sparkles: Cha-ching! You got some karma, {0}!",
                      ":sparkles: What's that? Sounds like that karma train, {0}!",
                      ":sparkles: +1 karma for {0}!"]
-        client_responses = ["You're welcome!",
-                            "No problem.",
-                            "Anytime!",
-                            "Sure thing, fellow human!",
-                            "*eats karma* Mmm."]
+        client_responses = ["You're welcome!", "No problem.",
+                            "Anytime!", "Sure thing, fellow human!",
+                            "*eats karma* Mmm.", 'I try!', 'I do it for the kudos!', ':wink:',
+                            'Appreciate it!', 'You got it!', ':smile:', 'Yeet!'
+                            ]
         bad_response = ["You can't give yourself karma.",
                         "Let's keep things fair here...",
                         "Looks like karma abuse over here.",
@@ -69,7 +69,7 @@ class Karma:
                 # this prevents a bug that allows  a user to pass karma multiple times in one post
                 if len(karma_key) > 0:
                     # check if someone is trying to give artemis karma
-                    if member.id is self.client.user.id:
+                    if member.id == self.client.user.id:
                         await self.client.send_message(message.channel, random.choice(client_responses))
                         return
                     # check if someone is trying to give karma for their self
