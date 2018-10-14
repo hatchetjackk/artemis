@@ -87,6 +87,12 @@ class Help:
                   '``mytime <event id> <timezone>``',
             inline=False
         )
+        embed.add_field(
+            name='notify',
+            value='Tell Artemis to notify you when an event is less than one hour from beginning.\n'
+                  '``notify <event id>``',
+            inline=False
+        )
         await self.client.send_message(ctx.message.author, embed=embed)
 
 
