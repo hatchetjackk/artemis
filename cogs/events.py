@@ -53,12 +53,12 @@ class Events:
 
     @commands.command(pass_context=True)
     async def delevent(self, ctx, *args):
-        if len(args) > 1:
+        if len(args) < 1:
             await self.client.send_message(ctx.message.channel, 'Use ``delevent <event id>`` to delete an event.')
             return
-        event_id = str(args[0])
+        event_list = args[:]
         data = await self.load_events()
-        if event_id == 'all':
+        if str(event_list[0]) == 'all':
             # delete all events
             while len(data) > 0:
                 try:
@@ -69,12 +69,13 @@ class Events:
                     pass
             await self.client.send_message(ctx.message.channel, 'All events deleted!')
             return
-        if event_id in data:
-            data.pop(event_id)
-            await self.dump_events(data)
-            await self.client.send_message(ctx.message.channel, 'Event {} successfully deleted.'.format(event_id))
-        else:
-            await self.client.send_message(ctx.message.channel, 'Event {} not found.'.format(event_id))
+        for event_id in event_list:
+            if event_id in data:
+                data.pop(event_id)
+                await self.dump_events(data)
+                await self.client.send_message(ctx.message.channel, 'Event {} successfully deleted.'.format(event_id))
+            else:
+                await self.client.send_message(ctx.message.channel, 'Event {} not found.'.format(event_id))
 
     @commands.command(pass_context=True)
     async def update(self, ctx, *args):
@@ -175,10 +176,14 @@ class Events:
         embed = discord.Embed(title=title, color=color)
         embed.set_thumbnail(url=thumb_url)
         embed.set_footer(text=fmt_footer)
-
-        event_id = args[0]
-        tz = args[1]
-        data = await self.load_events()
+        try:
+            event_id = args[0]
+            tz = args[1]
+            data = await self.load_events()
+        except IndexError:
+            await self.client.send_message(ctx.message.channel,
+                                           'Use `mytime <event id> <time zone>` to check an event in a specific timezone.')
+            return
         if event_id in data:
             dt = await self.make_datetime(data[event_id]['time'])
             verify, tz_conversion = await self.timezones(tz)
@@ -193,6 +198,7 @@ class Events:
             return
         await self.client.send_message(ctx.message.channel,
                                        'Use `mytime <event id> <time zone>` to check an event in a specific timezone.')
+
 
     @commands.command(pass_context=True)
     async def time(self, ctx):
@@ -219,7 +225,7 @@ class Events:
         if event_id in data:
             data[event_id]['notify'] = True
             data[event_id]['member_notify'].append(group)
-        await self.client.send_message(ctx.message.channel, 'Set to notify {author} when *{event}* is 1 hour away from '
+        await self.client.send_message(ctx.message.channel, 'Set to notify **{author}** when *{event}* is 1 hour away from '
                                                             'starting!'.format(author=author.name, event=data[event_id]['event']))
         await self.dump_events(data)
 
@@ -288,6 +294,9 @@ class Events:
         days = td.days
         hours, remainder = divmod(td.seconds, 3600)
         minutes, seconds = divmod(remainder, 60)
+        if days < 0:
+            eta = '{0}d {1}h {2}m'.format(0, 0, 0)
+            return eta
         eta = '{0}d {1}h {2}m'.format(days, hours, minutes)
         return eta
 
