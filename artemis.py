@@ -18,8 +18,8 @@ with open('files/bot.json', 'r') as b:
 command_prefix = bot['prefix']
 
 with open('files/credentials.json', 'r') as c:
-    data = json.load(c)
-token = data['token']
+    credentials = json.load(c)
+token = credentials['token']
 
 # todo check logging
 # logging.basicConfig(filename='artemis.log', format='%(asctime)s %(message)s', level=logging.DEBUG)
@@ -125,14 +125,16 @@ async def on_message(message):
             print(e)
 
     bot_kudos = ['good bot', 'good job bot', 'good job, bot',
-                 'good artemis', 'thanks artemis', 'thank you, artemis',
-                 'good, artie', 'good artie']
+                 'good artemis', 'good, artie', 'good artie']
     bad_bot = ['bad bot', 'bad artie', 'bad artemis', 'damnit artie',
                'damn it, artemis', 'you suck, Artemis']
     for value in bot_kudos:
         if value in message.content.lower():
-            responses = ['I try!', 'I do it for the kudos!', ':wink:'
-                         'Appreciate it!', 'You got it!', ':smile:', 'Yeet!']
+            responses = ["You're welcome!", "No problem.",
+                         "Anytime!", "Sure thing, fellow human!",
+                         "*eats karma* Mmm.", 'I try!', 'I do it for the kudos!', ':wink:',
+                         'Appreciate it!', 'You got it!', ':smile:', 'Yeet!'
+                         ]
             await client.send_message(message.channel, random.choice(responses))
     for value in bad_bot:
         if value in message.content.lower():
@@ -163,8 +165,8 @@ async def check_notifier():
     while not client.is_closed:
         await asyncio.sleep(60*5)
         print('Checking notifier...')
-        data = await Events.load_events()
-        for key, value in data.items():
+        data_events = await Events.load_events()
+        for key, value in data_events.items():
             if value['notify'] is True:
                 dt = await Events.make_datetime(value['time'])
                 eta = await Events.eta(dt)
@@ -179,7 +181,7 @@ async def check_notifier():
                             await client.send_message(client.get_channel(channel), '{0}: **{1}** is starting in less than 1 hour!'.format(user.mention, value['event'][:50]))
                     value['notify'] = False
                     value['member_notify'] = []
-                await Events.dump_events(data)
+                await Events.dump_events(data_events)
 
 
 async def on_message_edit(before, after):
