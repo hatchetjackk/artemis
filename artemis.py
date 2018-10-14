@@ -7,6 +7,7 @@ import datetime
 # import traceback
 # import logging
 import random
+from cogs.events import Events
 from cogs.karma import Karma
 from cogs.emotional_core import Emotions
 from itertools import cycle
@@ -25,7 +26,6 @@ token = data['token']
 # logging.info('Starting')
 
 client = commands.Bot(command_prefix=command_prefix)
-# os.chdir(credentials.home_dir())
 client.remove_command('help')
 extensions = ['cogs.mod', 'cogs.karma', 'cogs.fun',
               'cogs.emotional_core', 'cogs.arena', 'cogs.user',
@@ -54,8 +54,7 @@ async def on_ready():
     try:
         with open('files/servers.json') as f:
             d = json.load(f)
-        servers = [server for server in client.servers]
-        for server in servers:
+        for server in client.servers:
             s_id = server.id
             server = server.name
             if s_id not in d:
@@ -105,6 +104,8 @@ async def on_member_join(member):
 
 @client.event
 async def on_message(message):
+    if message.author.id == client.user.id:
+        return
     k = Karma(client)
     emotion = Emotions(client)
     srv = str(message.server)
@@ -157,6 +158,30 @@ async def change_status():
         await asyncio.sleep(60*5)
 
 
+async def check_notifier():
+    await client.wait_until_ready()
+    while not client.is_closed:
+        await asyncio.sleep(60*5)
+        print('Checking notifier...')
+        data = await Events.load_events()
+        for key, value in data.items():
+            if value['notify'] is True:
+                dt = await Events.make_datetime(value['time'])
+                eta = await Events.eta(dt)
+                days, hours, minutes = eta.split()
+                days = int(days.strip('d'))
+                hours = int(hours.strip('h'))
+                minutes = int(minutes.strip('m'))
+                if days < 1 and hours < 1 and minutes > 0:
+                    for values in value['member_notify']:
+                        for user, channel in values.items():
+                            user = await client.get_user_info(user_id=user)
+                            await client.send_message(client.get_channel(channel), '{0}: **{1}** is starting in less than 1 hour!'.format(user.mention, value['event'][:50]))
+                    value['notify'] = False
+                    value['member_notify'] = []
+                await Events.dump_events(data)
+
+
 async def on_message_edit(before, after):
     message = '**{0.author}** edited their message:\n{1.content}'
     if verbose:
@@ -182,7 +207,7 @@ async def botspam(message):
 
 
 client.loop.create_task(change_status())
-
+client.loop.create_task(check_notifier())
 
 if __name__ == '__main__':
     for extension in extensions:
