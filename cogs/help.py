@@ -9,42 +9,69 @@ class Help:
 
     @commands.command(pass_context=True)
     async def help(self, ctx, *args):
+        print(args[0])
         if len(args) > 1:
             await self.client.send_message(ctx.message.channel, 'You\'ve passed too many arguments.')
-        try:
-            if args[0] == 'events' or 'event':
+            return
+        if len(args) > 0:
+            if args[0] == 'events' or args[0] == 'event':
+                print(2)
                 await self.events_help(ctx)
+                return
+            if args[0] == 'embeds' or args[0] == 'embed':
+                print(10)
+                await self.embeds_help(ctx)
                 return
             await self.client.send_message(ctx.message.channel, '{0} is not an option.'.format(args[0]))
             return
-        except IndexError:
-            pass
+        if len(args) == 0:
+            embed = discord.Embed(color=discord.Color.blue())
+            embed.set_author(name="Help Page")
+            embed.add_field(name='Artemis is in Beta', value='Things are likely to break, be broken, or be removed.\n')
+            embed.add_field(
+                name="How do I give karma?",
+                value="Just say thanks and mention the target\nEx: 'Thanks @Hatchet Jackk'",
+                inline=False
+            )
+            embed.add_field(name="ping", value="Return pong", inline=False)
+            embed.add_field(name="roll", value="Roll NdN dice", inline=False)
+            embed.add_field(name="karma <@user>", value="Check your or another <@user>'s current level of karma",
+                            inline=False)
+            embed.add_field(name='hello', value='Say hi to Artemis!', inline=False)
+            embed.add_field(name="status", value="Check Artemis' status", inline=False)
+            embed.add_field(name="leaderboard", value="Check karma levels (WIP)", inline=False)
+            embed.add_field(name="arena", value="Settle the score (WIP)", inline=False)
+            embed.add_field(name="flip", value="Flip a coin", inline=False)
+            embed.add_field(name="rps <choice>", value="Play Rock, Paper, Scissors against the bot", inline=False)
+            embed.add_field(name="whois <user>", value="Find user details (WIP)", inline=False)
+            embed.add_field(name="server", value="Check server information (WIP)", inline=False)
+            embed.add_field(name='yt <search>', value='Return the first YouTube video based for <search>.', inline=False)
+            embed.add_field(name='help events', value='See available options for events.', inline=False)
+            embed.add_field(name='help embeds', value='See available options for embeds.', inline=False)
+            embed.set_footer(text="Author: Hatchet Jackk")
+            await self.client.send_message(ctx.message.author, embed=embed)
+            print('Artemis: Sent help to {0}'.format(ctx.message.author))
 
-        embed = discord.Embed(color=discord.Color.blue())
-        embed.set_author(name="Help Page")
-        embed.add_field(name='Artemis is in Beta', value='Things are likely to break, be broken, or be removed.\n')
+    async def embeds_help(self, ctx):
+        embed = discord.Embed(
+            title='Embeds Help',
+            color=discord.Color.blue()
+        )
         embed.add_field(
-            name="How do I give karma?",
-            value="Just say thanks and mention the target\nEx: 'Thanks @Hatchet Jackk'",
+            name='richembed',
+            value='Quickly create a simple embed\n'
+                  '*Available variables*: \n'
+                  '``title`` ``color`` ``author`` ``footer`` ``thumbnail`` ``fieldname`` ``fieldvalue`` \n\n'
+                  '*Example*: title=This is a title, color=dark_blue, author=Hatchet Jackk, fieldname=An interesting title, fieldvalue=Interesting information\n\n',
             inline=False
         )
-        embed.add_field(name="ping", value="Return pong", inline=False)
-        embed.add_field(name="roll", value="Roll NdN dice", inline=False)
-        embed.add_field(name="karma <@user>", value="Check your or another <@user>'s current level of karma",
-                        inline=False)
-        embed.add_field(name='hello', value='Say hi to Artemis!', inline=False)
-        embed.add_field(name="status", value="Check Artemis' status", inline=False)
-        embed.add_field(name="leaderboard", value="Check karma levels (WIP)", inline=False)
-        embed.add_field(name="arena", value="Settle the score (WIP)", inline=False)
-        embed.add_field(name="flip", value="Flip a coin", inline=False)
-        embed.add_field(name="rps <choice>", value="Play Rock, Paper, Scissors against the bot", inline=False)
-        embed.add_field(name="whois <user>", value="Find user details (WIP)", inline=False)
-        embed.add_field(name="server", value="Check server information (WIP)", inline=False)
-        embed.add_field(name='yt <search>', value='Return the first YouTube video based for <search>.', inline=False)
-        embed.add_field(name='help events', value='See available options for events.', inline=False)
-        embed.set_footer(text="Author: Hatchet Jackk")
+        embed.add_field(
+            name='colors',
+            value='Show the list of default Discord colors.\n'
+                  '``colors <optional: full>``',
+            inline=False
+        )
         await self.client.send_message(ctx.message.author, embed=embed)
-        print('Artemis: Sent help to {0}'.format(ctx.message.author))
 
     async def events_help(self, ctx):
         embed = discord.Embed(
