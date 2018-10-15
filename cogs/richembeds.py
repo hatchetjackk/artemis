@@ -153,8 +153,8 @@ class RichEmbed:
         title, color, fieldvalue, fieldname = None, None, None, None
         embed = discord.Embed(title='Rich Embed Creator', color=discord.Color.blue())
         embed.set_thumbnail(url=self.client.user.avatar_url)
-        embed.add_field(name='Format', value='keys: title=, author=, color=,\n'
-                                             'footer=, thumbnail=,\n'
+        embed.add_field(name='Format', value='keys: title=,\n author=, \ncolor=,\n'
+                                             'footer=, \nthumbnail=,\n'
                                              'fieldname=, fieldvalue=\n'
                                              'ex: title=This is a title, color=dark_blue')
         embed.add_field(name='\u200b', value='Please enter your embed string or enter ``quit`` to exit.')
@@ -168,54 +168,42 @@ class RichEmbed:
         lines = [line.strip() for line in richembed.split(',')]
         for line in lines:
             # get color
-            if line.startswith('color'):
-                print(line)
+            if line.startswith('color='):
                 color = line[6:]
-                # print(color)
                 verify, color = await self.check_colors(color)
                 if not verify:
                     await self.client.send_message(ctx.message.channel, '{} is not a valid color.')
             # get colour
-            if line.startswith('colour'):
-                print(line)
+            if line.startswith('colour='):
                 color = line[7:]
-                # print(color)
                 verify, color = await self.check_colors(color)
                 if not verify:
                     await self.client.send_message(ctx.message.channel, '{} is not a valid color.')
             # get title
-            if line.startswith('title'):
-                print(line)
+            if line.startswith('title='):
                 title = line[6:]
-                # print(title)
         embed = discord.Embed(title=title, color=color)
         for line in lines:
             # get author
-            if line.startswith('author'):
-                print(line)
+            if line.startswith('author='):
                 author = line[7:]
-                # print(author)
                 embed.set_author(name=author)
             # get thumb url
-            if line.startswith('thumbnail'):
-                print(line)
+            if line.startswith('thumbnail='):
                 thumbnail = line[10:]
-                # print(thumbnail)
                 embed.set_thumbnail(url=thumbnail)
             # get footer
-            if line.startswith('footer'):
-                print(line)
+            if line.startswith('footer='):
                 footer = line[7:]
                 embed.set_footer(text=footer)
         for line in lines:
             # get field
-            if line.startswith('fieldname'):
-                print(line)
+            if line.startswith('fieldname='):
                 fieldname = line[10:]
-            if line.startswith('fieldvalue'):
-                print(line)
+            if line.startswith('fieldvalue='):
                 fieldvalue = line[11:]
-        embed.add_field(name=fieldname, value=fieldvalue)
+        if fieldname is not None and fieldvalue is not None:
+            embed.add_field(name=fieldname, value=fieldvalue)
 
         # delete bot and user input before issuing embed
         messages = []
