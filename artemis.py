@@ -5,7 +5,7 @@ import asyncio
 import json
 import datetime
 # import traceback
-# import logging
+import logging
 import random
 from cogs.events import Events
 from cogs.karma import Karma
@@ -21,9 +21,8 @@ with open('files/credentials.json', 'r') as c:
     credentials = json.load(c)
 token = credentials['token']
 
-# todo check logging
-# logging.basicConfig(filename='artemis.log', format='%(asctime)s %(message)s', level=logging.DEBUG)
-# logging.info('Starting')
+logging.basicConfig(filename='files/artemis.log', format='%(asctime)s %(message)s', level=logging.INFO)
+logging.info('Starting')
 
 client = commands.Bot(command_prefix=command_prefix)
 client.remove_command('help')
@@ -164,7 +163,7 @@ async def check_notifier():
     await client.wait_until_ready()
     while not client.is_closed:
         await asyncio.sleep(60*5)
-        print('Checking notifier...')
+        logging.info('Checking notifier...')
         data_events = await Events.load_events()
         for key, value in data_events.items():
             if value['notify'] is True:
