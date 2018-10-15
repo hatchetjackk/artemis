@@ -107,11 +107,13 @@ class Events:
                                                                 'or use `events` to check all events.')
             return
 
+        with open('files/servers.json') as f:
+            thumbs = json.load(f)
         # set the thumbnail
-        if ctx.message.server.icon_url is '':
-            thumb_url = self.client.user.avatar_url
+        if thumbs[ctx.message.server.id]['thumb_url'] != '':
+            thumb_url = thumbs[ctx.message.server.id]['thumb_url']
         else:
-            thumb_url = ctx.message.server.icon_url
+            thumb_url = self.client.user.avatar_url
 
         # set embed
         title = '──────────────── [Events] ────────────────'
@@ -134,6 +136,8 @@ class Events:
         data = await self.load_events()
         # ensure that the event matches the server
         if event_id in data and data[event_id]['server_id'] == ctx.message.server.id:
+            print(data[event_id]['server_id'])
+            print(ctx.message.server.id)
             event = data[event_id]['event'][:50]
             dt = await self.make_datetime(data[event_id]['time'])
             dt_long, dt_short = await self.make_string(dt)
@@ -144,18 +148,19 @@ class Events:
         elif event_id == '':
             counter = 1
             for key, value in data.items():
-                diamond = ':small_orange_diamond:'
-                if counter % 2 == 0:
-                    diamond = ':small_blue_diamond:'
-                event = value['event'][:50]
-                event_id = key
-                dt = await self.make_datetime(data[key]['time'])
-                dt_long, dt_short = await self.make_string(dt)
-                eta = await self.eta(dt)
-                embed.add_field(name='{0} {1}'.format(diamond, event), value='**Time**: {0}\n'
-                                                                             '**ETA**: {1}\n'
-                                                                             '**ID**: {2}'.format(dt_short, eta, event_id), inline=False)
-                counter += 1
+                if value['server_id'] == ctx.message.server.id:
+                    diamond = ':small_orange_diamond:'
+                    if counter % 2 == 0:
+                        diamond = ':small_blue_diamond:'
+                    event = value['event'][:50]
+                    event_id = key
+                    dt = await self.make_datetime(data[key]['time'])
+                    dt_long, dt_short = await self.make_string(dt)
+                    eta = await self.eta(dt)
+                    embed.add_field(name='{0} {1}'.format(diamond, event), value='**Time**: {0}\n'
+                                                                                 '**ETA**: {1}\n'
+                                                                                 '**ID**: {2}'.format(dt_short, eta, event_id), inline=False)
+                    counter += 1
             await self.client.send_message(ctx.message.channel, embed=embed)
 
     @commands.command(pass_context=True)
@@ -184,6 +189,7 @@ class Events:
             await self.client.send_message(ctx.message.channel,
                                            'Use `mytime <event id> <time zone>` to check an event in a specific timezone.')
             return
+        # find events in data that match the current server
         if event_id in data:
             dt = await self.make_datetime(data[event_id]['time'])
             verify, tz_conversion = await self.timezones(tz)
@@ -198,7 +204,6 @@ class Events:
             return
         await self.client.send_message(ctx.message.channel,
                                        'Use `mytime <event id> <time zone>` to check an event in a specific timezone.')
-
 
     @commands.command(pass_context=True)
     async def time(self, ctx):
@@ -252,11 +257,13 @@ class Events:
         # get two times
         dt_long, dt_short = await self.make_string(dt)
 
+        with open('files/servers.json') as f:
+            thumbs = json.load(f)
         # set the thumbnail
-        if ctx.message.server.icon_url is '':
-            thumb_url = self.client.user.avatar_url
+        if thumbs[ctx.message.server.id]['thumb_url'] != '':
+            thumb_url = thumbs[ctx.message.server.id]['thumb_url']
         else:
-            thumb_url = ctx.message.server.icon_url
+            thumb_url = self.client.user.avatar_url
 
         # set the event title
         event_title = ':sparkles: Upcoming Event'
@@ -279,12 +286,17 @@ class Events:
             if event_id in data:
                 dt_data = data[event_id]['time']
                 dt_data = await self.make_datetime(dt_data)
+                eta = await self.eta(dt_data)
                 dt_data_long, dt_data_short = await self.make_string(dt_data)
                 embed.add_field(name=event_title, value='**Event** [{0}]: {1}\n'
-                                                        '**Time**: {2} **──>** {3}'.format(event_id, event, dt_data_short, dt_short), inline=False)
+                                                        '**Time**: {2} **──>** {3}\n'
+                                                        '**ETA**: {4}'.format(event_id, event, dt_data_short, dt_short, eta), inline=False)
                 return embed
+        dt = await self.make_datetime(dt_long)
+        eta = await self.eta(dt)
         embed.add_field(name=event_title, value='**Event** [{0}]: {1}\n'
-                                                '**Time**: {2}'.format(event_id, event, dt_short), inline=False)
+                                                '**Time**: {2}\n'
+                                                '**ETA**: {3}'.format(event_id, event, dt_short, eta), inline=False)
         return embed
 
     @staticmethod
