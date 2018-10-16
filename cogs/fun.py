@@ -13,6 +13,10 @@ class Fun:
         await self.client.say(':ping_pong: Pong')
 
     @commands.command()
+    async def lennie(self):
+        await self.client.say('( ͡° ͜ʖ ͡°)')
+
+    @commands.command()
     async def roll(self, dice: str):
         try:
             rolls, limit = map(int, dice.split('d'))
