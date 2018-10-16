@@ -15,7 +15,7 @@ class RichEmbed:
         self.client = client
 
     @commands.command(pass_context=True)
-    async def emaker(self, ctx):
+    async def embedwiz(self, ctx):
         await self.client.send_message(ctx.message.channel, 'This command is not ready.')
         return
         # author = ctx.message.author
