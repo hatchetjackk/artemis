@@ -153,10 +153,14 @@ class RichEmbed:
         title, color, fieldvalue, fieldname = None, None, None, None
         embed = discord.Embed(title='Rich Embed Creator', color=discord.Color.blue())
         embed.set_thumbnail(url=self.client.user.avatar_url)
-        embed.add_field(name='Format', value='keys: title=,\n author=, \ncolor=,\n'
-                                             'footer=, \nthumbnail=,\n'
-                                             'fieldname=, fieldvalue=\n'
-                                             'ex: title=This is a title, color=dark_blue')
+        embed.add_field(name='Format', value='keys: \n'
+                                             'title=<title>; color=<color>;\n '
+                                             'author=<author>; \n'
+                                             'footer=<footer>; \n'
+                                             'thumbnail=<url>;\n'
+                                             'fieldname=<a field title>; fieldvalue=<some text>; \n\n'
+                                             'ex: title=This is a title; color=dark_blue; author=Hatchet Jackk \n'
+                                             'Use semicolons ` ; ` to split keys.')
         embed.add_field(name='\u200b', value='Please enter your embed string or enter ``quit`` to exit.')
         await self.client.send_message(ctx.message.channel, embed=embed)
         richembed = await self.client.wait_for_message(author=ctx.message.author)
@@ -165,42 +169,42 @@ class RichEmbed:
         if richembed == 'quit':
             await self.client.send_message(ctx.message.channel, 'Quitting Rich Embed Creator.')
             return
-        lines = [line.strip() for line in richembed.split(',')]
+        lines = [line.strip() for line in richembed.split(';')]
         for line in lines:
             # get color
-            if line.startswith('color='):
+            if line.lower().startswith('color='):
                 color = line[6:]
                 verify, color = await self.check_colors(color)
                 if not verify:
                     await self.client.send_message(ctx.message.channel, '{} is not a valid color.')
             # get colour
-            if line.startswith('colour='):
+            if line.lower().startswith('colour='):
                 color = line[7:]
                 verify, color = await self.check_colors(color)
                 if not verify:
                     await self.client.send_message(ctx.message.channel, '{} is not a valid color.')
             # get title
-            if line.startswith('title='):
+            if line.lower().startswith('title='):
                 title = line[6:]
         embed = discord.Embed(title=title, color=color)
         for line in lines:
             # get author
-            if line.startswith('author='):
+            if line.lower().startswith('author='):
                 author = line[7:]
                 embed.set_author(name=author)
             # get thumb url
-            if line.startswith('thumbnail='):
+            if line.lower().startswith('thumbnail='):
                 thumbnail = line[10:]
                 embed.set_thumbnail(url=thumbnail)
             # get footer
-            if line.startswith('footer='):
+            if line.lower().startswith('footer='):
                 footer = line[7:]
                 embed.set_footer(text=footer)
         for line in lines:
             # get field
-            if line.startswith('fieldname='):
+            if line.lower().startswith('fieldname='):
                 fieldname = line[10:]
-            if line.startswith('fieldvalue='):
+            if line.lower().startswith('fieldvalue='):
                 fieldvalue = line[11:]
         if fieldname is not None and fieldvalue is not None:
             embed.add_field(name=fieldname, value=fieldvalue)
