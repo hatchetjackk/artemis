@@ -15,11 +15,9 @@ class Help:
             return
         if len(args) > 0:
             if args[0] == 'events' or args[0] == 'event':
-                print(2)
                 await self.events_help(ctx)
                 return
             if args[0] == 'embeds' or args[0] == 'embed':
-                print(10)
                 await self.embeds_help(ctx)
                 return
             await self.client.send_message(ctx.message.channel, '{0} is not an option.'.format(args[0]))
@@ -72,6 +70,7 @@ class Help:
             inline=False
         )
         await self.client.send_message(ctx.message.author, embed=embed)
+        print('Artemis: Sent help to {0}'.format(ctx.message.author))
 
     async def events_help(self, ctx):
         embed = discord.Embed(
@@ -121,6 +120,7 @@ class Help:
             inline=False
         )
         await self.client.send_message(ctx.message.author, embed=embed)
+        print('Artemis: Sent help to {0}'.format(ctx.message.author))
 
 
 def setup(client):

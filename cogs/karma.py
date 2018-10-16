@@ -128,4 +128,5 @@ class Karma:
 
 
 def setup(client):
+    # client.add_listener(Karma(client).generate_karma(message=message), "on_message")
     client.add_cog(Karma(client))

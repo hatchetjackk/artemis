@@ -206,8 +206,7 @@ class Events:
             dt = await self.make_datetime(data[event_id]['time'])
             verify, tz_conversion = await self.timezones(tz)
             new_dt = dt.astimezone(tz_conversion)
-            dt = new_dt + datetime.utcoffset(new_dt)
-
+            dt = dt + datetime.utcoffset(new_dt)
             dt_long, dt_short = await self.make_string(dt)
             dt_short = dt_short.replace('UTC', '')
             embed.add_field(name='{}'.format(data[event_id]['event'][:50]),
@@ -343,6 +342,7 @@ class Events:
             return datetime_string
         else:
             datetime_object_full = datetime.strptime(datetime_string, '%Y-%m-%d %H:%M:%S')
+            datetime_object_full.replace(tzinfo=pytz.UTC)
             return datetime_object_full
 
     @staticmethod
@@ -357,6 +357,7 @@ class Events:
 
     @staticmethod
     async def timezones(tz):
+        tz = tz.lower()
         zones = {'pst': pytz.timezone('US/Alaska'), 'pdt': pytz.timezone('US/Alaska'),
                  'cst': pytz.timezone('US/Mountain'), 'cdt': pytz.timezone('US/Mountain'),
                  'est': pytz.timezone('US/Eastern'), 'edt': pytz.timezone('US/Eastern'),
