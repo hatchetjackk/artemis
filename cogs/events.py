@@ -1,3 +1,4 @@
+import asyncio
 import discord
 from _datetime import datetime
 import pytz
@@ -42,7 +43,7 @@ class Events:
                     'user_id': ctx.message.author.id,
                     'server_id': ctx.message.server.id,
                     'notify': False,
-                    'member_notify': []
+                    'member_notify': {}
                 }
                 break
 
@@ -69,13 +70,24 @@ class Events:
                     pass
             await self.client.send_message(ctx.message.channel, 'All events deleted!')
             return
+        # print out results and delete after 5 seconds
         for event_id in event_list:
+            count = 1
+            messages = []
             if event_id in data:
+                count += 1
                 data.pop(event_id)
                 await self.dump_events(data)
                 await self.client.send_message(ctx.message.channel, 'Event {} successfully deleted.'.format(event_id))
+                async for message in self.client.logs_from(ctx.message.channel, limit=int(count)):
+                    messages.append(message)
             else:
+                count += 1
                 await self.client.send_message(ctx.message.channel, 'Event {} not found.'.format(event_id))
+                async for message in self.client.logs_from(ctx.message.channel, limit=int(count)):
+                    messages.append(message)
+            await asyncio.sleep(5)
+            await self.client.delete_messages(messages)
 
     @commands.command(pass_context=True)
     async def update(self, ctx, *args):
@@ -225,14 +237,26 @@ class Events:
         event_id = str(args[0])
         channel = str(ctx.message.channel.id)
         author = ctx.message.author
-        group = {author.id: channel}
         data = await self.load_events()
         if event_id in data:
-            data[event_id]['notify'] = True
-            data[event_id]['member_notify'].append(group)
-        await self.client.send_message(ctx.message.channel, 'Set to notify **{author}** when *{event}* is 1 hour away from '
-                                                            'starting!'.format(author=author.name, event=data[event_id]['event']))
-        await self.dump_events(data)
+            if author.id not in data[event_id]['member_notify']:
+                data[event_id]['notify'] = True
+                data[event_id]['member_notify'].update({str(author.id): channel})
+                await self.client.send_message(ctx.message.channel, 'Set to notify **{author}** when *{event}* is 1 hour away from '
+                                                                    'starting!'.format(author=author.name, event=data[event_id]['event']))
+                await self.dump_events(data)
+                return
+            # if user already exists in notification, remove the user
+            if str(author.id) in data[event_id]['member_notify']:
+                data[event_id]['member_notify'].pop(str(author.id), None)
+                await self.client.send_message(ctx.message.channel,
+                                               'Removing **{author}\'s** notification for *{event}*.'.format(
+                                                   author=author.name,
+                                                   event=data[event_id]['event']))
+                if len(data[event_id]['member_notify']) < 1:
+                    data[event_id]['notify'] = False
+                await self.dump_events(data)
+                return
 
     async def time_formatter(self, ctx, day, month, h, m):
         # takes hours and minutes and formats it to a datetime with UTC tz

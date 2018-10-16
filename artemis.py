@@ -28,7 +28,7 @@ client = commands.Bot(command_prefix=command_prefix)
 client.remove_command('help')
 extensions = ['cogs.mod', 'cogs.karma', 'cogs.fun',
               'cogs.emotional_core', 'cogs.arena', 'cogs.user',
-              'cogs.events', 'cogs.help']
+              'cogs.events', 'cogs.help', 'cogs.richembeds']
 
 verbose = False
 
