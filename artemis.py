@@ -28,7 +28,8 @@ client = commands.Bot(command_prefix=command_prefix)
 client.remove_command('help')
 extensions = ['cogs.mod', 'cogs.karma', 'cogs.fun',
               'cogs.emotional_core', 'cogs.arena', 'cogs.user',
-              'cogs.events', 'cogs.help', 'cogs.richembeds']
+              'cogs.events', 'cogs.help', 'cogs.richembeds',
+              'cogs.automod']
 
 verbose = False
 
@@ -132,12 +133,13 @@ async def on_message(message):
             responses = ["You're welcome!", "No problem.",
                          "Anytime!", "Sure thing, fellow human!",
                          "*eats karma* Mmm.", 'I try!', 'I do it for the kudos!', ':wink:',
-                         'Appreciate it!', 'You got it!', ':smile:', 'Yeet!'
+                         'Appreciate it!', 'You got it!', ':smile:', 'Yeet!',
+                         '( ͡° ͜ʖ ͡°)'
                          ]
             await client.send_message(message.channel, random.choice(responses))
     for value in bad_bot:
         if value in message.content.lower():
-            responses = [':sob:', ':cry:', 'Oh... ok', 'S-sorry.']
+            responses = [':sob:', ':cry:', 'Oh... ok', 'S-sorry.', '( ͡° ͜ʖ ͡°)']
             await client.send_message(message.channel, random.choice(responses))
 
     await client.process_commands(message)
