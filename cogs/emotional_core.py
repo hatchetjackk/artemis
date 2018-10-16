@@ -26,51 +26,35 @@ class Emotions:
             status = json.load(f)
         if value < 0 and status["status"]["level"] == 0:
             return
-        if value > 0 and status["status"]["level"] == 100:
+        if value > 0 and status["status"]["level"] == 50:
             return
         status["status"]["level"] += value
         print('Artemis emotional level change: {0}'.format(status["status"]["level"]))
-        with open('status.json', 'w') as f:
-            json.dump(status, f)
+        with open('files/status.json', 'w') as f:
+            json.dump(status, f, indent=2)
 
     @commands.command(pass_context=True)
     async def status(self, ctx):
         with open('files/status.json', 'r') as f:
-            status = json.load(f)
-        level = status["status"]["level"]
-        great = ["Artemis is doing great!",
-                 "Everything is optimal.",
-                 "Everything looks good from here!",
-                 ":sparkler:"]
-        good = ["Artemis is good!",
-                "No problems, at the moment.",
-                ":thumbsup:"]
-        ok = ["Artemis is ok!",
-              "Everything is fine.",
-              "Nothing to report."]
-        bad = ["Artemis is doing poorly",
-               "Eh, things could be better.",
-               "I don't feel so good, Mr. Star-"]
-        terrible = ["Artemis is doing terribly",
-                    "Couldn't get any worse in here.",
-                    "Artemis is operating at sub-optimal levels.",
-                    "Everything is on fire!"]
-        if level > 80:
-            await self.client.send_message(ctx.message.channel, random.choice(great))
+            data = json.load(f)
+        level = data["status"]["level"]
+
+        if level >= 40:
+            await self.client.send_message(ctx.message.channel, random.choice(data["responses"]["great"]))
             mood = "Great"
-        elif level > 60:
-            await self.client.send_message(ctx.message.channel, random.choice(good))
+        elif level >= 30:
+            await self.client.send_message(ctx.message.channel, random.choice(data["responses"]["good"]))
             mood = "Good"
-        elif level > 40:
-            await self.client.send_message(ctx.message.channel, random.choice(ok))
+        elif level >= 20:
+            await self.client.send_message(ctx.message.channel, random.choice(data["responses"]["ok"]))
             mood = 'OK'
-        elif level > 20:
-            await self.client.send_message(ctx.message.channel, random.choice(bad))
+        elif level >= 10:
+            await self.client.send_message(ctx.message.channel, random.choice(data["responses"]["bad"]))
             mood = 'Bad'
         else:
-            await self.client.send_message(ctx.message.channel, random.choice(terrible))
+            await self.client.send_message(ctx.message.channel, random.choice(data["responses"]["terrible"]))
             mood = 'Terrible'
-        print('Mood: {0:<5} Level: {1}'.format(mood, level))
+        print('Mood: {0:<5} Level: {1}/50'.format(mood, level))
         return mood
 
 
