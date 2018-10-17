@@ -20,6 +20,9 @@ class Help:
             if args[0] == 'embeds' or args[0] == 'embed':
                 await self.embeds_help(ctx)
                 return
+            if args[0] == 'roles' or args[0] == 'role':
+                await self.roles_help(ctx)
+                return
             await self.client.send_message(ctx.message.channel, '{0} is not an option.'.format(args[0]))
             return
         if len(args) == 0:
@@ -46,6 +49,7 @@ class Help:
             embed.add_field(name='yt <search>', value='Return the first YouTube video based for <search>.', inline=False)
             embed.add_field(name='help events', value='See available options for events.', inline=False)
             embed.add_field(name='help embeds', value='See available options for embeds.', inline=False)
+            embed.add_field(name='help role', value='See available options for roles.', inline=False)
             embed.set_footer(text="Author: Hatchet Jackk")
             await self.client.send_message(ctx.message.author, embed=embed)
             print('Artemis: Sent help to {0}'.format(ctx.message.author))
@@ -117,6 +121,21 @@ class Help:
             name='notify',
             value='Tell Artemis to notify you when an event is less than one hour from beginning.\n'
                   '``notify <event id>``',
+            inline=False
+        )
+        await self.client.send_message(ctx.message.author, embed=embed)
+        print('Artemis: Sent help to {0}'.format(ctx.message.author))
+
+    async def roles_help(self, ctx):
+        embed = discord.Embed(
+            title='Roles Help',
+            color=discord.Color.blue()
+        )
+        embed.add_field(
+            name='autorole',
+            value='Create an autorole for new members\n'
+                  '`add`: Make a default autorole (there can only be one autorole at a time)\n'
+                  '`del`: Remove the autorole',
             inline=False
         )
         await self.client.send_message(ctx.message.author, embed=embed)
