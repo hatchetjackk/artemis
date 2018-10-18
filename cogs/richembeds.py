@@ -14,100 +14,19 @@ class RichEmbed:
     def __init__(self, client):
         self.client = client
 
-    @commands.command(pass_context=True)
-    async def embedwiz(self, ctx):
-        await self.client.send_message(ctx.message.channel, 'This command is not ready.')
-        return
-        # author = ctx.message.author
-        #
-        # embed = discord.Embed(title='Embed Wizard', color=discord.Color.blue())
-        # embed.set_thumbnail(url=self.client.user.avatar_url)
-        # embed.add_field(name="Welcome to the embed wizard.",
-        #                 value='Please follow the prompts to create a custom embed.')
-        # embed.add_field(name="Timeout.",
-        #                 value='Please be aware that the timeout is set for 60 seconds.')
-        # await self.client.send_message(ctx.message.channel, embed=embed)
-        # await asyncio.sleep(3)
-        #
-        # # set title
-        # embed = discord.Embed(title='Your Title Goes Here', color=discord.Color.blue())
-        # await self.client.send_message(ctx.message.channel, embed=embed)
-        # await self.client.send_message(ctx.message.channel, 'What do you want your title to be?')
-        # title = await self.client.wait_for_message(author=author, timeout=60)
-        # title = title.clean_content
-        # # clear entries
-        #
-        # # display title embed
-        # embed = discord.Embed(title=title, color=discord.Color.blue())
-        # await self.client.send_message(ctx.message.channel, embed=embed)
-        # while True:
-        #     await self.client.send_message(ctx.message.channel,
-        #                                    '```'
-        #                                    'What color do you want to use? Please choose a number:\n'
-        #                                    '[1] Teal, [2] Dark Teal, [3] Green, [4] Dark Green\n'
-        #                                    '[5] Blue, [6] Dark Blue, [7] Purple, [8] Dark Purple\n'
-        #                                    '[9] Magenta, [10] Dark Magenta, [11] Gold, [12] Dark Gold\n'
-        #                                    '[13] Orange, [14] Dark Orange, [15] Red, [16] Dark Red\n'
-        #                                    '[17] Lighter Grey, [18] Dark Grey, [19] Light Grey, [20] Darker Grey\n'
-        #                                    '```')
-        #     num = await self.client.wait_for_message(author=author, timeout=60)
-        #     num = int(num.clean_content)
-        #     colors = {
-        #         1: discord.Color.teal(), 2: discord.Color.dark_teal(), 3: discord.Color.green(), 4: discord.Color.dark_green(),
-        #         5: discord.Color.blue(), 6: discord.Color.dark_blue(), 7: discord.Color.purple(), 8: discord.Color.dark_purple(),
-        #         9: discord.Color.magenta(), 10: discord.Color.dark_magenta(), 11: discord.Color.gold(), 12: discord.Color.dark_gold(),
-        #         13: discord.Color.orange(), 14: discord.Color.dark_orange(), 15: discord.Color.red(), 16: discord.Color.dark_red(),
-        #         17: discord.Color.lighter_grey(), 18: discord.Color.dark_grey(), 19: discord.Color.light_grey(), 20: discord.Color.darker_grey()
-        #     }
-        #     if num in colors:
-        #         color = colors[num]
-        #         break
-        #     else:
-        #         await self.client.send_message(ctx.message.channel, '{} is not a valid entry.'.format(num))
-        #
-        # # thumbnail? [1] server avatar [2] user avatar [3] artemis avatar [4] custom url
-        # embed = discord.Embed(title=title, color=color)
-        # await self.client.send_message(ctx.message.channel, embed=embed)
-        # await self.client.send_message(ctx.message.channel, 'Choose a thumbnail.')
-        # while True:
-        #     await self.client.send_message(ctx.message.channel,
-        #                                    '```'
-        #                                    'What color do you want to use? Please choose a number:\n'
-        #                                    '[1] Server Avatar\n'
-        #                                    '[2] Author Avatar\n'
-        #                                    '[3] Artemis\'s Avatar\n'
-        #                                    '[4] Custom URL\n'
-        #                                    '[5] None'
-        #                                    '```')
-        #     num = await self.client.wait_for_message(author=author, timeout=60)
-        #     num = int(num.clean_content)
-        #     thumbs = {
-        #         1: ctx.message.server.icon_url,
-        #         2: ctx.message.author.avatar_url,
-        #         3: self.client.user.avatar_url,
-        #         4: await self.choose_thumb(author),
-        #         5: None
-        #     }
-        #     if num in thumbs:
-        #         thumb = thumbs[num]
-        #         break
-        #     else:
-        #         await self.client.send_message(ctx.message.channel, '{} is not a valid entry.'.format(num))
-        # # clear entries
-        #
-        # # fields
-        # embed = discord.Embed(title=title, color=color)
-        # embed.set_thumbnail(url=thumb)
-        # await self.client.send_message(ctx.message.channel, embed=embed)
-        # # add thumbnail embed, delete previous entries and display current information
-        # # while loop for fields
-        # # add at least one field
-        # # example input, name='test input' value='test input'
-        # # add field to a list of fields
-        # # do you want to add another field? y/n
-        # # no breaks the loops
-        # # add footer
-        # pass
+    @commands.command()
+    async def embedex(self):
+        embed = discord.Embed(
+            title="Title",
+            description="Description",
+            color=discord.Color.blue()
+        )
+        embed.set_footer(text="Footer")
+        embed.set_image(url="http://vignette1.wikia.nocookie.net/pantheonthelegends/images/d/d2/Artemis.png/revision/latest?cb=20130604072452")
+        embed.set_thumbnail(url="http://vignette1.wikia.nocookie.net/pantheonthelegends/images/d/d2/Artemis.png/revision/latest?cb=20130604072452")
+        embed.set_author(name="Author", icon_url="http://vignette1.wikia.nocookie.net/pantheonthelegends/images/d/d2/Artemis.png/revision/latest?cb=20130604072452")
+        embed.add_field(name="FieldName", value="FieldValue", inline=False)
+        await self.client.say(embed=embed)
 
     @commands.command(pass_context=True)
     async def colors(self, ctx, *args):
@@ -221,6 +140,19 @@ class RichEmbed:
             messages.append(message)
         await self.client.delete_messages(messages)
         await self.client.send_message(ctx.message.channel, embed=embed)
+
+    async def on_message(self, message):
+        embed = discord.Embed(color=discord.Color.blue())
+        # quickembeds!
+        if message.content.startswith('>'):
+            lines = message.content.split('\n')
+            line1 = lines[0]
+            title = line1[1:]
+            line2 = ' '.join(lines[1:])
+            value = line2[1:]
+            embed.add_field(name=title, value=value, inline=False)
+            embed.set_author(name=message.author.name, icon_url=message.author.avatar_url)
+            await self.client.send_message(discord.Object(id=message.channel.id), embed=embed)
 
     async def choose_thumb(self, author):
         thumb = await self.client.wait_for_message(author=author, timeout=60)
