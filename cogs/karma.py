@@ -35,7 +35,24 @@ class Karma:
                 points = users[author.id]['karma']
                 await self.client.send_message(ctx.message.channel, 'You have {0} karma.'.format(points))
 
-    async def generate_karma(self, message):
+    @commands.command(pass_context=True)
+    async def leaderboard(self, ctx):
+        # todo order top 10 users from most to least karma
+        embed = discord.Embed(
+            title="Karma Leaderboard",
+            description="This is a work in progress",
+            color=discord.Color.blue()
+        )
+        with open('files/users.json', 'r') as f:
+            users = json.load(f)
+            for user in users:
+                if str(ctx.message.server) in users[user]['server']:
+                    points = users[user]['karma']
+                    user = ctx.message.server.get_member(user)
+                    embed.add_field(name=user.name, value=points, inline=False)
+        await self.client.say(embed=embed)
+
+    async def on_message(self, message):
         """ Generate karma!
 
         This section of code splits messages into lists. It then parses the lists for user mentions. If it finds a 
@@ -80,7 +97,8 @@ class Karma:
                     # if karma is going to a user and not artemis
                     with open('files/users.json', 'r') as f:
                         data = json.load(f)
-                    await self.add_karma(data, member)
+
+                        data[member.id]['karma'] += 1
 
                     with open('files/users.json', 'w') as f:
                         json.dump(data, f, indent=2)
@@ -90,43 +108,6 @@ class Karma:
                     print("{0} received a karma point from {1}".format(member.name, message.author.name))
                     return
 
-    @staticmethod
-    async def add_karma(users, user):
-        users[user.id]['karma'] += 1
-
-    @staticmethod
-    async def username_formatter(username):
-        user1 = '<@!{0}>'.format(username)
-        user2 = '<@{0}>'.format(username)
-        return user1, user2
-
-    @commands.command(pass_context=True)
-    async def leaderboard(self, ctx):
-        # todo order top 10 users from most to least karma
-        embed = discord.Embed(
-            title="Karma Leaderboard",
-            description="This is a work in progress",
-            color=discord.Color.blue()
-        )
-        with open('files/users.json', 'r') as f:
-            users = json.load(f)
-            for user in users:
-                if str(ctx.message.server) in users[user]['server']:
-                    points = users[user]['karma']
-                    user = ctx.message.server.get_member(user)
-                    embed.add_field(name=user.name, value=points, inline=False)
-        await self.client.say(embed=embed)
-
-    @commands.command(pass_context=True)
-    async def karma_test(self, ctx):
-        # owner only
-        if ctx.message.author.id == "193416878717140992":
-            await self.client.wait_until_ready()
-            for x in range(30):
-                await self.client.send_message(discord.Object(id="477966302871289866"), "thanks <@193416878717140992>")
-                await self.client.send_message(discord.Object(id="477966302871289866"), "thanks <@355055661303988225>")
-
 
 def setup(client):
-    # client.add_listener(Karma(client).generate_karma(message=message), "on_message")
     client.add_cog(Karma(client))
