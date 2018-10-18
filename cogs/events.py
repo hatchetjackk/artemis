@@ -24,7 +24,6 @@ class Events:
         event = ' '.join(args[2:])
 
         # format the time to be timezone ready
-
         dt = await self.time_formatter(ctx, day, month, h, m)
         if dt is None:
             return
@@ -51,6 +50,8 @@ class Events:
 
         embed = await self.embed_handler(ctx, dt, event, event_id, update=False)
         await self.client.send_message(ctx.message.channel, embed=embed)
+        msg = 'An event was created.\n{0} [{1}]\n{2}'.format(event, event_id, dt_long)
+        await self.spam(ctx, msg)
 
     @commands.command(pass_context=True)
     async def delevent(self, ctx, *args):
@@ -72,22 +73,22 @@ class Events:
             return
         # print out results and delete after 5 seconds
         for event_id in event_list:
-            count = 1
-            messages = []
+            # count = 1
+            # messages = []
             if event_id in data:
-                count += 1
+                event = data[event_id]['event']
+                # count += 1
                 data.pop(event_id)
                 await self.dump_events(data)
-                await self.client.send_message(ctx.message.channel, 'Event {} successfully deleted.'.format(event_id))
-                async for message in self.client.logs_from(ctx.message.channel, limit=int(count)):
-                    messages.append(message)
+                embed = discord.Embed(color=discord.Color.blue())
+                embed.add_field(name='Event Deleted', value='{} successfully deleted.'.format(event_id))
+                await self.client.send_message(ctx.message.channel, embed=embed)
             else:
-                count += 1
                 await self.client.send_message(ctx.message.channel, 'Event {} not found.'.format(event_id))
-                async for message in self.client.logs_from(ctx.message.channel, limit=int(count)):
-                    messages.append(message)
+                return
             await asyncio.sleep(5)
-            await self.client.delete_messages(messages)
+            msg = 'An event was deleted.\n{0} [{1}]'.format(event, event_id)
+            await self.spam(ctx, msg)
 
     @commands.command(pass_context=True)
     async def update(self, ctx, *args):
@@ -379,6 +380,61 @@ class Events:
         with open('files/events.json', 'w') as f:
             json.dump(data, f, indent=2)
 
+    async def check_notifier(self):
+        await self.client.wait_until_ready()
+        while not self.client.is_closed:
+            await asyncio.sleep(60 * 5)
+            print('Checking notifier...')
+            data_events = await Events.load_events()
+            for key, value in data_events.items():
+                if value['notify'] is True:
+                    dt = await Events.make_datetime(value['time'])
+                    eta = await Events.eta(dt)
+                    days, hours, minutes = eta.split()
+                    days = int(days.strip('d'))
+                    hours = int(hours.strip('h'))
+                    minutes = int(minutes.strip('m'))
+                    if days < 1 and hours < 1 and minutes > 0:
+                        for values in value['member_notify']:
+                            for user, channel in values.items():
+                                user = await self.client.get_user_info(user_id=user)
+                                await self.client.send_message(
+                                    self.client.get_channel(channel),
+                                    '{0}: **{1}** is starting in less than 1 hour!'.format(user.mention, value['event'][:50]))
+                        value['notify'] = False
+                        value['member_notify'] = []
+                    await Events.dump_events(data_events)
+
+    async def spam(self, ctx, message):
+        data = await self.load_servers()
+        server = ctx.message.server.id
+        if str(server) in data:
+            if data[server]['spam'] is not None:
+                embed = discord.Embed(color=discord.Color.blue())
+                embed.add_field(name='Alert', value=message)
+                embed.set_footer(text='Triggered by: {0.name}'.format(ctx.message.author))
+                await self.client.send_message(discord.Object(id=data[server]['spam']), embed=embed)
+
+    @staticmethod
+    async def create_user(member):
+        with open('files/users.json', 'r') as f:
+            data_users = json.load(f)
+        if member.id not in data_users:
+            data_users[member.id] = {
+                'username': member.name,
+                'server': [],
+                'karma': 0,
+            }
+        with open('files/users.json', 'w') as f:
+            json.dump(data_users, f, indent=2)
+
+    @staticmethod
+    async def load_servers():
+        with open('files/servers.json') as f:
+            data = json.load(f)
+        return data
+
 
 def setup(client):
     client.add_cog(Events(client))
+    client.loop.create_task(Events(client).check_notifier())
