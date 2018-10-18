@@ -8,7 +8,7 @@ class Emotions:
     def __init__(self, client):
         self.client = client
 
-    async def generate_points(self, message):
+    async def on_message(self, message):
         message = [word.lower() for word in message.content.split()]
         good_keys = ['nice', 'good', 'love']
         bad_keys = ['hate', 'bad']
