@@ -9,7 +9,6 @@ class Help:
 
     @commands.command(pass_context=True)
     async def help(self, ctx, *args):
-        print(args[0])
         if len(args) > 1:
             await self.client.send_message(ctx.message.channel, 'You\'ve passed too many arguments.')
             return
@@ -47,6 +46,7 @@ class Help:
             embed.add_field(name="whois <user>", value="Find user details (WIP)", inline=False)
             embed.add_field(name="server", value="Check server information (WIP)", inline=False)
             embed.add_field(name='yt <search>', value='Return the first YouTube video based for <search>.', inline=False)
+            embed.add_field(name='spamchannel <channel>', value='Set a channel for all spam.', inline=False)
             embed.add_field(name='help events', value='See available options for events.', inline=False)
             embed.add_field(name='help embeds', value='See available options for embeds.', inline=False)
             embed.add_field(name='help role', value='See available options for roles.', inline=False)
