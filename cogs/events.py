@@ -59,13 +59,12 @@ class Events:
 
     @commands.command()
     async def delevent(self, ctx, *args):
-
         if len(args) < 1:
             await ctx.send('Use ``delevent <event id>`` to delete an event.')
             return
         event_list = args[:]
         data = await self.load_events()
-        if str(event_list[0]) == 'all':
+        if str(event_list[0]) == 'all' and 'mod' in [role.name for role in ctx.author.roles]:
             # delete all events
             while len(data) > 0:
                 try:
@@ -75,6 +74,8 @@ class Events:
                 except RuntimeError:
                     pass
             await ctx.send('All events deleted!')
+        else:
+            await ctx.send('You do not have permission to do that.')
             return
         # print out results and delete after 5 seconds
         for event_id in event_list:
@@ -233,9 +234,11 @@ class Events:
             # Format the event's time
             dt = await self.make_datetime(data[event_id]['time'])
             verify, tz_conversion = await self.timezones(tz)
+
             # Convert the time with set tz
             new_dt = dt.astimezone(tz_conversion)
             dt = dt + datetime.utcoffset(new_dt)
+
             # Make the datetime object a string and format it
             dt_long, dt_short = await self.make_string(dt)
             dt_short = dt_short.replace('UTC', '')
@@ -255,7 +258,8 @@ class Events:
             'cst/cdt': now(pytz.timezone('US/Mountain')),
             'est/edt': now(pytz.timezone('US/Eastern')),
             'utc/gmt': now(pytz.timezone('GMT')),
-            'bst': now(pytz.timezone('Europe/London'))
+            'bst': now(pytz.timezone('Europe/London')),
+            'cest': now(pytz.timezone('Europe/Brussels'))
         }
         embed = discord.Embed(title='──────────────── [ Time ] ────────────────', color=discord.Color.blue())
         embed.add_field(name='Zone', value='\n'.join([zone.upper() for zone in zones]), inline=True)
@@ -402,7 +406,7 @@ class Events:
                  'cst': pytz.timezone('US/Mountain'), 'cdt': pytz.timezone('US/Mountain'),
                  'est': pytz.timezone('US/Eastern'), 'edt': pytz.timezone('US/Eastern'),
                  'gmt': pytz.timezone('GMT'), 'bst': pytz.timezone('Europe/London'),
-                 'utc': pytz.timezone('UTC')}
+                 'utc': pytz.timezone('UTC'), 'cest': pytz.timezone('Europe/Brussels')}
         if tz in zones:
             return True, zones[tz]
         else:
