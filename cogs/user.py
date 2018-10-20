@@ -1,6 +1,5 @@
 import discord
 import random
-import datetime
 import urllib.request
 import urllib.parse
 import re
@@ -17,13 +16,13 @@ class User:
         # return from afk when sending a message
         pass
 
-    @commands.command(pass_context=True)
+    @commands.command()
     async def flip(self, ctx):
         # return heads or tails
         choice = ['Heads!', 'Tails!']
         coin = random.choice(choice)
-        print('{0} flipped a coin.'.format(ctx.message.author.name))
-        await self.client.send_message(ctx.message.channel, coin)
+        print('{0} flipped a coin.'.format(ctx.author.name))
+        await ctx.send(coin)
 
     @commands.command()
     async def google(self):
@@ -35,7 +34,7 @@ class User:
         # pull the first image from a google search
         pass
 
-    @commands.command(pass_context=True)
+    @commands.command()
     async def rps(self, ctx, *args):
         rps = ['rock', 'paper', 'scissors']
         lose = {'rock': 'paper', 'paper': 'scissors', 'scissors': 'rock'}
@@ -43,35 +42,35 @@ class User:
 
         # check for valid entry
         if len(args) < 1:
-            await self.client.send_message(ctx.message.channel, 'You didn\'t say what you picked!')
+            await ctx.send('You didn\'t say what you picked!')
             return
         if len(args) > 1:
-            await self.client.send_message(ctx.message.channel,
+            await ctx.send(
                                            "It's Rock, Paper, Scissors not Rock, Paper, \"*Whateverthehellyouwant*.\" :joy:")
             return
         if args[0] not in rps:
-            await self.client.send_message(ctx.message.channel, 'That\'s not a valid choice.')
+            await ctx.send('That\'s not a valid choice.')
             return
 
         bot_choice = random.choice(rps)
         user_choice = args[0]
         # check choice against bot
         if bot_choice == user_choice:
-            await self.client.send_message(ctx.message.channel, 'Artemis chose {0}! It\'s a tie!'.format(bot_choice))
-            print('{0} played rock, paper, scissors and tied with Artemis.'.format(ctx.message.author.name))
+            await ctx.send('Artemis chose {0}! It\'s a tie!'.format(bot_choice))
+            print('{0} played rock, paper, scissors and tied with Artemis.'.format(ctx.author.name))
         if user_choice == lose.get(bot_choice):
-            await self.client.send_message(ctx.message.channel, 'Artemis chose {0}! You lost!'.format(bot_choice))
-            print('{0} played rock, paper, scissors and lost to Artemis.'.format(ctx.message.author.name))
+            await ctx.send('Artemis chose {0}! You lost!'.format(bot_choice))
+            print('{0} played rock, paper, scissors and lost to Artemis.'.format(ctx.author.name))
         if user_choice == win.get(bot_choice):
-            await self.client.send_message(ctx.message.channel, 'Artemis chose {0}! You win!'.format(bot_choice))
-            print('{0} played rock, paper, scissors and beat Artemis!'.format(ctx.message.author.name))
+            await ctx.send('Artemis chose {0}! You win!'.format(bot_choice))
+            print('{0} played rock, paper, scissors and beat Artemis!'.format(ctx.author.name))
 
-    @commands.command(pass_context=True)
-    async def server(self, ctx):
+    @commands.command()
+    async def guild(self, ctx):
         # e = Emotions(self.client)
         # start = time.time() in artemis.py
         # uptime = time.time() - start
-        # server_id = server id
+        # guild_id = guild id
         # mood = e.status
         # thumbnail = 'https://cdn0.iconfinder.com/data/icons/cosmo-medicine/40/eye_6-512.png'
         # embed
@@ -80,38 +79,38 @@ class User:
         # )
         # embed.set_author(name="Artemis", icon_url=thumbnail)
         # embed.add_field(name="Uptime", value=uptime, inline=False)
-        # embed.add_field(name="Server ID", value=server_id, inline=False)
+        # embed.add_field(name="guild ID", value=guild_id, inline=False)
         # embed.add_field(name="Mood", value=mood, inline=False)
-        # await self.client.say(embed=embed)
-        await self.client.send_message(ctx.message.channel, 'This command is not ready yet.')
-        print('{0} tried to use the server command.'.format(ctx.message.author.name))
+        # await self.send(embed=embed)
+        await ctx.send('This command is not ready yet.')
+        print('{0} tried to use the guild command.'.format(ctx.author.name))
 
-    @commands.command(pass_context=True)
+    @commands.command()
     async def whois(self, ctx):
         # read message for user or part of a username
         # joined_discord = check when joined discord
-        # joined_server = check when joined server
+        # joined_guild = check when joined guild
         # user_avatar = grab user avatar
         # roles = grab roles from list
         # make embed
         # add joined_discord
-        # add joined_server
+        # add joined_guild
         # add user_avatar
         # add roles
         # send to channel
-        await self.client.send_message(ctx.message.channel, 'This command is not ready yet.')
-        print('{0} tried to use the whois command.'.format(ctx.message.author.name))
+        await ctx.send('This command is not ready yet.')
+        print('{0} tried to use the whois command.'.format(ctx.author.name))
 
-    @commands.command(pass_context=True)
+    @commands.command()
     async def yt(self, ctx, *args):
         query_string = urllib.parse.urlencode({"search_query": ' '.join(args)})
         html_content = urllib.request.urlopen("http://www.youtube.com/results?" + query_string)
         search_results = re.findall(r'href=\"\/watch\?v=(.{11})', html_content.read().decode())
 
-        await self.client.send_message(ctx.message.channel, "http://www.youtube.com/watch?v=" + search_results[0])
-        print('{0} searched Youtube for "{1}".'.format(ctx.message.author.name, ' '.join(args)))
+        await ctx.send("http://www.youtube.com/watch?v=" + search_results[0])
+        print('{0} searched Youtube for "{1}".'.format(ctx.author.name, ' '.join(args)))
 
-    @commands.command(pass_context=True)
+    @commands.command()
     async def card(self, ctx):
         """ draw a random card from a deck """
         card = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 'Ace', 'King', 'Queen', 'Jack']
@@ -121,7 +120,7 @@ class User:
         rstyle = random.choice(style)
 
         fmt = 'You drew the {0} of {1}!'
-        if ctx.message.author.id == '193416878717140992':
+        if ctx.author.id == '193416878717140992':
             card = ['Ace']
             style = ['Hearts']
             rcard = random.choice(card)
@@ -136,39 +135,39 @@ class User:
                 if rstyle == 'Hearts':
                     await self.hearts(ctx)
                 return
-        await self.client.send_message(ctx.message.channel, fmt.format(rcard, rstyle))
-        print('{0} drew the {1} of {2}.'.format(ctx.message.author.name, rcard, rstyle))
+        await ctx.send(fmt.format(rcard, rstyle))
+        print('{0} drew the {1} of {2}.'.format(ctx.author.name, rcard, rstyle))
 
-    async def spades(self, ctx):
-        await self.client.send_message(ctx.message.channel, '***IT\'S THE ACE OF SPADES! THE ACE OF SPADES!!!***')
+    @staticmethod
+    async def spades(ctx):
+        await ctx.send('***IT\'S THE ACE OF SPADES! THE ACE OF SPADES!!!***')
 
     async def diamonds(self, ctx):
         """ Move user to the Sparkle, Sparkle role """
-        await self.client.send_message(ctx.message.channel, ':sparkles: *Sparkle, Sparkle! *:sparkles: ')
-        await discord.Client.add_roles(self.client, ctx.message.author, discord.utils.get(ctx.message.server.roles, name='Sparkle, Sparkle!'))
+        await ctx.send(':sparkles: *Sparkle, Sparkle! *:sparkles: ')
+        await discord.Member.add_roles(self.client, ctx.author, discord.utils.get(ctx.guild.roles, name='Sparkle, Sparkle!'))
 
     async def clubs(self, ctx):
         """ send a channel invite to the user then kick them! """
-        d = discord.Client
-        await self.client.send_message(ctx.message.channel, 'You\'ve activated my trap card!')
+        await ctx.send('You\'ve activated my trap card!')
 
         # send invite link before kick
-        link = await self.client.create_invite(destination=ctx.message.channel)
+        link = await self.client.create_invite(destination=ctx.channel)
         fmt = 'You activated my trap card!\n{0}'.format(link)
-        await self.client.send_message(ctx.message.author, fmt)
+        await ctx.author.send(fmt)
 
         # don't kick the owner
-        if ctx.message.author.id == '193416878717140992':
-            await self.client.send_message(ctx.message.channel, 'I can\'t kick the owner!')
+        if ctx.author.id == '193416878717140992':
+            await ctx.send('I can\'t kick the owner!')
             return
         # kick!
-        await d.kick(self.client, member=ctx.message.author)
+        await discord.Member.kick(self.client, member=ctx.author)
 
     async def hearts(self, ctx):
         # todo fix member call
-        await self.client.send_message(ctx.message.channel, ':sparkling_heart: :kissing_heart: :two_hearts: ')
-        await self.client.change_nickname(ctx.message.author, '💖_{0}_💖'.format(discord.utils.get(ctx.message.server.members, name='testie')))
-        # await discord.Client.change_nickname(self.client, ctx.message.author, nickname='💖 {0} 💖'.format(ctx.message.author.name))
+        await ctx.send(':sparkling_heart: :kissing_heart: :two_hearts: ')
+        await self.client.change_nickname(ctx.author, '💖_{0}_💖'.format(discord.utils.get(ctx.guild.members, name='testie')))
+        # await discord.Client.change_nickname(self.client, ctx.author, nickname='💖 {0} 💖'.format(ctx.author.name))
 
 
 def setup(client):
