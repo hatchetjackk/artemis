@@ -71,8 +71,10 @@ class Karma:
         with open('files/users.json', 'r') as f:
             data = json.load(f)
 
-        # determine if the cooldown is still in effect
+        # ignore the bot
         author = message.author
+        if author.id == self.client.user.id:
+            return
 
         msg = [word.lower() for word in message.content.split()]
         keywords = ['thanks', 'thank', 'gracias', 'kudos', 'thx', 'appreciate', 'cheers']
