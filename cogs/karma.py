@@ -65,19 +65,14 @@ class Karma:
         catch all users.
         todo allow multiple users to be mentioned in one line
         """
-        responses = [":sparkles: You earned some karma, {0}!",
-                     ":sparkles: Cha-ching! You got some karma, {0}!",
-                     ":sparkles: What's that? Sounds like that karma train, {0}!",
-                     ":sparkles: +1 karma for {0}!"]
-        client_responses = ["You're welcome!", "No problem.",
-                            "Anytime!", "Sure thing, fellow human!",
-                            "*eats karma* Mmm.", 'I try!', 'I do it for the kudos!', ':wink:',
-                            'Appreciate it!', 'You got it!', ':smile:', 'Yeet!'
-                            ]
-        bad_response = ["You can't give yourself karma.",
-                        "Let's keep things fair here...",
-                        "Looks like karma abuse over here.",
-                        "Are you trying to farm karma?!"]
+        with open('files/status.json') as f:
+            karma_responses = json.load(f)
+
+        with open('files/users.json', 'r') as f:
+            data = json.load(f)
+
+        # determine if the cooldown is still in effect
+        author = message.author
 
         msg = [word.lower() for word in message.content.split()]
         keywords = ['thanks', 'thank', 'gracias', 'kudos', 'thx', 'appreciate', 'cheers']
@@ -92,22 +87,19 @@ class Karma:
                 if len(karma_key) > 0:
                     # check if someone is trying to give artemis karma
                     if member.id == self.client.user.id:
-                        await message.send(random.choice(client_responses))
+                        await message.send(random.choice(karma_responses['karma_responses']['client_response']))
                         return
                     # check if someone is trying to give karma for their self
-                    if member.id is message.author.id:
-                        await message.channel.send(random.choice(bad_response).format(message.author.id))
+                    if member.id is author.id:
+                        await message.channel.send(random.choice(karma_responses['karma_responses']['bad_response']).format(message.author.id))
                         return
                     # if karma is going to a user and not artemis
-                    with open('files/users.json', 'r') as f:
-                        data = json.load(f)
-
-                        data[mid]['karma'] += 1
+                    data[mid]['karma'] += 1
 
                     with open('files/users.json', 'w') as f:
-                        json.dump(data, f, indent=2)
+                        json.dump(data, f, sort_keys=True, indent=2)
 
-                    fmt = random.choice(responses).format(member.name)
+                    fmt = random.choice(karma_responses['karma_responses']['good_response']).format(member.name)
                     await message.channel.send(fmt)
                     print("{0} received a karma point from {1}".format(member.name, message.author.name))
                     return
