@@ -7,38 +7,37 @@ from discord.ext import commands
 
 
 class RichEmbed:
-    color_dict = {
-        1: [Color.teal(), 'teal'],
-        2: [Color.dark_teal(), 'dark_teal'],
-        3: [Color.green(), 'green'],
-        4: [Color.dark_green(), 'dark_green'],
-        5: [Color.blue(), 'blue'],
-        6: [Color.dark_blue(), 'dark_blue'],
-        7: [Color.purple(), 'purple'],
-        8: [Color.dark_purple(), 'dark_purple'],
-        9: [Color.magenta(), 'magenta'],
-        10: [Color.dark_magenta(), 'dark_magenta'],
-        11: [Color.gold(), 'gold'],
-        12: [Color.dark_gold(), 'dark_gold'],
-        13: [Color.orange(), 'orange'],
-        14: [Color.dark_orange(), 'dark_orange'],
-        15: [Color.red(), 'red'],
-        16: [Color.dark_red(), 'dark_red'],
-        17: [Color.lighter_grey(), 'lighter_grey'],
-        18: [Color.dark_grey(), 'grey'],
-        19: [Color.light_grey(), 'light_grey'],
-        20: [Color.darker_grey(), 'darker_grey']
-    }
 
     def __init__(self, client):
         self.client = client
+        self.color_dict = {
+            1: [Color.teal(), 'teal'],
+            2: [Color.dark_teal(), 'dark_teal'],
+            3: [Color.green(), 'green'],
+            4: [Color.dark_green(), 'dark_green'],
+            5: [Color.blue(), 'blue'],
+            6: [Color.dark_blue(), 'dark_blue'],
+            7: [Color.purple(), 'purple'],
+            8: [Color.dark_purple(), 'dark_purple'],
+            9: [Color.magenta(), 'magenta'],
+            10: [Color.dark_magenta(), 'dark_magenta'],
+            11: [Color.gold(), 'gold'],
+            12: [Color.dark_gold(), 'dark_gold'],
+            13: [Color.orange(), 'orange'],
+            14: [Color.dark_orange(), 'dark_orange'],
+            15: [Color.red(), 'red'],
+            16: [Color.dark_red(), 'dark_red'],
+            17: [Color.lighter_grey(), 'lighter_grey'],
+            18: [Color.dark_grey(), 'grey'],
+            19: [Color.light_grey(), 'light_grey'],
+            20: [Color.darker_grey(), 'darker_grey']
+        }
 
     @commands.group()
     async def colors(self, ctx):
-        colors = RichEmbed.color_dict
         if ctx.invoked_subcommand is None:
             embed = Embed(colors=Color.blue())
-            for key, value in colors.items():
+            for key, value in self.color_dict.items():
                 color_num = str(hash(value[0]))
                 embed.add_field(name=value[1], value=color_num)
             embed.add_field(name='u2oob', value='Try ``colors full`` for embed examples.\n'
@@ -47,10 +46,8 @@ class RichEmbed:
 
     @colors.group()
     async def full(self, ctx):
-        colors = RichEmbed.color_dict
         await ctx.send('*Incoming!* :boom:')
-
-        for key, value in colors.items():
+        for key, value in self.color_dict.items():
             color_num = str(hash(value[0]))
             embed = Embed(color=value[0])
             embed.add_field(name=value[1], value=color_num)
