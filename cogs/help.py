@@ -35,18 +35,18 @@ class Help:
             )
             embed.add_field(name="ping", value="Return pong", inline=False)
             embed.add_field(name="roll", value="Roll NdN dice", inline=False)
-            embed.add_field(name="karma <@user>", value="Check your or another <@user>'s current level of karma",
+            embed.add_field(name="karma @user", value="Check your or another <@user>'s current level of karma",
                             inline=False)
             embed.add_field(name='hello', value='Say hi to Artemis!', inline=False)
             embed.add_field(name="status", value="Check Artemis' status", inline=False)
             # embed.add_field(name="leaderboard", value="Check karma levels (WIP)", inline=False)
             # embed.add_field(name="arena", value="Settle the score (WIP)", inline=False)
             embed.add_field(name="flip", value="Flip a coin", inline=False)
-            embed.add_field(name="rps <choice>", value="Play Rock, Paper, Scissors against the bot", inline=False)
-            embed.add_field(name="whois <user>", value="Find user details (WIP)", inline=False)
-            embed.add_field(name="guild", value="Check guild information (WIP)", inline=False)
-            embed.add_field(name='yt <search>', value='Return the first YouTube video based for <search>.', inline=False)
-            embed.add_field(name='spamchannel <channel>', value='Set a channel for all spam.', inline=False)
+            embed.add_field(name="rps choice", value="Play Rock, Paper, Scissors against the bot", inline=False)
+            # embed.add_field(name="whois <user>", value="Find user details (WIP)", inline=False)
+            # embed.add_field(name="guild", value="Check guild information (WIP)", inline=False)
+            embed.add_field(name='yt search', value='Return the first YouTube video based for <search>.', inline=False)
+            embed.add_field(name='spamchannel channel', value='Set a channel for all spam.', inline=False)
             embed.add_field(name='help events', value='See available options for events.', inline=False)
             embed.add_field(name='help embeds', value='See available options for embeds.', inline=False)
             embed.add_field(name='help role', value='See available options for roles.', inline=False)
@@ -62,10 +62,10 @@ class Help:
         )
         embed.add_field(
             name='richembed',
-            value='Quickly create a simple embed\n'
-                  '*Available variables*: \n'
-                  '``title`` ``color`` ``author`` ``footer`` ``thumbnail`` ``fieldname`` ``fieldvalue`` \n\n'
-                  '*Example*: title=This is a title, color=dark_blue, author=Hatchet Jackk, fieldname=An interesting title, fieldvalue=Interesting information\n\n',
+            value='Quickly create embeds\n'
+                  '`richembed get`: Get the embed information from a message id.\n'
+                  '`richembed ex`: Get a richembed example and example input.\n'
+                  '`richembed pasta`: Takes richembed input to create a new embed.',
             inline=False
         )
         embed.add_field(
@@ -86,43 +86,44 @@ class Help:
         embed.add_field(
             name='setevent',
             value='Create a new event. Defaults to UTC time.\n'
-                  '``setevent <hour:minutes> <day/month> <event>``',
+                  '`setevent hour:minutes day/month event`',
             inline=False
         )
         embed.add_field(
             name='events',
             value='Check current events. Passing an event id will load that specific event only.\n'
-                  '``events <optional: event id>``',
+                  '`events`: Returns all events\n'
+                  '`events event_id`: Returns a specific event',
             inline=False
         )
         embed.add_field(
             name='delevent',
             value='Delete an event\n'
-                  '``delevent <event id>``',
+                  '`delevent event_id`',
             inline=False
         )
         embed.add_field(
             name='update',
             value='Update an event with a new time and zone.\n'
-                  '``update <event id> <hour:minutes> <day/month>``',
+                  '`update event_id hour:minutes day/month`',
             inline=False
         )
         embed.add_field(
             name='time',
             value='Show current timezones.\n'
-                  '``time``',
+                  '`time`',
             inline=False
         )
         embed.add_field(
             name='mytime',
             value='Show an event in a specified timezone.\n'
-                  '``mytime <event id> <timezone>``',
+                  '`mytime event_id timezone`',
             inline=False
         )
         embed.add_field(
             name='notify',
             value='Tell Artemis to notify you when an event is less than one hour from beginning.\n'
-                  '``notify <event id>``',
+                  '`notify event_id`',
             inline=False
         )
         await ctx.author.send(embed=embed)
