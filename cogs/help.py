@@ -7,24 +7,9 @@ class Help:
     def __init__(self, client):
         self.client = client
 
-    @commands.command()
-    async def help(self, ctx, *args):
-        if len(args) > 1:
-            await ctx.send('You\'ve passed too many arguments.')
-            return
-        if len(args) > 0:
-            if args[0] == 'events' or args[0] == 'event':
-                await self.events_help(ctx)
-                return
-            if args[0] == 'embeds' or args[0] == 'embed':
-                await self.embeds_help(ctx)
-                return
-            if args[0] == 'roles' or args[0] == 'role':
-                await self.roles_help(ctx)
-                return
-            await ctx.send('{0} is not an option.'.format(args[0]))
-            return
-        if len(args) == 0:
+    @commands.group()
+    async def help(self, ctx):
+        if ctx.invoked_subcommand is None:
             embed = discord.Embed(color=discord.Color.blue())
             embed.set_author(name="Help Page")
             embed.add_field(name='Artemis is in Beta', value='Things are likely to break, be broken, or be removed.\n')
@@ -49,13 +34,15 @@ class Help:
             embed.add_field(name='spamchannel channel', value='Set a channel for all spam.', inline=False)
             embed.add_field(name='help events', value='See available options for events.', inline=False)
             embed.add_field(name='help embeds', value='See available options for embeds.', inline=False)
-            embed.add_field(name='help role', value='See available options for roles.', inline=False)
+            # embed.add_field(name='help roles', value='See available options for roles.', inline=False)
+            # embed.add_field(name='help mod', value='See available options for moderators.', inline=False)
             embed.set_footer(text="Author: Hatchet Jackk")
             await ctx.author.send(embed=embed)
-            print('Artemis: Sent help to {0}'.format(ctx.author))
+            print('Artemis: Sent help to {0}'.format(ctx.author.name))
 
     @staticmethod
-    async def embeds_help(ctx):
+    @help.group()
+    async def embeds(ctx):
         embed = discord.Embed(
             title='Embeds Help',
             color=discord.Color.blue()
@@ -78,7 +65,8 @@ class Help:
         print('Artemis: Sent help to {0}'.format(ctx.author))
 
     @staticmethod
-    async def events_help(ctx):
+    @help.group()
+    async def events(ctx):
         embed = discord.Embed(
             title='Events Help',
             color=discord.Color.blue()
@@ -130,7 +118,8 @@ class Help:
         print('Artemis: Sent help to {0}'.format(ctx.author))
 
     @staticmethod
-    async def roles_help(ctx):
+    @help.group()
+    async def roles(ctx):
         embed = discord.Embed(
             title='Roles Help',
             color=discord.Color.blue()
