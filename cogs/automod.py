@@ -114,14 +114,23 @@ class Automod:
 
     @staticmethod
     async def create_user(member):
+        guild = member.guild
+        gid = str(guild.id)
+        mid = str(member.id)
+
         with open('files/users.json', 'r') as f:
             data_users = json.load(f)
-        if member.id not in data_users:
+
+        if mid not in data_users:
             data_users[member.id] = {
                 'username': member.name,
-                'guild': [],
+                'guild': {},
                 'karma': 0,
+                'karma_cooldown': 0
             }
+        if gid not in data_users[mid]['guild']:
+            data_users[mid]['guild'].update({gid: guild.name})
+
         with open('files/users.json', 'w') as f:
             json.dump(data_users, f, indent=2)
 
