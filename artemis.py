@@ -154,6 +154,7 @@ async def update_users(message):
                 'username': member.name,
                 'guild': {},
                 'karma': 0,
+                'karma_cooldown': 0
             }
         if gid not in data_users[mid]['guild']:
             data_users[mid]['guild'].update({gid: guild.name})
