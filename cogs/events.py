@@ -13,10 +13,13 @@ class Events:
     def __init__(self, client):
         self.client = client
 
-    @commands.command(pass_context=True)
+    @commands.command()
     async def setevent(self, ctx, *args):
+        guild = ctx.guild
+        author = ctx.author
+
         if len(args) < 2:
-            await self.client.send_message(ctx.message.channel, 'Please use the format ``setevent <h:m> <day/mnth> <event>``.')
+            await ctx.send('Please use the format ``setevent <h:m> <day/mnth> <event>``.')
             return
 
         h, m = args[0].split(':')
@@ -39,8 +42,8 @@ class Events:
                 data[event_id] = {
                     'event': event,
                     'time': dt_long,
-                    'user_id': ctx.message.author.id,
-                    'server_id': ctx.message.server.id,
+                    'user_id': author.id,
+                    'guild_id': guild.id,
                     'notify': False,
                     'member_notify': {}
                 }
@@ -49,14 +52,16 @@ class Events:
         await self.dump_events(data)
 
         embed = await self.embed_handler(ctx, dt, event, event_id, update=False)
-        await self.client.send_message(ctx.message.channel, embed=embed)
+        await ctx.send(embed=embed)
+
         msg = 'An event was created.\n{0} [{1}]\n{2}'.format(event, event_id, dt_long)
         await self.spam(ctx, msg)
 
-    @commands.command(pass_context=True)
+    @commands.command()
     async def delevent(self, ctx, *args):
+
         if len(args) < 1:
-            await self.client.send_message(ctx.message.channel, 'Use ``delevent <event id>`` to delete an event.')
+            await ctx.send('Use ``delevent <event id>`` to delete an event.')
             return
         event_list = args[:]
         data = await self.load_events()
@@ -69,7 +74,7 @@ class Events:
                         await self.dump_events(data)
                 except RuntimeError:
                     pass
-            await self.client.send_message(ctx.message.channel, 'All events deleted!')
+            await ctx.send('All events deleted!')
             return
         # print out results and delete after 5 seconds
         for event_id in event_list:
@@ -82,19 +87,19 @@ class Events:
                 await self.dump_events(data)
                 embed = discord.Embed(color=discord.Color.blue())
                 embed.add_field(name='Event Deleted', value='{} successfully deleted.'.format(event_id))
-                await self.client.send_message(ctx.message.channel, embed=embed)
+                await ctx.send(embed=embed)
             else:
-                await self.client.send_message(ctx.message.channel, 'Event {} not found.'.format(event_id))
+                await ctx.send('Event {} not found.'.format(event_id))
                 return
             await asyncio.sleep(5)
             msg = 'An event was deleted.\n{0} [{1}]'.format(event, event_id)
             await self.spam(ctx, msg)
 
-    @commands.command(pass_context=True)
+    @commands.command()
     async def update(self, ctx, *args):
+
         if 1 > len(args) > 3:
-            await self.client.send_message(ctx.message.channel,
-                                           'Please use the format ``update <event id> <h:m> <day/mnth> ``.')
+            await ctx.send('Please use the format ``update <event id> <h:m> <day/mnth> ``.')
             return
         event_id = str(args[0])
         h, m = args[1].split(':')
@@ -106,33 +111,40 @@ class Events:
             dt_long, dt_short = await self.make_string(dt)
             data[event_id]['time'] = dt_long
         else:
-            await self.client.send_message(ctx.message.channel, 'Event ID {} not found.'.format(event_id))
+            await ctx.send('Event ID {} not found.'.format(event_id))
             return
         event = data[event_id]['event']
         embed = await self.embed_handler(ctx, dt, event, event_id, update=True)
-        await self.client.send_message(ctx.message.channel, embed=embed)
+        await ctx.send(embed=embed)
         await self.dump_events(data)
 
-    @commands.command(pass_context=True)
+    @commands.command()
     async def events(self, ctx, *args):
+        """ Return one or all events in events.json dependent on the guild id
+
+        Method will check for args, and if none are passed, all events will be sent
+        """
+        guild = ctx.guild
+        author = ctx.author
+        gid = str(guild.id)
+
         if len(args) > 1:
-            await self.client.send_message(ctx.message.channel, 'Please use `events <event id>` to check a single event\n'
-                                                                'or use `events` to check all events.')
+            await ctx.send('Please use `events <event id>` to check a single event\n'
+                           'or use `events` to check all events.')
             return
 
-        with open('files/servers.json') as f:
-            thumbs = json.load(f)
         # set the thumbnail
-        if thumbs[ctx.message.server.id]['thumb_url'] != '':
-            thumb_url = thumbs[ctx.message.server.id]['thumb_url']
-        else:
-            thumb_url = self.client.user.avatar_url
+        with open('files/guilds.json') as f:
+            thumbs = json.load(f)
+        thumb_url = self.client.user.avatar_url
+        if thumbs[gid]['thumb_url'] != '':
+            thumb_url = thumbs[gid]['thumb_url']
 
         # set embed
         title = '──────────────── [Events] ────────────────'
         color = discord.Color.blue()
-        footer_style = int((39 - len(ctx.message.author.name)) / 2) * '─'
-        fmt_footer = footer_style + '[Created by: {0}]'.format(ctx.message.author.name) + footer_style
+        footer_style = int((39 - len(author.name)) / 2) * '─'
+        fmt_footer = footer_style + '[Created by: {0}]'.format(author.name) + footer_style
 
         # create embed
         embed = discord.Embed(title=title, color=color)
@@ -141,125 +153,147 @@ class Events:
         embed.add_field(name=':sparkles: Upcoming Events', value='\u200b')
 
         # create variables
-        event_id = ''
+        event_id = False
         try:
             event_id = str(args[0])
         except IndexError:
             pass
+
         data = await self.load_events()
-        # ensure that the event matches the server
-        if event_id in data and data[event_id]['server_id'] == ctx.message.server.id:
-            print(data[event_id]['server_id'])
-            print(ctx.message.server.id)
+        # Ensure that the event matches the guild
+        # Then return a single event
+        if event_id in data and data[event_id]['guild_id'] == guild.id:
+            print(data[event_id]['guild_id'])
+            print(guild.id)
             event = data[event_id]['event'][:50]
             dt = await self.make_datetime(data[event_id]['time'])
             dt_long, dt_short = await self.make_string(dt)
             embed.add_field(name=event, value='**Event** [{0}]: {1}\n'
                                               '**Time**: {2}'.format(event_id, event, dt_short), inline=False)
-            await self.client.send_message(ctx.message.channel, embed=embed)
+            await ctx.send(embed=embed)
             return
-        elif event_id == '':
+
+        # If no arguments were passed, iterate through the events.json file
+        # Return all events that match the guild id
+        # todo sort events by eta
+        elif not event_id:
             counter = 1
             for key, value in data.items():
-                if value['server_id'] == ctx.message.server.id:
+                if value['guild_id'] == guild.id:
                     diamond = ':small_orange_diamond:'
                     if counter % 2 == 0:
                         diamond = ':small_blue_diamond:'
+                    # trim long event names
                     event = value['event'][:50]
-                    event_id = key
-                    dt = await self.make_datetime(data[key]['time'])
+
+                    # format the event's time
+                    dt = await self.make_datetime(value['time'])
                     dt_long, dt_short = await self.make_string(dt)
                     eta = await self.eta(dt)
-                    embed.add_field(name='{0} {1}'.format(diamond, event), value='**Time**: {0}\n'
-                                                                                 '**ETA**: {1}\n'
-                                                                                 '**ID**: {2}'.format(dt_short, eta, event_id), inline=False)
-                    counter += 1
-            await self.client.send_message(ctx.message.channel, embed=embed)
 
-    @commands.command(pass_context=True)
+                    embed.add_field(name='{0} {1}'.format(diamond, event),
+                                    value='**Time**: {0}\n'
+                                          '**ETA**: {1}\n'
+                                          '**ID**: {2}'.format(dt_short, eta, key), inline=False)
+                    counter += 1
+            await ctx.send(embed=embed)
+
+    @commands.command()
     async def mytime(self, ctx, *args):
+        guild = ctx.guild
+        author = ctx.author
+
         # set the thumbnail
-        if ctx.message.server.icon_url is '':
+        thumb_url = guild.icon_url
+        if guild.icon_url is '':
             thumb_url = self.client.user.avatar_url
-        else:
-            thumb_url = ctx.message.server.icon_url
 
         # set embed
         title = '──────────────── [Events] ────────────────'
         color = discord.Color.blue()
-        footer_style = int((39 - len(ctx.message.author.name)) / 2) * '─'
-        fmt_footer = footer_style + '[Created by: {0}]'.format(ctx.message.author.name) + footer_style
+        footer_style = int((39 - len(author.name)) / 2) * '─'
+        fmt_footer = footer_style + '[Created by: {0}]'.format(author.name) + footer_style
 
         # create embed
         embed = discord.Embed(title=title, color=color)
         embed.set_thumbnail(url=thumb_url)
         embed.set_footer(text=fmt_footer)
+
+        # Check if the right number of arguments have been passed
         try:
             event_id = args[0]
             tz = args[1]
-            data = await self.load_events()
         except IndexError:
-            await self.client.send_message(ctx.message.channel,
-                                           'Use `mytime <event id> <time zone>` to check an event in a specific timezone.')
+            await ctx.send('Use `mytime <event id> <time zone>` to check an event in a specific timezone.')
             return
-        # find events in data that match the current server
+
+        # find events in data that match the current guild
+        data = await self.load_events()
         if event_id in data:
+            # Format the event's time
             dt = await self.make_datetime(data[event_id]['time'])
             verify, tz_conversion = await self.timezones(tz)
+            # Convert the time with set tz
             new_dt = dt.astimezone(tz_conversion)
             dt = dt + datetime.utcoffset(new_dt)
+            # Make the datetime object a string and format it
             dt_long, dt_short = await self.make_string(dt)
             dt_short = dt_short.replace('UTC', '')
+
             embed.add_field(name='{}'.format(data[event_id]['event'][:50]),
                             value='This event in {0} is {1}'.format(tz.upper(), dt_short))
-            await self.client.send_message(ctx.message.channel, embed=embed)
-            return
-        await self.client.send_message(ctx.message.channel,
-                                       'Use `mytime <event id> <time zone>` to check an event in a specific timezone.')
+            await ctx.send(embed=embed)
+        else:
+            await ctx.send('Event id {} was not found.'.format(event_id))
 
-    @commands.command(pass_context=True)
+    @commands.command()
     async def time(self, ctx):
-        # returns an embed with set time zones
+        # returns an embed with popular time zones
         now = datetime.now
-        zones = {'pst/pdt': now(pytz.timezone('US/Alaska')),
-                 'cst/cdt': now(pytz.timezone('US/Mountain')),
-                 'est/edt': now(pytz.timezone('US/Eastern')),
-                 'utc/gmt': now(pytz.timezone('GMT')),
-                 'bst': now(pytz.timezone('Europe/London'))}
+        zones = {
+            'pst/pdt': now(pytz.timezone('US/Alaska')),
+            'cst/cdt': now(pytz.timezone('US/Mountain')),
+            'est/edt': now(pytz.timezone('US/Eastern')),
+            'utc/gmt': now(pytz.timezone('GMT')),
+            'bst': now(pytz.timezone('Europe/London'))
+        }
         embed = discord.Embed(title='──────────────── [ Time ] ────────────────', color=discord.Color.blue())
         embed.add_field(name='Zone', value='\n'.join([zone.upper() for zone in zones]), inline=True)
         embed.add_field(name='Time', value='\n'.join(zones[zone].strftime('%H:%M') for zone in zones))
         embed.set_footer(text='──────────────────────────────────────────')
-        await self.client.send_message(ctx.message.channel, embed=embed)
+        await ctx.send(embed=embed)
 
-    @commands.command(pass_context=True)
+    @commands.command()
     async def notify(self, ctx, *args):
+        # Allow a user to set a notification for an event
+        # Notifier will alert the user one hour before the event in the channel they set the event in
+        author = ctx.author
         event_id = str(args[0])
-        channel = str(ctx.message.channel.id)
-        author = ctx.message.author
+
         data = await self.load_events()
         if event_id in data:
             if author.id not in data[event_id]['member_notify']:
                 data[event_id]['notify'] = True
-                data[event_id]['member_notify'].update({str(author.id): channel})
-                await self.client.send_message(ctx.message.channel, 'Set to notify **{author}** when *{event}* is 1 hour away from '
-                                                                    'starting!'.format(author=author.name, event=data[event_id]['event']))
+                data[event_id]['member_notify'].update({str(author.id): ctx.channel})
+                await ctx.send('Set to notify **{author}** when *{event}* is 1 hour away from '
+                               'starting!'.format(author=author.name, event=data[event_id]['event']))
                 await self.dump_events(data)
                 return
             # if user already exists in notification, remove the user
             if str(author.id) in data[event_id]['member_notify']:
                 data[event_id]['member_notify'].pop(str(author.id), None)
-                await self.client.send_message(ctx.message.channel,
-                                               'Removing **{author}\'s** notification for *{event}*.'.format(
-                                                   author=author.name,
-                                                   event=data[event_id]['event']))
+                await ctx.send(
+                    'Removing **{author}\'s** notification for *{event}*.'.format(author=author.name, event=data[event_id]['event'])
+                )
                 if len(data[event_id]['member_notify']) < 1:
                     data[event_id]['notify'] = False
                 await self.dump_events(data)
                 return
 
-    async def time_formatter(self, ctx, day, month, h, m):
+    @staticmethod
+    async def time_formatter(ctx, day, month, h, m):
         # takes hours and minutes and formats it to a datetime with UTC tz
+
         try:
             d = datetime.now
             dt = datetime(year=d().year,
@@ -273,19 +307,22 @@ class Events:
             return dt
         except ValueError as e:
             print('An improper datetime was passed.', e)
-            await self.client.send_message(ctx.message.channel, 'An incorrect datetime was passed: {}\n'
-                                                                'Use the format `setevent <h:m> <day/mnth> <event>`'.format(e))
+            await ctx.send('An incorrect datetime was passed: {}\n'
+                           'Use the format `setevent <h:m> <day/mnth> <event>`'.format(e))
             return None
 
     async def embed_handler(self, ctx, dt, event, event_id, update):
+        guild = ctx.guild
+        author = ctx.author
+
         # get two times
         dt_long, dt_short = await self.make_string(dt)
 
-        with open('files/servers.json') as f:
+        with open('files/guilds.json') as f:
             thumbs = json.load(f)
         # set the thumbnail
-        if thumbs[ctx.message.server.id]['thumb_url'] != '':
-            thumb_url = thumbs[ctx.message.server.id]['thumb_url']
+        if thumbs[str(guild.id)]['thumb_url'] != '':
+            thumb_url = thumbs[guild.id]['thumb_url']
         else:
             thumb_url = self.client.user.avatar_url
 
@@ -297,8 +334,8 @@ class Events:
         # set embed
         title = '──────────────── [Events] ────────────────'
         color = discord.Color.blue()
-        footer_style = int((39 - len(ctx.message.author.name)) / 2) * '─'
-        fmt_footer = footer_style + '[Created by: {0}]'.format(ctx.message.author.name) + footer_style
+        footer_style = int((39 - len(author.name)) / 2) * '─'
+        fmt_footer = footer_style + '[Created by: {0}]'.format(author.name) + footer_style
 
         # create embed
         embed = discord.Embed(title=title, color=color)
@@ -310,8 +347,10 @@ class Events:
             if event_id in data:
                 dt_data = data[event_id]['time']
                 dt_data = await self.make_datetime(dt_data)
-                eta = await self.eta(dt_data)
                 dt_data_long, dt_data_short = await self.make_string(dt_data)
+                new_dt_data = await self.make_datetime(dt_long)
+                eta = await self.eta(new_dt_data)
+
                 embed.add_field(name=event_title, value='**Event** [{0}]: {1}\n'
                                                         '**Time**: {2} **──>** {3}\n'
                                                         '**ETA**: {4}'.format(event_id, event, dt_data_short, dt_short, eta), inline=False)
@@ -382,7 +421,7 @@ class Events:
 
     async def check_notifier(self):
         await self.client.wait_until_ready()
-        while not self.client.is_closed:
+        while not self.client.is_closed():
             await asyncio.sleep(60 * 5)
             print('Checking notifier...')
             data_events = await Events.load_events()
@@ -394,6 +433,7 @@ class Events:
                     days = int(days.strip('d'))
                     hours = int(hours.strip('h'))
                     minutes = int(minutes.strip('m'))
+                    print(days, hours, minutes)
                     if days < 1 and hours < 1 and minutes > 0:
                         for values in value['member_notify']:
                             for user, channel in values.items():
@@ -406,14 +446,18 @@ class Events:
                     await Events.dump_events(data_events)
 
     async def spam(self, ctx, message):
-        data = await self.load_servers()
-        server = ctx.message.server.id
-        if str(server) in data:
-            if data[server]['spam'] is not None:
+        guild = ctx.guild
+        author = ctx.author
+        gid = str(guild.id)
+
+        data = await self.load_guilds()
+        if gid in data:
+            if data[gid]['spam'] is not None:
                 embed = discord.Embed(color=discord.Color.blue())
                 embed.add_field(name='Alert', value=message)
-                embed.set_footer(text='Triggered by: {0.name}'.format(ctx.message.author))
-                await self.client.send_message(discord.Object(id=data[server]['spam']), embed=embed)
+                embed.set_footer(text='Triggered by: {0.name}'.format(author))
+                channel = self.client.get_channel(int(data[gid]['spam']))
+                await channel.send(embed=embed)
 
     @staticmethod
     async def create_user(member):
@@ -422,15 +466,15 @@ class Events:
         if member.id not in data_users:
             data_users[member.id] = {
                 'username': member.name,
-                'server': [],
+                'guild': [],
                 'karma': 0,
             }
         with open('files/users.json', 'w') as f:
             json.dump(data_users, f, indent=2)
 
     @staticmethod
-    async def load_servers():
-        with open('files/servers.json') as f:
+    async def load_guilds():
+        with open('files/guilds.json') as f:
             data = json.load(f)
         return data
 

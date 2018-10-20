@@ -7,10 +7,10 @@ class Help:
     def __init__(self, client):
         self.client = client
 
-    @commands.command(pass_context=True)
+    @commands.command()
     async def help(self, ctx, *args):
         if len(args) > 1:
-            await self.client.send_message(ctx.message.channel, 'You\'ve passed too many arguments.')
+            await ctx.send('You\'ve passed too many arguments.')
             return
         if len(args) > 0:
             if args[0] == 'events' or args[0] == 'event':
@@ -22,7 +22,7 @@ class Help:
             if args[0] == 'roles' or args[0] == 'role':
                 await self.roles_help(ctx)
                 return
-            await self.client.send_message(ctx.message.channel, '{0} is not an option.'.format(args[0]))
+            await ctx.send('{0} is not an option.'.format(args[0]))
             return
         if len(args) == 0:
             embed = discord.Embed(color=discord.Color.blue())
@@ -39,22 +39,23 @@ class Help:
                             inline=False)
             embed.add_field(name='hello', value='Say hi to Artemis!', inline=False)
             embed.add_field(name="status", value="Check Artemis' status", inline=False)
-            embed.add_field(name="leaderboard", value="Check karma levels (WIP)", inline=False)
-            embed.add_field(name="arena", value="Settle the score (WIP)", inline=False)
+            # embed.add_field(name="leaderboard", value="Check karma levels (WIP)", inline=False)
+            # embed.add_field(name="arena", value="Settle the score (WIP)", inline=False)
             embed.add_field(name="flip", value="Flip a coin", inline=False)
             embed.add_field(name="rps <choice>", value="Play Rock, Paper, Scissors against the bot", inline=False)
             embed.add_field(name="whois <user>", value="Find user details (WIP)", inline=False)
-            embed.add_field(name="server", value="Check server information (WIP)", inline=False)
+            embed.add_field(name="guild", value="Check guild information (WIP)", inline=False)
             embed.add_field(name='yt <search>', value='Return the first YouTube video based for <search>.', inline=False)
             embed.add_field(name='spamchannel <channel>', value='Set a channel for all spam.', inline=False)
             embed.add_field(name='help events', value='See available options for events.', inline=False)
             embed.add_field(name='help embeds', value='See available options for embeds.', inline=False)
             embed.add_field(name='help role', value='See available options for roles.', inline=False)
             embed.set_footer(text="Author: Hatchet Jackk")
-            await self.client.send_message(ctx.message.author, embed=embed)
-            print('Artemis: Sent help to {0}'.format(ctx.message.author))
+            await ctx.author.send(embed=embed)
+            print('Artemis: Sent help to {0}'.format(ctx.author))
 
-    async def embeds_help(self, ctx):
+    @staticmethod
+    async def embeds_help(ctx):
         embed = discord.Embed(
             title='Embeds Help',
             color=discord.Color.blue()
@@ -73,10 +74,11 @@ class Help:
                   '``colors <optional: full>``',
             inline=False
         )
-        await self.client.send_message(ctx.message.author, embed=embed)
-        print('Artemis: Sent help to {0}'.format(ctx.message.author))
+        await ctx.author.send(embed=embed)
+        print('Artemis: Sent help to {0}'.format(ctx.author))
 
-    async def events_help(self, ctx):
+    @staticmethod
+    async def events_help(ctx):
         embed = discord.Embed(
             title='Events Help',
             color=discord.Color.blue()
@@ -123,10 +125,11 @@ class Help:
                   '``notify <event id>``',
             inline=False
         )
-        await self.client.send_message(ctx.message.author, embed=embed)
-        print('Artemis: Sent help to {0}'.format(ctx.message.author))
+        await ctx.author.send(embed=embed)
+        print('Artemis: Sent help to {0}'.format(ctx.author))
 
-    async def roles_help(self, ctx):
+    @staticmethod
+    async def roles_help(ctx):
         embed = discord.Embed(
             title='Roles Help',
             color=discord.Color.blue()
@@ -138,8 +141,8 @@ class Help:
                   '`del`: Remove the autorole',
             inline=False
         )
-        await self.client.send_message(ctx.message.author, embed=embed)
-        print('Artemis: Sent help to {0}'.format(ctx.message.author))
+        await ctx.author.send(embed=embed)
+        print('Artemis: Sent help to {0}'.format(ctx.author))
 
 
 def setup(client):

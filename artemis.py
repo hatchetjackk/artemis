@@ -14,8 +14,8 @@ with open('files/bot.json', 'r') as b:
     bot_data = json.load(b)
 command_prefix = bot_data['prefix']
 # try:
-#     for key, value in server_data.items():
-#         if key == discord.Server.id:
+#     for key, value in guild_data.items():
+#         if key == discord.guild.id:
 #             command_prefix = value['prefix']
 # except Exception as e:
 #     print(e)
@@ -30,7 +30,7 @@ logging.info('Starting')
 client = commands.Bot(command_prefix=command_prefix)
 client.remove_command('help')
 extensions = ['cogs.mod', 'cogs.karma', 'cogs.fun',
-              'cogs.emotional_core', 'cogs.arena', 'cogs.user',
+              'cogs.emotional_core', 'cogs.user',
               'cogs.events', 'cogs.help', 'cogs.richembeds',
               'cogs.automod']
 
@@ -40,7 +40,8 @@ async def on_ready():
     # log login
     now = datetime.datetime.now()
     print("{0:<15} {1}".format("Logged in as", client.user.name))
-    print("{0:<15} {1}".format("User ID:", client.user.id))
+    print("{0:<15} {1}".format("Client", client.user.id))
+    print('{0:<15} {1}'.format('Discord.py', discord.__version__))
     print("---------------------------------------")
     print("[{0}] Artemis is online.".format(now))
 
@@ -49,22 +50,22 @@ async def on_ready():
     #              "Artemis is ready.",
     #              "Artemis, reporting in.",
     #              "Artemis, logging in."]
-    # report in to botspam for all servers
+    # report in to botspam for all guilds
     # await botspam(random.choice(responses))
     try:
-        with open('files/servers.json') as f:
-            data_servers = json.load(f)
-        for server in client.servers:
-            if str(server.id) not in data_servers:
-                data_servers[server.id] = {
-                    'server_name': server.name,
+        with open('files/guilds.json') as f:
+            data_guilds = json.load(f)
+        for guild in client.guilds:
+            if str(guild.id) not in data_guilds:
+                data_guilds[guild.id] = {
+                    'guild_name': guild.name,
                     'thumb_url': '',
                     'prefix': '!',
                     'auto_role': None,
                     'spam': None
                 }
-        with open('files/servers.json', 'w') as f:
-            json.dump(data_servers, f, indent=2)
+        with open('files/guilds.json', 'w') as f:
+            json.dump(data_guilds, f, indent=2)
     except Exception as e:
         print(e)
 
@@ -76,10 +77,10 @@ async def on_resumed():
     print(message)
 
 
-@client.event
-async def on_error(event):
-    now = datetime.datetime.now().strftime('%d/%Y %H:%M')
-    msg = "An error has occurred.\n[{0}] Error: {1}".format(now, event)
+# @client.event
+# async def on_error(event):
+#     now = datetime.datetime.now().strftime('%d/%Y %H:%M')
+#     msg = "An error has occurred.\n[{0}] Error: {1}".format(now, event)
 
 
 @client.event
@@ -111,14 +112,14 @@ async def on_message(message):
                     'Appreciate it!', 'You got it!', ':smile:', 'Yeet!',
                     '( ͡° ͜ʖ ͡°)'
                 ]
-                await client.send_message(message.channel, random.choice(responses))
+                await message.channel.send(random.choice(responses))
         for value in bad_bot:
             if value in message.content.lower():
                 responses = [
                     ':sob:', ':cry:', 'Oh... ok',
                     'S-sorry.', '( ͡° ͜ʖ ͡°)', 'Sowwy onyii-chan'
                 ]
-                await client.send_message(message.channel, random.choice(responses))
+                await message.channel.send(random.choice(responses))
 
     await client.process_commands(message)
 
@@ -134,51 +135,54 @@ async def change_status():
         'with Python'
     ]
     msg = cycle(status_response)
-    while not client.is_closed:
+    while not client.is_closed():
         current_status = next(msg)
         await client.change_presence(game=discord.Game(name=current_status))
         await asyncio.sleep(60*5)
 
 
 async def update_users(message):
+    guild = message.guild
+    gid = str(guild.id)
     with open('files/users.json', 'r') as f:
         data_users = json.load(f)
 
-    for member in message.server.members:
-        if member.id not in data_users:
-            data_users[member.id] = {
+    for member in message.guild.members:
+        mid = str(member.id)
+        if mid not in data_users:
+            data_users[mid] = {
                 'username': member.name,
-                'server': [],
+                'guild': {},
                 'karma': 0,
             }
-        if str(message.server) not in data_users[member.id]['server']:
-            data_users[member.id]['server'].append(str(message.server))
+        if gid not in data_users[mid]['guild']:
+            data_users[mid]['guild'].update({gid: guild.name})
 
     with open('files/users.json', 'w') as f:
         json.dump(data_users, f, indent=2)
 
 
-async def spam(self, ctx, message):
-    data = await self.load_servers()
-    server = ctx.message.server.id
-    if str(server) in data:
-        if data[server]['spam'] is not None:
+async def spam(ctx, message):
+    data = await load_guilds()
+    guild = ctx.guild
+    gid = str(guild.id)
+
+    if gid in data:
+        if data[gid]['spam'] is not None:
             embed = discord.Embed(color=discord.Color.blue())
             embed.add_field(name='Alert', value=message)
             embed.set_footer(text='Triggered by: {0.name}'.format(ctx.message.author))
-            await self.client.send_message(discord.Object(id=data[server]['spam']), embed=embed)
+            await ctx.Object(id=data[gid]['spam']).send(embed=embed)
 
 
-@staticmethod
-async def load_servers():
-    with open('files/servers.json') as f:
+async def load_guilds():
+    with open('files/guilds.json') as f:
         data = json.load(f)
     return data
 
 
-@staticmethod
-async def dump_servers(data):
-    with open('files/servers.json', 'w') as f:
+async def dump_guilds(data):
+    with open('files/guilds.json', 'w') as f:
         json.dump(data, f, indent=2)
 
 client.loop.create_task(change_status())
