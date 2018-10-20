@@ -21,6 +21,7 @@ class Automod:
         pass
 
     @commands.command()
+    @commands.has_role('mod')
     async def autorole(self, ctx, *args):
         guild = ctx.guild
         author = ctx.author
@@ -50,6 +51,7 @@ class Automod:
             await ctx.send('{} is not a valid command.'.format(args[0]))
 
     @commands.command()
+    @commands.has_role('mod')
     async def spamchannel(self, ctx, *args):
         guild = ctx.guild
         gid = str(guild.id)
