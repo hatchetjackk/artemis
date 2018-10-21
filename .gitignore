@@ -78,3 +78,5 @@ files/servers\.json
 files/moderation\.json
 
 status\.json
+
+files/guilds\.json
