@@ -32,5 +32,33 @@
       "I feel pretty bad. I mean... yeah.",
       "Just... ugh."
     ]
+  },
+  "karma_responses": {
+    "good_response": [
+      ":sparkles: You earned some karma, {0}!",
+      ":sparkles: Cha-ching! You got some karma, {0}!",
+      ":sparkles: What's that? Sounds like that karma train, {0}!",
+      ":sparkles: +1 karma for {0}!"
+    ],
+    "client_response": [
+      "You're welcome!",
+      "No problem.",
+      "Anytime!",
+      "Sure thing, fellow human!",
+      "*eats karma* Mmm.",
+      "I try!",
+      "I do it for the kudos!",
+      ":wink:",
+      "Appreciate it!",
+      "You got it!",
+      ":smile:",
+      "Yeet!"
+      ],
+    "bad_response": [
+      "You can't give yourself karma.",
+      "Let's keep things fair here...",
+      "Looks like karma abuse over here.",
+      "Are you trying to farm karma?!"
+    ]
   }
 }

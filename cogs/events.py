@@ -5,6 +5,7 @@ import pytz
 import json
 import random
 from discord.ext import commands
+from discord.ext.commands import BucketType
 
 """ All times in events are handled as UTC and then converted to set zone times for local reference """
 
@@ -12,8 +13,28 @@ from discord.ext import commands
 class Events:
     def __init__(self, client):
         self.client = client
+        self.tz_dict = {
+            'pst/pdt': datetime.now(pytz.timezone('US/Alaska')),
+            'cst/cdt': datetime.now(pytz.timezone('US/Mountain')),
+            'est/edt': datetime.now(pytz.timezone('US/Eastern')),
+            'utc/gmt': datetime.now(pytz.timezone('GMT')),
+            'bst': datetime.now(pytz.timezone('Europe/London')),
+            'cest': datetime.now(pytz.timezone('Europe/Brussels'))
+        }
+        self.pop_zones = {
+            'pst': pytz.timezone('US/Alaska'),
+            'pdt': pytz.timezone('US/Alaska'),
+            'cst': pytz.timezone('US/Mountain'),
+            'cdt': pytz.timezone('US/Mountain'),
+            'est': pytz.timezone('US/Eastern'),
+            'edt': pytz.timezone('US/Eastern'),
+            'gmt': pytz.timezone('GMT'),
+            'bst': pytz.timezone('Europe/London'),
+            'utc': pytz.timezone('UTC'),
+            'cest': pytz.timezone('Europe/Brussels')}
 
     @commands.command()
+    @commands.cooldown(rate=2, per=30, type=BucketType.user)
     async def setevent(self, ctx, *args):
         guild = ctx.guild
         author = ctx.author
@@ -31,7 +52,6 @@ class Events:
         if dt is None:
             return
 
-        # utc = await self.utc_conversion(dt, tz)
         data = await self.load_events()
 
         # generate the event with a unique ID
@@ -57,32 +77,23 @@ class Events:
         msg = 'An event was created.\n{0} [{1}]\n{2}'.format(event, event_id, dt_long)
         await self.spam(ctx, msg)
 
-    @commands.command()
-    async def delevent(self, ctx, *args):
+    @commands.group()
+    @commands.cooldown(rate=2, per=30, type=BucketType.user)
+    async def delevent(self, ctx):
+        if ctx.invoked_subcommand is None:
+            await ctx.send('Use `delevent id event_id1 event_id2` to delete an event.')
 
+    @delevent.group()
+    async def id(self, ctx, *args):
+        # delete specific events
         if len(args) < 1:
-            await ctx.send('Use ``delevent <event id>`` to delete an event.')
+            await ctx.send('Use `delevent id event_id1 event_id2` to delete an event.')
             return
         event_list = args[:]
         data = await self.load_events()
-        if str(event_list[0]) == 'all':
-            # delete all events
-            while len(data) > 0:
-                try:
-                    for event in data:
-                        data.pop(event)
-                        await self.dump_events(data)
-                except RuntimeError:
-                    pass
-            await ctx.send('All events deleted!')
-            return
-        # print out results and delete after 5 seconds
         for event_id in event_list:
-            # count = 1
-            # messages = []
             if event_id in data:
                 event = data[event_id]['event']
-                # count += 1
                 data.pop(event_id)
                 await self.dump_events(data)
                 embed = discord.Embed(color=discord.Color.blue())
@@ -94,6 +105,20 @@ class Events:
             await asyncio.sleep(5)
             msg = 'An event was deleted.\n{0} [{1}]'.format(event, event_id)
             await self.spam(ctx, msg)
+
+    @delevent.group()
+    @commands.has_role('mod')
+    async def all(self, ctx):
+        # delete all events
+        data = await self.load_events()
+        while len(data) > 0:
+            try:
+                for event in data:
+                    data.pop(event)
+                    await self.dump_events(data)
+            except RuntimeError:
+                pass
+        await ctx.send('All events deleted!')
 
     @commands.command()
     async def update(self, ctx, *args):
@@ -121,7 +146,6 @@ class Events:
     @commands.command()
     async def events(self, ctx, *args):
         """ Return one or all events in events.json dependent on the guild id
-
         Method will check for args, and if none are passed, all events will be sent
         """
         guild = ctx.guild
@@ -233,9 +257,11 @@ class Events:
             # Format the event's time
             dt = await self.make_datetime(data[event_id]['time'])
             verify, tz_conversion = await self.timezones(tz)
+
             # Convert the time with set tz
             new_dt = dt.astimezone(tz_conversion)
             dt = dt + datetime.utcoffset(new_dt)
+
             # Make the datetime object a string and format it
             dt_long, dt_short = await self.make_string(dt)
             dt_short = dt_short.replace('UTC', '')
@@ -249,14 +275,7 @@ class Events:
     @commands.command()
     async def time(self, ctx):
         # returns an embed with popular time zones
-        now = datetime.now
-        zones = {
-            'pst/pdt': now(pytz.timezone('US/Alaska')),
-            'cst/cdt': now(pytz.timezone('US/Mountain')),
-            'est/edt': now(pytz.timezone('US/Eastern')),
-            'utc/gmt': now(pytz.timezone('GMT')),
-            'bst': now(pytz.timezone('Europe/London'))
-        }
+        zones = self.tz_dict
         embed = discord.Embed(title='──────────────── [ Time ] ────────────────', color=discord.Color.blue())
         embed.add_field(name='Zone', value='\n'.join([zone.upper() for zone in zones]), inline=True)
         embed.add_field(name='Time', value='\n'.join(zones[zone].strftime('%H:%M') for zone in zones))
@@ -293,7 +312,6 @@ class Events:
     @staticmethod
     async def time_formatter(ctx, day, month, h, m):
         # takes hours and minutes and formats it to a datetime with UTC tz
-
         try:
             d = datetime.now
             dt = datetime(year=d().year,
@@ -395,29 +413,12 @@ class Events:
             datetime_string_short = datetime_object.strftime('%H:%M UTC, %d/%b')
             return datetime_string_full, datetime_string_short
 
-    @staticmethod
-    async def timezones(tz):
+    async def timezones(self, tz):
         tz = tz.lower()
-        zones = {'pst': pytz.timezone('US/Alaska'), 'pdt': pytz.timezone('US/Alaska'),
-                 'cst': pytz.timezone('US/Mountain'), 'cdt': pytz.timezone('US/Mountain'),
-                 'est': pytz.timezone('US/Eastern'), 'edt': pytz.timezone('US/Eastern'),
-                 'gmt': pytz.timezone('GMT'), 'bst': pytz.timezone('Europe/London'),
-                 'utc': pytz.timezone('UTC')}
-        if tz in zones:
-            return True, zones[tz]
+        if tz in self.pop_zones:
+            return True, self.pop_zones[tz]
         else:
             return False
-
-    @staticmethod
-    async def load_events():
-        with open('files/events.json') as f:
-            data = json.load(f)
-        return data
-
-    @staticmethod
-    async def dump_events(data):
-        with open('files/events.json', 'w') as f:
-            json.dump(data, f, indent=2)
 
     async def check_notifier(self):
         await self.client.wait_until_ready()
@@ -477,6 +478,25 @@ class Events:
         with open('files/guilds.json') as f:
             data = json.load(f)
         return data
+
+    @staticmethod
+    async def load_events():
+        with open('files/events.json') as f:
+            data = json.load(f)
+        return data
+
+    @staticmethod
+    async def dump_events(data):
+        with open('files/events.json', 'w') as f:
+            json.dump(data, f, indent=2)
+
+    @setevent.error
+    @delevent.error
+    async def on_message_error(self, ctx, error):
+        if isinstance(error, commands.CommandOnCooldown):
+            msg = ':sob: You\'ve triggered a cool down. Please try again in {} sec.'.format(
+                int(error.retry_after))
+            await ctx.send(msg)
 
 
 def setup(client):

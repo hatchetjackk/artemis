@@ -81,6 +81,7 @@ async def on_resumed():
 # async def on_error(event):
 #     now = datetime.datetime.now().strftime('%d/%Y %H:%M')
 #     msg = "An error has occurred.\n[{0}] Error: {1}".format(now, event)
+#     await
 
 
 @client.event
@@ -88,12 +89,7 @@ async def on_message(message):
     if message.author.id == client.user.id:
         return
     if not message.content.startswith('!'):
-        try:
-            await update_users(message)
-        except ValueError as e:
-            print(e)
-        except AttributeError as e:
-            print(e)
+        await update_users(message)
 
         bot_kudos = [
             'good bot', 'good job bot', 'good job, bot',
@@ -142,25 +138,29 @@ async def change_status():
 
 
 async def update_users(message):
-    guild = message.guild
-    gid = str(guild.id)
-    with open('files/users.json', 'r') as f:
-        data_users = json.load(f)
+    try:
+        guild = message.guild
+        gid = str(guild.id)
+        with open('files/users.json', 'r') as f:
+            data_users = json.load(f)
 
-    for member in message.guild.members:
-        mid = str(member.id)
-        if mid not in data_users:
-            data_users[mid] = {
-                'username': member.name,
-                'guild': {},
-                'karma': 0,
-            }
-        if gid not in data_users[mid]['guild']:
-            data_users[mid]['guild'].update({gid: guild.name})
+        for member in message.guild.members:
+            mid = str(member.id)
+            if mid not in data_users:
+                data_users[mid] = {
+                    'username': member.name,
+                    'guild': {},
+                    'karma': 0,
+                    'karma_cooldown': 0
+                }
+            if gid not in data_users[mid]['guild']:
+                data_users[mid]['guild'].update({gid: guild.name})
 
-    with open('files/users.json', 'w') as f:
-        json.dump(data_users, f, indent=2)
-
+        with open('files/users.json', 'w') as f:
+            json.dump(data_users, f, indent=2)
+    except Exception as e:
+        print(e)
+        raise
 
 async def spam(ctx, message):
     data = await load_guilds()

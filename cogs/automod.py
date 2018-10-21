@@ -9,6 +9,7 @@ class Automod:
         self.client = client
 
     @commands.command()
+    @commands.has_role('mod')
     async def role(self, ctx, *args):
         # desc that can be accessed by help commands?
         # parent command for other functions
@@ -20,35 +21,45 @@ class Automod:
         # except Exception
         pass
 
-    @commands.command()
+    @commands.group()
     @commands.has_role('mod')
-    async def autorole(self, ctx, *args):
+    async def autorole(self, ctx):
+        if ctx.invoked_subcommand is None:
+            await ctx.send('Invoke `autorole` with `add` or `remove`.')
+
+    @autorole.group()
+    async def add(self, ctx, role):
+        data = await self.load_guilds()
+        guild = ctx.guild
+        gid = str(guild.id)
+        author = ctx.author
+        role = discord.utils.get(guild.roles, name=role)
+        try:
+            if role in guild.roles:
+                data[gid]['auto_role'] = role.id
+                await self.dump_guilds(data)
+                await ctx.send('The Autorole is now set to `{}`'.format(role))
+                msg = '{0} set {1}\'s autorole to *{2}*.'.format(author.name, guild, role)
+                await self.spam(ctx, msg)
+            else:
+                await ctx.ctx.send('{} is not a valid role.'.format(role))
+        except Exception as e:
+            print(e)
+
+    @autorole.group()
+    async def remove(self, ctx):
+        data = await self.load_guilds()
         guild = ctx.guild
         author = ctx.author
-
-        # allow a user to set the autorole for when members join
-        data = await self.load_guilds()
-        if args[0] == 'add':
-            role = discord.utils.get(guild.roles, name=args[1])
-            try:
-                if role in guild.roles:
-                    data[guild.id]['auto_role'] = role.id
-                    await self.dump_guilds(data)
-                    await ctx.send('The Autorole is now set to `{}`'.format(role))
-                    msg = '{0} set {1}\'s autorole to {2}.'.format(author.name, guild, role)
-                    await self.spam(ctx, msg)
-                else:
-                    await ctx.ctx.send('{} is not a valid role.'.format(role))
-            except Exception as e:
-                print(e)
-        elif args[0] == 'del':
+        try:
             data[guild.id]['auto_role'] = None
             await self.dump_guilds(data)
             await ctx.send('The Autorole has been cleared.')
             msg = '{0} cleared {1}\'s autorole.'.format(author.name, guild)
             await self.spam(ctx, msg)
-        else:
-            await ctx.send('{} is not a valid command.'.format(args[0]))
+        except Exception as e:
+            print(e)
+            raise
 
     @commands.command()
     @commands.has_role('mod')
@@ -84,18 +95,18 @@ class Automod:
                 embed.set_footer(text='Triggered by: {0.name}'.format(member))
                 await self.client.send_message(discord.Object(id=data[guild]['spam']), embed=embed)
 
-    async def on_message_edit(self, before, after):
-        if after.author.bot:
-            return
-        data = await self.load_guilds()
-        embed = discord.Embed(title='{0} edited a message in #{1}'.format(after.author.name, after.channel.name),
-                              color=discord.Color.blue())
-        embed.set_thumbnail(url=after.author.avatar_url)
-        embed.add_field(name='Before', value=before.content)
-        embed.add_field(name='After', value=after.content)
-        channel = data[after.guild.id]['spam']
-        await self.client.send_message(discord.Object(id=channel), embed=embed)
-        await self.client.send_message(channel, 'yee')
+    # async def on_message_edit(self, before, after):
+    #     if after.author.bot:
+    #         return
+    #     data = await self.load_guilds()
+    #     embed = discord.Embed(title='{0} edited a message in #{1}'.format(after.author.name, after.channel.name),
+    #                           color=discord.Color.blue())
+    #     embed.set_thumbnail(url=after.author.avatar_url)
+    #     embed.add_field(name='Before', value=before.content)
+    #     embed.add_field(name='After', value=after.content)
+    #     channel = data[after.guild.id]['spam']
+    #     await self.client.send_message(discord.Object(id=channel), embed=embed)
+    #     await self.client.send_message(channel, 'yee')
 
     async def on_message_delete(self, message):
         if message.author.bot:
@@ -114,14 +125,23 @@ class Automod:
 
     @staticmethod
     async def create_user(member):
+        guild = member.guild
+        gid = str(guild.id)
+        mid = str(member.id)
+
         with open('files/users.json', 'r') as f:
             data_users = json.load(f)
-        if member.id not in data_users:
+
+        if mid not in data_users:
             data_users[member.id] = {
                 'username': member.name,
-                'guild': [],
+                'guild': {},
                 'karma': 0,
+                'karma_cooldown': 0
             }
+        if gid not in data_users[mid]['guild']:
+            data_users[mid]['guild'].update({gid: guild.name})
+
         with open('files/users.json', 'w') as f:
             json.dump(data_users, f, indent=2)
 
@@ -149,6 +169,16 @@ class Automod:
                 embed.set_footer(text='Triggered by: {0.name}'.format(author))
                 channel = self.client.get_channel(data[gid]['spam'])
                 await channel.send(embed=embed)
+
+    @autorole.error
+    async def on_message_error(self, ctx, error):
+        if isinstance(error, commands.CommandOnCooldown):
+            msg = ':sob: You\'ve triggered a cool down. Please try again in {} sec.'.format(
+                int(error.retry_after))
+            await ctx.send(msg)
+        if isinstance(error, commands.CheckFailure):
+            msg = 'You do not have permission to run this command.'
+            await ctx.send(msg)
 
 
 def setup(client):
