@@ -1,5 +1,5 @@
 #! python3
-
+import os
 import discord
 import asyncio
 import json
@@ -12,27 +12,24 @@ from discord.ext import commands
 
 with open('files/bot.json', 'r') as b:
     bot_data = json.load(b)
-command_prefix = bot_data['prefix']
-# try:
-#     for key, value in guild_data.items():
-#         if key == discord.guild.id:
-#             command_prefix = value['prefix']
-# except Exception as e:
-#     print(e)
-#     sys.exit(1)
+with open('files/guilds.json', 'r') as g:
+    guild_data = json.load(g)
 with open('files/credentials.json', 'r') as c:
     credentials = json.load(c)
+
 token = credentials['token']
+default_prefix = '!'
 
 logging.basicConfig(filename='files/artemis.log', format='%(asctime)s %(message)s', level=logging.INFO)
 logging.info('Starting')
 
-client = commands.Bot(command_prefix=command_prefix)
+
+async def prefix(bot, message):
+    gid = str(message.guild.id)
+    return guild_data[gid]['prefix']
+
+client = commands.Bot(command_prefix=prefix)
 client.remove_command('help')
-extensions = ['cogs.mod', 'cogs.karma', 'cogs.fun',
-              'cogs.emotional_core', 'cogs.user',
-              'cogs.events', 'cogs.help', 'cogs.richembeds',
-              'cogs.automod']
 
 
 @client.event
@@ -45,19 +42,10 @@ async def on_ready():
     print("---------------------------------------")
     print("[{0}] Artemis is online.".format(now))
 
-    # tell a channel that Artemis has logged in
-    # responses = ["Artemis is online.",
-    #              "Artemis is ready.",
-    #              "Artemis, reporting in.",
-    #              "Artemis, logging in."]
-    # report in to botspam for all guilds
-    # await botspam(random.choice(responses))
     try:
-        with open('files/guilds.json') as f:
-            data_guilds = json.load(f)
         for guild in client.guilds:
-            if str(guild.id) not in data_guilds:
-                data_guilds[guild.id] = {
+            if str(guild.id) not in guild_data:
+                guild_data[guild.id] = {
                     'guild_name': guild.name,
                     'thumb_url': '',
                     'prefix': '!',
@@ -65,7 +53,7 @@ async def on_ready():
                     'spam': None
                 }
         with open('files/guilds.json', 'w') as f:
-            json.dump(data_guilds, f, indent=2)
+            json.dump(guild_data, f, indent=2)
     except Exception as e:
         print(e)
 
@@ -86,6 +74,7 @@ async def on_resumed():
 
 @client.event
 async def on_message(message):
+
     if message.author.id == client.user.id:
         return
     if not message.content.startswith('!'):
@@ -189,9 +178,9 @@ async def dump_guilds(data):
 client.loop.create_task(change_status())
 
 if __name__ == '__main__':
-    for extension in extensions:
+    for extension in [f.replace('.py', '') for f in os.listdir('cogs/')]:
         try:
-            client.load_extension(extension)
+            client.load_extension('cogs.' + extension)
         except Exception as error:
             print('{0} cannot be loaded [{1}]'.format(extension, error))
     client.run(token)
