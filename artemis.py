@@ -162,6 +162,7 @@ async def update_users(message):
         print(e)
         raise
 
+
 async def spam(ctx, message):
     data = await load_guilds()
     guild = ctx.guild
