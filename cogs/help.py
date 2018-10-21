@@ -72,28 +72,20 @@ class Help:
             color=discord.Color.blue()
         )
         embed.add_field(
-            name='setevent',
-            value='Create a new event. Defaults to UTC time.\n'
-                  '`setevent hour:minutes day/month event`',
-            inline=False
-        )
-        embed.add_field(
             name='events',
-            value='Check current events. Passing an event id will load that specific event only.\n'
-                  '`events`: Returns all events\n'
-                  '`events event_id`: Returns a specific event',
+            value='Show all events in the guild. New events are UTC by default.\n'
+                  'Add new events with: \n'
+                  '`events set h:m day/mnth event_description`'
+                  'Find individual events with: \n'
+                  '`events find event_id`\n'
+                  'Update existing events with:\n'
+                  '`events update event_id h:m day/mnth`',
             inline=False
         )
         embed.add_field(
             name='delevent',
             value='Delete an event\n'
                   '`delevent event_id`',
-            inline=False
-        )
-        embed.add_field(
-            name='update',
-            value='Update an event with a new time and zone.\n'
-                  '`update event_id hour:minutes day/month`',
             inline=False
         )
         embed.add_field(
