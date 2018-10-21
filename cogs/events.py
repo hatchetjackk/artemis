@@ -33,14 +33,162 @@ class Events:
             'utc': pytz.timezone('UTC'),
             'cest': pytz.timezone('Europe/Brussels')}
 
-    @commands.command()
+    @commands.group()
     @commands.cooldown(rate=2, per=30, type=BucketType.user)
-    async def setevent(self, ctx, *args):
+    async def delevent(self, ctx):
+        # delete an event in the guild
+        if ctx.invoked_subcommand is None:
+            await ctx.send('Use `delevent id event_id1 event_id2` to delete an event.')
+
+    @delevent.group()
+    async def id(self, ctx, *args):
+        guild = ctx.guild
+        gid = guild.id
+        # delete specific events
+        if len(args) < 1:
+            await ctx.send('Use `delevent id event_id1 event_id2` to delete an event.')
+            return
+        event_list = args[:]
+        data = await self.load_events()
+        for event_id in event_list:
+            if event_id in data and data[event_id]['guild_id'] == gid:
+                event = data[event_id]['event']
+                data.pop(event_id)
+                await self.dump_events(data)
+                embed = discord.Embed(color=discord.Color.blue())
+                embed.add_field(name='Event Deleted', value='{} successfully deleted.'.format(event_id))
+                await ctx.send(embed=embed)
+            else:
+                await ctx.send('Event {} not found.'.format(event_id))
+                return
+            await asyncio.sleep(5)
+            msg = 'An event was deleted by {0}.\n{1} [{2}]'.format(ctx.message.author, event, event_id)
+            await self.spam(ctx, msg)
+
+    @delevent.group()
+    @commands.has_role('mod')
+    async def all(self, ctx):
+        # delete all events
+        gid = ctx.guild.id
+        data = await self.load_events()
+        num = 0
+        for event in data:
+            if data[event]['guild_id'] == gid:
+                num += 1
+        while num > 0:
+            try:
+                for event in data:
+                    if data[event]['guild_id'] == gid:
+                        data.pop(event)
+                        await self.dump_events(data)
+                        num = num - 1
+            except RuntimeError:
+                pass
+        await ctx.send('All events deleted!')
+
+    @commands.group()
+    async def events(self, ctx):
+        # if subcommand isn't passed, return all events related to guild
+        # subcommands: set, find
+        if ctx.invoked_subcommand is None:
+            data = await self.load_guilds()
+            guild = ctx.guild
+            author = ctx.author
+            gid = str(guild.id)
+
+            thumb_url = self.client.user.avatar_url
+            if data[gid]['thumb_url'] != '':
+                thumb_url = data[gid]['thumb_url']
+
+            # set embed
+            title = '──────────────── [Events] ────────────────'
+            color = discord.Color.blue()
+            footer_style = int((39 - len(author.name)) / 2) * '─'
+            fmt_footer = footer_style + '[Created by: {0}]'.format(author.name) + footer_style
+
+            # create embed
+            embed = discord.Embed(title=title, color=color)
+            embed.set_thumbnail(url=thumb_url)
+            embed.set_footer(text=fmt_footer)
+            embed.add_field(name=':sparkles: Upcoming Events', value='\u200b')
+
+            counter = 1
+            data = await self.load_events()
+            for key, value in data.items():
+                if value['guild_id'] == guild.id:
+                    diamond = ':small_orange_diamond:'
+                    if counter % 2 == 0:
+                        diamond = ':small_blue_diamond:'
+                    # trim long event names
+                    event = value['event'][:50]
+
+                    # format the event's time
+                    dt = await self.make_datetime(value['time'])
+                    dt_long, dt_short = await self.make_string(dt)
+                    eta = await self.eta(dt)
+
+                    embed.add_field(
+                        name='{0} {1}'.format(diamond, event),
+                        value='**Time**: {0}\n'
+                              '**ETA**: {1}\n'
+                              '**ID**: {2}'.format(dt_short, eta, key),
+                        inline=False)
+                    counter += 1
+            await ctx.send(embed=embed)
+
+    @events.group()
+    @commands.cooldown(rate=1, per=5, type=BucketType.user)
+    async def find(self, ctx, event_id: str):
+        # find a single event in the events file if it is in the guild
+        data_guilds = await self.load_guilds()
+        guild = ctx.guild
+        author = ctx.author
+        gid = str(guild.id)
+
+        thumb_url = self.client.user.avatar_url
+        if data_guilds[gid]['thumb_url'] != '':
+            thumb_url = data_guilds[gid]['thumb_url']
+
+        # set embed
+        title = '──────────────── [Events] ────────────────'
+        color = discord.Color.blue()
+        footer_style = int((39 - len(author.name)) / 2) * '─'
+        fmt_footer = footer_style + '[Created by: {0}]'.format(author.name) + footer_style
+
+        # create embed
+        embed = discord.Embed(title=title, color=color)
+        embed.set_thumbnail(url=thumb_url)
+        embed.set_footer(text=fmt_footer)
+        embed.add_field(name=':sparkles: Upcoming Events', value='\u200b')
+
+        # Ensure that the event matches the guild
+        # Then return a single event
+        data_events = await self.load_events()
+        if event_id in data_events and data_events[event_id]['guild_id'] == int(gid):
+            event = data_events[event_id]['event'][:50]
+            dt = await self.make_datetime(data_events[event_id]['time'])
+            dt_long, dt_short = await self.make_string(dt)
+            eta = await self.eta(dt)
+            embed.add_field(
+                name=event,
+                value='**Event** [{0}]: {1}\n'
+                      '**Time**: {2}\n'
+                      '**ETA**: {3}'.format(event_id, event, dt_short, eta),
+                inline=False
+            )
+            await ctx.send(embed=embed)
+            return
+
+    @events.group()
+    @commands.cooldown(rate=2, per=30, type=BucketType.user)
+    async def set(self, ctx, *args):
+        # set an event using a time (hours:minutes) and date {day/month)
+        data = await self.load_events()
         guild = ctx.guild
         author = ctx.author
 
         if len(args) < 2:
-            await ctx.send('Please use the format ``setevent <h:m> <day/mnth> <event>``.')
+            await ctx.send('Please use the format `setevent h:m day/mnth event`.')
             return
 
         h, m = args[0].split(':')
@@ -51,8 +199,6 @@ class Events:
         dt = await self.time_formatter(ctx, day, month, h, m)
         if dt is None:
             return
-
-        data = await self.load_events()
 
         # generate the event with a unique ID
         while True:
@@ -68,61 +214,15 @@ class Events:
                     'member_notify': {}
                 }
                 break
-
         await self.dump_events(data)
-
         embed = await self.embed_handler(ctx, dt, event, event_id, update=False)
         await ctx.send(embed=embed)
-
-        msg = 'An event was created.\n{0} [{1}]\n{2}'.format(event, event_id, dt_long)
+        msg = 'An event was created by {0}.\n{1} [{2}]\n{3}'.format(ctx.message.author, event, event_id, dt_long)
         await self.spam(ctx, msg)
 
-    @commands.group()
+    @events.group()
     @commands.cooldown(rate=2, per=30, type=BucketType.user)
-    async def delevent(self, ctx):
-        if ctx.invoked_subcommand is None:
-            await ctx.send('Use `delevent id event_id1 event_id2` to delete an event.')
-
-    @delevent.group()
-    async def id(self, ctx, *args):
-        # delete specific events
-        if len(args) < 1:
-            await ctx.send('Use `delevent id event_id1 event_id2` to delete an event.')
-            return
-        event_list = args[:]
-        data = await self.load_events()
-        for event_id in event_list:
-            if event_id in data:
-                event = data[event_id]['event']
-                data.pop(event_id)
-                await self.dump_events(data)
-                embed = discord.Embed(color=discord.Color.blue())
-                embed.add_field(name='Event Deleted', value='{} successfully deleted.'.format(event_id))
-                await ctx.send(embed=embed)
-            else:
-                await ctx.send('Event {} not found.'.format(event_id))
-                return
-            await asyncio.sleep(5)
-            msg = 'An event was deleted.\n{0} [{1}]'.format(event, event_id)
-            await self.spam(ctx, msg)
-
-    @delevent.group()
-    @commands.has_role('mod')
-    async def all(self, ctx):
-        # delete all events
-        data = await self.load_events()
-        while len(data) > 0:
-            try:
-                for event in data:
-                    data.pop(event)
-                    await self.dump_events(data)
-            except RuntimeError:
-                pass
-        await ctx.send('All events deleted!')
-
-    @commands.command()
     async def update(self, ctx, *args):
-
         if 1 > len(args) > 3:
             await ctx.send('Please use the format ``update <event id> <h:m> <day/mnth> ``.')
             return
@@ -142,85 +242,6 @@ class Events:
         embed = await self.embed_handler(ctx, dt, event, event_id, update=True)
         await ctx.send(embed=embed)
         await self.dump_events(data)
-
-    @commands.command()
-    async def events(self, ctx, *args):
-        """ Return one or all events in events.json dependent on the guild id
-        Method will check for args, and if none are passed, all events will be sent
-        """
-        guild = ctx.guild
-        author = ctx.author
-        gid = str(guild.id)
-
-        if len(args) > 1:
-            await ctx.send('Please use `events <event id>` to check a single event\n'
-                           'or use `events` to check all events.')
-            return
-
-        # set the thumbnail
-        with open('files/guilds.json') as f:
-            thumbs = json.load(f)
-        thumb_url = self.client.user.avatar_url
-        if thumbs[gid]['thumb_url'] != '':
-            thumb_url = thumbs[gid]['thumb_url']
-
-        # set embed
-        title = '──────────────── [Events] ────────────────'
-        color = discord.Color.blue()
-        footer_style = int((39 - len(author.name)) / 2) * '─'
-        fmt_footer = footer_style + '[Created by: {0}]'.format(author.name) + footer_style
-
-        # create embed
-        embed = discord.Embed(title=title, color=color)
-        embed.set_thumbnail(url=thumb_url)
-        embed.set_footer(text=fmt_footer)
-        embed.add_field(name=':sparkles: Upcoming Events', value='\u200b')
-
-        # create variables
-        event_id = False
-        try:
-            event_id = str(args[0])
-        except IndexError:
-            pass
-
-        data = await self.load_events()
-        # Ensure that the event matches the guild
-        # Then return a single event
-        if event_id in data and data[event_id]['guild_id'] == guild.id:
-            print(data[event_id]['guild_id'])
-            print(guild.id)
-            event = data[event_id]['event'][:50]
-            dt = await self.make_datetime(data[event_id]['time'])
-            dt_long, dt_short = await self.make_string(dt)
-            embed.add_field(name=event, value='**Event** [{0}]: {1}\n'
-                                              '**Time**: {2}'.format(event_id, event, dt_short), inline=False)
-            await ctx.send(embed=embed)
-            return
-
-        # If no arguments were passed, iterate through the events.json file
-        # Return all events that match the guild id
-        # todo sort events by eta
-        elif not event_id:
-            counter = 1
-            for key, value in data.items():
-                if value['guild_id'] == guild.id:
-                    diamond = ':small_orange_diamond:'
-                    if counter % 2 == 0:
-                        diamond = ':small_blue_diamond:'
-                    # trim long event names
-                    event = value['event'][:50]
-
-                    # format the event's time
-                    dt = await self.make_datetime(value['time'])
-                    dt_long, dt_short = await self.make_string(dt)
-                    eta = await self.eta(dt)
-
-                    embed.add_field(name='{0} {1}'.format(diamond, event),
-                                    value='**Time**: {0}\n'
-                                          '**ETA**: {1}\n'
-                                          '**ID**: {2}'.format(dt_short, eta, key), inline=False)
-                    counter += 1
-            await ctx.send(embed=embed)
 
     @commands.command()
     async def mytime(self, ctx, *args):
@@ -490,12 +511,16 @@ class Events:
         with open('files/events.json', 'w') as f:
             json.dump(data, f, indent=2)
 
-    @setevent.error
     @delevent.error
+    @events.error
+    @find.error
     async def on_message_error(self, ctx, error):
         if isinstance(error, commands.CommandOnCooldown):
             msg = ':sob: You\'ve triggered a cool down. Please try again in {} sec.'.format(
                 int(error.retry_after))
+            await ctx.send(msg)
+        if isinstance(error, commands.CheckFailure):
+            msg = 'You do not have permission to run this command.'
             await ctx.send(msg)
 
 
