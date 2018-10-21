@@ -115,17 +115,30 @@ class Mod:
 
     # owner command
     @commands.command()
-    async def prefix(self, ctx, arg):
-        author = ctx.author
+    @commands.has_role('mod')
+    async def prefix(self, ctx, prefix: str):
+        # change the prefix for the guild
+        guild = ctx.guild
+        gid = str(guild.id)
+        with open('files/guilds.json') as f:
+            data = json.load(f)
+        data[gid]['prefix'] = prefix
+        with open('files/guilds.json', 'w') as f:
+            json.dump(data, f, indent=2)
+        await ctx.send('Changed guild prefix to {}'.format(prefix))
 
-        if '193416878717140992' in [role.id for role in author.roles]:
-            with open('bot.json', 'r') as f:
-                bot = json.load(f)
-            bot['artemis']['prefix'] = arg
-            with open('bot.json', 'w') as f:
-                json.dump(bot, f)
-        else:
-            await ctx.send("You do not have permission to do that.")
+    @prefix.error
+    async def on_message_error(self, ctx, error):
+        if isinstance(error, commands.CommandOnCooldown):
+            msg = ':sob: You\'ve triggered a cool down. Please try again in {} sec.'.format(
+                int(error.retry_after))
+            await ctx.send(msg)
+        if isinstance(error, commands.CheckFailure):
+            msg = 'You do not have permission to run this command.'
+            await ctx.send(msg)
+
+    # async def artemis(self, ctx):
+    #     # talk about the bot
 
 
 def setup(client):
