@@ -35,7 +35,7 @@ class Help:
             embed.add_field(name='help events', value='See available options for events.', inline=False)
             embed.add_field(name='help embeds', value='See available options for embeds.', inline=False)
             # embed.add_field(name='help roles', value='See available options for roles.', inline=False)
-            # embed.add_field(name='help mod', value='See available options for moderators.', inline=False)
+            embed.add_field(name='help mod', value='See available options for moderators.', inline=False)
             embed.set_footer(text="Author: Hatchet Jackk")
             await ctx.author.send(embed=embed)
             print('Artemis: Sent help to {0}'.format(ctx.author.name))
@@ -114,6 +114,43 @@ class Help:
                   '`notify event_id`',
             inline=False
         )
+        await ctx.author.send(embed=embed)
+        print('Artemis: Sent help to {0}'.format(ctx.author))
+
+    @staticmethod
+    @help.group()
+    async def mods(ctx):
+        embed = discord.Embed(
+            title='Mods Help',
+            description='Help topics for mods only.',
+            color=discord.Color.blue()
+        )
+        embed.add_field(
+            name='botspam',
+            value='Change the botspam channel.\n'
+                  '`botspam channel_name`',
+            inline=False
+        ),
+        embed.add_field(
+            name='autorole',
+            value='Determine what role new users will automatically receive'
+                  '`autorole add role_name`\n'
+                  '`autorole remove`',
+            inline=False
+        ),
+        embed.add_field(
+            name='delevent __all__',
+            value='Delete all events for the server\n'
+                  '`delevent all`',
+            inline=False
+        ),
+        embed.add_field(
+            name='clear',
+            value='Clear x number of messages\n'
+                  '`clear integer`',
+            inline=False
+        )
+
         await ctx.author.send(embed=embed)
         print('Artemis: Sent help to {0}'.format(ctx.author))
 

@@ -63,37 +63,52 @@ class Automod:
 
     @commands.command()
     @commands.has_role('mod')
-    async def spamchannel(self, ctx, *args):
+    async def botspam(self, ctx, channel: str):
         guild = ctx.guild
         gid = str(guild.id)
 
         data = await self.load_guilds()
-        if len(args) != 1:
-            await ctx.send('Please use `spamchannel <channel_name>`.')
-        spam = discord.utils.get(guild.channels, name=args[0])
+        if len(channel) < 1:
+            await ctx.send('Please use `spamchannel channel_name`.')
+        if channel not in [channel.name for channel in ctx.guild.channels]:
+            await ctx.send('{} is not a channel.'.format(channel))
+            return
+        spam = discord.utils.get(guild.channels, name=channel)
         data[gid]['spam'] = spam.id
         await self.dump_guilds(data)
-        msg = 'Spam channel changed. Spam channel is now {0.mention}'.format(spam)
+        msg = '{0} changed the botspam channel. It is now {1.mention}'.format(ctx.message.author.name, spam)
         await self.spam(ctx, msg)
+
+    @commands.command()
+    @commands.has_role('mod')
+    async def clear(self, ctx, amount=2):
+        channel = ctx.channel
+        messages = []
+        async for message in self.client.logs_from(channel, limit=int(amount)):
+            messages.append(message)
+            await self.client.delete_messages(messages)
 
     async def on_member_join(self, member):
         # when a member joins, give them an autorole if it exists
         data = await self.load_guilds()
-        if data[member.guild.id]['auto_role'] is not None:
-            role = discord.utils.get(member.guild.roles, id=data[member.guild.id]['auto_role'])
+
+        guild = member.guild
+        gid = str(guild.id)
+
+        if data[gid]['auto_role'] is not None:
+            role = discord.utils.get(member.guild.roles, id=data[gid]['auto_role'])
             await self.client.add_roles(member, role)
         await self.create_user(member)
 
-        guild = member.guild.id
-        if str(guild) in data:
-            if data[guild]['spam'] is not None:
-                msg1 = '{0.name} joined {1}.'.format(member, member.guild)
-                msg2 = '{0} was assigned the autorole {1}'.format(member.name, data[member.guild.id]['auto_role'])
+        if gid in data:
+            if data[gid]['spam'] is not None:
+                msg1 = '{0.name} joined {1}.'.format(member, guild)
+                msg2 = '{0} was assigned the autorole {1}'.format(member.name, data[gid]['auto_role'])
                 embed = discord.Embed(color=discord.Color.blue())
                 embed.add_field(name='Alert', value=msg1)
                 embed.add_field(name='Alert', value=msg2)
-                embed.set_footer(text='Triggered by: {0.name}'.format(member))
-                await self.client.send_message(discord.Object(id=data[guild]['spam']), embed=embed)
+                channel = self.client.get_channel(data[gid]['spam'])
+                await channel.send(embed=embed)
 
     async def on_message_edit(self, before, after):
         if before.author.bot:
@@ -165,7 +180,6 @@ class Automod:
 
     async def spam(self, ctx, message):
         guild = ctx.guild
-        author = ctx.author
         gid = str(guild.id)
 
         data = await self.load_guilds()
@@ -173,11 +187,12 @@ class Automod:
             if data[gid]['spam'] is not None:
                 embed = discord.Embed(color=discord.Color.blue())
                 embed.add_field(name='Alert', value=message)
-                embed.set_footer(text='Triggered by: {0.name}'.format(author))
                 channel = self.client.get_channel(data[gid]['spam'])
                 await channel.send(embed=embed)
 
     @autorole.error
+    @botspam.error
+    @clear.error
     async def on_message_error(self, ctx, error):
         if isinstance(error, commands.CommandOnCooldown):
             msg = ':sob: You\'ve triggered a cool down. Please try again in {} sec.'.format(

@@ -92,21 +92,6 @@ class Mod:
 
     # mod command
     @commands.command()
-    async def clear(self, ctx, amount=2):
-        author = ctx.author
-        channel = ctx.channel
-
-        mod = '495187511698784257'
-        if mod or "193416878717140992" in [role.id for role in author.roles]:
-            messages = []
-            async for message in self.client.logs_from(channel, limit=int(amount)):
-                messages.append(message)
-            await self.client.delete_messages(messages)
-        else:
-            await ctx.send("You do not have permission to do that.")
-
-    # mod command
-    @commands.command()
     async def displayembed(self, ctx):
         author = ctx.author
 
