@@ -107,7 +107,7 @@ class RichEmbed:
 
     async def on_message(self, message):
         embed = Embed(color=Color.blue())
-        # quickembeds!
+        # quick embeds!
         if message.content.startswith('>'):
             lines = message.content.split('\n')
             line1 = lines[0]
@@ -124,8 +124,7 @@ class RichEmbed:
         return thumb
 
     async def clear_messages(self, ctx, amount=2):
-        mod = '495187511698784257'
-        if mod or '193416878717140992' in [role.id for role in ctx.author.roles]:
+        if 'mod' in [role.name for role in ctx.author.roles]:
             messages = []
             async for message in self.client.logs_from(ctx.channel, limit=int(amount)):
                 messages.append(message)
@@ -133,31 +132,8 @@ class RichEmbed:
         else:
             await ctx.send('You do not have permission to do that.')
 
-    @staticmethod
-    async def check_colors(color):
-        colors = {
-            1: [Color.teal(), 'teal'],
-            2: [Color.dark_teal(), 'dark_teal'],
-            3: [Color.green(), 'green'],
-            4: [Color.dark_green(), 'dark_green'],
-            5: [Color.blue(), 'blue'],
-            6: [Color.dark_blue(), 'dark_blue'],
-            7: [Color.purple(), 'purple'],
-            8: [Color.dark_purple(), 'dark_purple'],
-            9: [Color.magenta(), 'magenta'],
-            10: [Color.dark_magenta(), 'dark_magenta'],
-            11: [Color.gold(), 'gold'],
-            12: [Color.dark_gold(), 'dark_gold'],
-            13: [Color.orange(), 'orange'],
-            14: [Color.dark_orange(), 'dark_orange'],
-            15: [Color.red(), 'red'],
-            16: [Color.dark_red(), 'dark_red'],
-            17: [Color.lighter_grey(), 'lighter_grey'],
-            18: [Color.dark_grey(), 'grey'],
-            19: [Color.light_grey(), 'light_grey'],
-            20: [Color.darker_grey(), 'darker_grey']
-        }
-        for key, value in colors.items():
+    async def check_colors(self, color):
+        for key, value in self.color_dict.items():
             if color == value[1]:
                 return True, value[0]
         return False
