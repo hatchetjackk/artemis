@@ -95,18 +95,25 @@ class Automod:
                 embed.set_footer(text='Triggered by: {0.name}'.format(member))
                 await self.client.send_message(discord.Object(id=data[guild]['spam']), embed=embed)
 
-    # async def on_message_edit(self, before, after):
-    #     if after.author.bot:
-    #         return
-    #     data = await self.load_guilds()
-    #     embed = discord.Embed(title='{0} edited a message in #{1}'.format(after.author.name, after.channel.name),
-    #                           color=discord.Color.blue())
-    #     embed.set_thumbnail(url=after.author.avatar_url)
-    #     embed.add_field(name='Before', value=before.content)
-    #     embed.add_field(name='After', value=after.content)
-    #     channel = data[after.guild.id]['spam']
-    #     await self.client.send_message(discord.Object(id=channel), embed=embed)
-    #     await self.client.send_message(channel, 'yee')
+    async def on_message_edit(self, before, after):
+        if before.author.bot:
+            return
+
+        guild = before.guild
+        gid = str(guild.id)
+
+        embed = discord.Embed(
+            title='{0} edited a message'.format(after.author.name),
+            description='in channel {0.mention}.'.format(after.channel),
+            color=discord.Color.blue()
+        )
+        embed.set_thumbnail(url=after.author.avatar_url)
+        embed.add_field(name='Before', value=before.content)
+        embed.add_field(name='After', value=after.content)
+
+        data = await self.load_guilds()
+        channel = self.client.get_channel(data[gid]['spam'])
+        await channel.send(embed=embed)
 
     async def on_message_delete(self, message):
         if message.author.bot:
