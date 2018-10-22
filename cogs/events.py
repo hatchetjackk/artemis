@@ -1,6 +1,6 @@
 import asyncio
 import discord
-from _datetime import datetime
+from _datetime import datetime, timedelta
 import pytz
 import json
 import random
@@ -87,6 +87,7 @@ class Events:
         await ctx.send('All events deleted!')
 
     @commands.group()
+    @commands.cooldown(rate=1, per=5, type=BucketType.user)
     async def events(self, ctx):
         # if subcommand isn't passed, return all events related to guild
         # subcommands: set, find
@@ -137,7 +138,6 @@ class Events:
             await ctx.send(embed=embed)
 
     @events.group()
-    @commands.cooldown(rate=1, per=5, type=BucketType.user)
     async def find(self, ctx, event_id: str):
         # find a single event in the events file if it is in the guild
         data_guilds = await self.load_guilds()
@@ -180,7 +180,36 @@ class Events:
             return
 
     @events.group()
-    @commands.cooldown(rate=2, per=30, type=BucketType.user)
+    async def timer(self, ctx, hours: int, minutes: int, event: str):
+        data = await self.load_events()
+        guild = ctx.guild
+        author = ctx.author
+
+        # format !events timer h m "event"
+        dt = datetime.utcnow()
+        td = timedelta(hours=hours, minutes=minutes)
+        dt = dt + td
+        # generate the event with a unique ID
+        while True:
+            event_id = random.randint(1, 99999)
+            if event_id not in data:
+                dt_long, dt_short = await self.make_string(dt)
+                data[event_id] = {
+                    'event': event,
+                    'time': dt_long,
+                    'user_id': author.id,
+                    'guild_id': guild.id,
+                    'notify': False,
+                    'member_notify': {}
+                }
+                break
+        await self.dump_events(data)
+        embed = await self.embed_handler(ctx, dt, event, event_id, update=False)
+        await ctx.send(embed=embed)
+        msg = 'An event was created by {0}.\n{1} [{2}]\n{3}'.format(ctx.message.author, event, event_id, dt_long)
+        await self.spam(ctx, msg)
+
+    @events.group()
     async def set(self, ctx, *args):
         # set an event using a time (hours:minutes) and date {day/month)
         data = await self.load_events()
@@ -221,7 +250,6 @@ class Events:
         await self.spam(ctx, msg)
 
     @events.group()
-    @commands.cooldown(rate=2, per=30, type=BucketType.user)
     async def update(self, ctx, *args):
         if 1 > len(args) > 3:
             await ctx.send('Please use the format ``update <event id> <h:m> <day/mnth> ``.')
@@ -294,6 +322,7 @@ class Events:
             await ctx.send('Event id {} was not found.'.format(event_id))
 
     @commands.command()
+    @commands.cooldown(rate=1, per=30, type=BucketType.user)
     async def time(self, ctx):
         # returns an embed with popular time zones
         zones = self.tz_dict
@@ -304,29 +333,32 @@ class Events:
         await ctx.send(embed=embed)
 
     @commands.command()
-    async def notify(self, ctx, *args):
+    @commands.cooldown(rate=3, per=10, type=BucketType.user)
+    async def notify(self, ctx, eid: str):
         # Allow a user to set a notification for an event
         # Notifier will alert the user one hour before the event in the channel they set the event in
+        channel = ctx.channel
+        cid = channel.id
         author = ctx.author
-        event_id = str(args[0])
+        aid = str(author.id)
 
         data = await self.load_events()
-        if event_id in data:
-            if author.id not in data[event_id]['member_notify']:
-                data[event_id]['notify'] = True
-                data[event_id]['member_notify'].update({str(author.id): ctx.channel})
+        if eid in data:
+            if aid not in data[eid]['member_notify']:
+                data[eid]['notify'] = True
+                data[eid]['member_notify'].update({aid: cid})
                 await ctx.send('Set to notify **{author}** when *{event}* is 1 hour away from '
-                               'starting!'.format(author=author.name, event=data[event_id]['event']))
+                               'starting!'.format(author=author.name, event=data[eid]['event']))
                 await self.dump_events(data)
                 return
             # if user already exists in notification, remove the user
-            if str(author.id) in data[event_id]['member_notify']:
-                data[event_id]['member_notify'].pop(str(author.id), None)
+            if str(author.id) in data[eid]['member_notify']:
+                data[eid]['member_notify'].pop(aid, None)
                 await ctx.send(
-                    'Removing **{author}\'s** notification for *{event}*.'.format(author=author.name, event=data[event_id]['event'])
+                    'Removing **{author}\'s** notification for *{event}*.'.format(author=author.name, event=data[eid]['event'])
                 )
-                if len(data[event_id]['member_notify']) < 1:
-                    data[event_id]['notify'] = False
+                if len(data[eid]['member_notify']) < 1:
+                    data[eid]['notify'] = False
                 await self.dump_events(data)
                 return
 
@@ -444,9 +476,8 @@ class Events:
     async def check_notifier(self):
         await self.client.wait_until_ready()
         while not self.client.is_closed():
-            await asyncio.sleep(60 * 5)
-            print('Checking notifier...')
-            data_events = await Events.load_events()
+            await asyncio.sleep(60 * 2)
+            data_events = await self.load_events()
             for key, value in data_events.items():
                 if value['notify'] is True:
                     dt = await Events.make_datetime(value['time'])
@@ -455,17 +486,17 @@ class Events:
                     days = int(days.strip('d'))
                     hours = int(hours.strip('h'))
                     minutes = int(minutes.strip('m'))
-                    print(days, hours, minutes)
                     if days < 1 and hours < 1 and minutes > 0:
-                        for values in value['member_notify']:
-                            for user, channel in values.items():
-                                user = await self.client.get_user_info(user_id=user)
-                                await self.client.send_message(
-                                    self.client.get_channel(channel),
-                                    '{0}: **{1}** is starting in less than 1 hour!'.format(user.mention, value['event'][:50]))
+                        for user, channel in value['member_notify'].items():
+                            # print(members)
+                            # for user, channel in members.items():
+                            user = await self.client.get_user_info(user_id=int(user))
+                            channel = self.client.get_channel(channel)
+                            await channel.send(
+                                '{0}: **{1}** is starting in less than 1 hour!'.format(user.mention, value['event'][:50]))
                         value['notify'] = False
-                        value['member_notify'] = []
-                    await Events.dump_events(data_events)
+                        value['member_notify'] = {}
+                    await self.dump_events(data_events)
 
     async def spam(self, ctx, message):
         guild = ctx.guild
@@ -511,9 +542,7 @@ class Events:
         with open('files/events.json', 'w') as f:
             json.dump(data, f, indent=2)
 
-    @delevent.error
     @events.error
-    @find.error
     async def on_message_error(self, ctx, error):
         if isinstance(error, commands.CommandOnCooldown):
             msg = ':sob: You\'ve triggered a cool down. Please try again in {} sec.'.format(

@@ -74,11 +74,12 @@ class Help:
         embed.add_field(
             name='events',
             value='Show all events in the guild. New events are UTC by default.\n'
-                  'Add new events with: \n'
-                  '`events set h:m day/mnth event_description`'
-                  'Find individual events with: \n'
+                  '**Add new events with**: \n'
+                  '`events set h:m day/mnth event_description`\n'
+                  '`events timer hours minutes "event description"`\n'
+                  '**Find individual events with**: \n'
                   '`events find event_id`\n'
-                  'Update existing events with:\n'
+                  '**Update existing events with**:\n'
                   '`events update event_id h:m day/mnth`',
             inline=False
         )
