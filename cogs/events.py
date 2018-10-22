@@ -90,7 +90,7 @@ class Events:
     @commands.cooldown(rate=1, per=5, type=BucketType.user)
     async def events(self, ctx):
         # if subcommand isn't passed, return all events related to guild
-        # subcommands: set, find
+        # subcommands: set, find, timer
         if ctx.invoked_subcommand is None:
             data = await self.load_guilds()
             guild = ctx.guild
