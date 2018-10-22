@@ -111,39 +111,49 @@ class Automod:
                 await channel.send(embed=embed)
 
     async def on_message_edit(self, before, after):
-        if before.author.bot:
-            return
+        try:
+            if before.author.bot:
+                return
 
-        guild = before.guild
-        gid = str(guild.id)
+            guild = before.guild
+            gid = str(guild.id)
 
-        embed = discord.Embed(
-            title='{0} edited a message'.format(after.author.name),
-            description='in channel {0.mention}.'.format(after.channel),
-            color=discord.Color.blue()
-        )
-        embed.set_thumbnail(url=after.author.avatar_url)
-        embed.add_field(name='Before', value=before.content)
-        embed.add_field(name='After', value=after.content)
+            embed = discord.Embed(
+                title='{0} edited a message'.format(after.author.name),
+                description='in channel {0.mention}.'.format(after.channel),
+                color=discord.Color.blue()
+            )
+            embed.set_thumbnail(url=after.author.avatar_url)
+            embed.add_field(name='Before', value=before.content)
+            embed.add_field(name='After', value=after.content)
 
-        data = await self.load_guilds()
-        channel = self.client.get_channel(data[gid]['spam'])
-        await channel.send(embed=embed)
+            data = await self.load_guilds()
+            channel = self.client.get_channel(data[gid]['spam'])
+            if channel is None:
+                return
+            await channel.send(embed=embed)
+        except Exception as e:
+            print(e)
 
     async def on_message_delete(self, message):
+        guild = message.guild
+        gid = str(guild.id)
+
         if message.author.bot:
             return
         msg = '{0.author.name}\'s message was deleted:\n' \
               '**Channel**: {0.channel.mention}\n' \
               '**Content**: {0.content}'
-        embed = discord.Embed(color=discord.Color.blue())
-        # embed.set_author(name='{0.message.author}', icon_url='{0.message.author.avatar_url}')
-        embed.add_field(name='Alert', value=msg.format(message))
+
         data = await self.load_guilds()
-        guild = message.guild.id
-        if str(guild) in data:
-            if data[guild]['spam'] is not None:
-                await self.client.send_message(discord.Object(id=data[guild]['spam']), embed=embed)
+        if gid in data:
+            if data[gid]['spam'] is not None:
+                embed = discord.Embed(color=discord.Color.blue())
+                embed.add_field(name='Alert', value=msg.format(message))
+                channel = self.client.get_channel(data[gid]['spam'])
+                if channel is None:
+                    return
+                await channel.send(embed=embed)
 
     @staticmethod
     async def create_user(member):
