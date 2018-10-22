@@ -1,6 +1,7 @@
 """
 generate embeds with user input
 """
+import discord
 from discord import Color, Embed, Object
 import json
 from discord.ext import commands
@@ -101,9 +102,7 @@ class RichEmbed:
             name='This is the second field name.',
             value='This is the second field name value.',
             inline=False)
-        embed_dict = embed.to_dict()
         await ctx.send(embed=embed)
-        await ctx.send(embed_dict)
 
     async def on_message(self, message):
         embed = Embed(color=Color.blue())
