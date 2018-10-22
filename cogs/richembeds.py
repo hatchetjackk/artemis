@@ -1,7 +1,6 @@
 """
 generate embeds with user input
 """
-import discord
 from discord import Color, Embed, Object
 import json
 from discord.ext import commands
@@ -115,27 +114,15 @@ class RichEmbed:
             value = line2[1:]
             embed.add_field(name=title, value=value, inline=False)
             embed.set_author(name=message.author.name, icon_url=message.author.avatar_url)
-            await self.client.send_message(Object(id=message.channel.id), embed=embed)
 
-    async def choose_thumb(self, author):
-        thumb = await self.client.wait_for(author=author, timeout=60)
-        thumb = thumb.clean_content
-        return thumb
-
-    async def clear_messages(self, ctx, amount=2):
-        if 'mod' in [role.name for role in ctx.author.roles]:
-            messages = []
-            async for message in self.client.logs_from(ctx.channel, limit=int(amount)):
-                messages.append(message)
-            await self.client.delete_messages(messages)
-        else:
-            await ctx.send('You do not have permission to do that.')
-
-    async def check_colors(self, color):
-        for key, value in self.color_dict.items():
-            if color == value[1]:
-                return True, value[0]
-        return False
+    async def on_message_error(self, ctx, error):
+        if isinstance(error, commands.CommandOnCooldown):
+            msg = ':sob: You\'ve triggered a cool down. Please try again in {} sec.'.format(
+                int(error.retry_after))
+            await ctx.send(msg)
+        if isinstance(error, commands.CheckFailure):
+            msg = 'You do not have permission to run this command.'
+            await ctx.send(msg)
 
 
 def setup(client):
