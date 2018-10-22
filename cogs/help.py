@@ -127,7 +127,7 @@ class Help:
         embed.add_field(
             name='autorole',
             value='Determine what role new users will automatically receive'
-                  '`autorole add role_name`\n'
+                  '`autorole set role_name`\n'
                   '`autorole remove`',
             inline=False
         ),

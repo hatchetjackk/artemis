@@ -46,7 +46,7 @@ class User:
             return
         if len(args) > 1:
             await ctx.send(
-                                           "It's Rock, Paper, Scissors not Rock, Paper, \"*Whateverthehellyouwant*.\" :joy:")
+                "It's Rock, Paper, Scissors not Rock, Paper, \"*Whateverthehellyouwant*.\" :joy:")
             return
         if args[0] not in rps:
             await ctx.send('That\'s not a valid choice.')
@@ -145,7 +145,13 @@ class User:
     async def diamonds(self, ctx):
         """ Move user to the Sparkle, Sparkle role """
         await ctx.send(':sparkles: *Sparkle, Sparkle! *:sparkles: ')
-        await discord.Member.add_roles(self.client, ctx.author, discord.utils.get(ctx.guild.roles, name='Sparkle, Sparkle!'))
+        await discord.Member.add_roles(
+            self.client,
+            ctx.author,
+            discord.utils.get(
+                ctx.guild.roles,
+                name='Sparkle, Sparkle!')
+        )
 
     async def clubs(self, ctx):
         """ send a channel invite to the user then kick them! """
@@ -166,7 +172,13 @@ class User:
     async def hearts(self, ctx):
         # todo fix member call
         await ctx.send(':sparkling_heart: :kissing_heart: :two_hearts: ')
-        await self.client.change_nickname(ctx.author, '💖_{0}_💖'.format(discord.utils.get(ctx.guild.members, name='testie')))
+        await self.client.change_nickname(
+            ctx.author, '💖_{0}_💖'.format(
+                discord.utils.get(
+                    ctx.guild.members,
+                    name='testie')
+            )
+        )
         # await discord.Client.change_nickname(self.client, ctx.author, nickname='💖 {0} 💖'.format(ctx.author.name))
 
 

@@ -93,7 +93,9 @@ class Karma:
                         return
                     # check if someone is trying to give karma for their self
                     if member.id is author.id:
-                        await message.channel.send(random.choice(karma_responses['karma_responses']['bad_response']).format(message.author.id))
+                        await message.channel.send(
+                            random.choice(karma_responses['karma_responses']['bad_response']).format(message.author.id)
+                        )
                         return
                     # if karma is going to a user and not artemis
                     data[mid]['karma'] += 1
