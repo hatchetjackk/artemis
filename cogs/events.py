@@ -252,24 +252,28 @@ class Events:
     @events.group()
     async def update(self, ctx, *args):
         if 1 > len(args) > 3:
-            await ctx.send('Please use the format ``update <event id> <h:m> <day/mnth> ``.')
+            await ctx.send('Please use the format `update <event id> <h:m> <day/mnth>`.')
             return
-        event_id = str(args[0])
-        h, m = args[1].split(':')
-        day, month = args[2].split('/')
+        try:
+            event_id = str(args[0])
+            h, m = args[1].split(':')
+            day, month = args[2].split('/')
 
-        dt = await self.time_formatter(ctx, day, month, h, m)
-        data = await self.load_events()
-        if event_id in data:
-            dt_long, dt_short = await self.make_string(dt)
-            data[event_id]['time'] = dt_long
-        else:
-            await ctx.send('Event ID {} not found.'.format(event_id))
-            return
-        event = data[event_id]['event']
-        embed = await self.embed_handler(ctx, dt, event, event_id, update=True)
-        await ctx.send(embed=embed)
-        await self.dump_events(data)
+            dt = await self.time_formatter(ctx, day, month, h, m)
+            data = await self.load_events()
+            if event_id in data:
+                dt_long, dt_short = await self.make_string(dt)
+                data[event_id]['time'] = dt_long
+            else:
+                await ctx.send('Event ID {} not found.'.format(event_id))
+                return
+            event = data[event_id]['event']
+            embed = await self.embed_handler(ctx, dt, event, event_id, update=True)
+            await ctx.send(embed=embed)
+            await self.dump_events(data)
+        except Exception as e:
+            await ctx.send('Please use the format `update event_id h:m day/mnth`.')
+            print(e)
 
     @commands.command()
     async def mytime(self, ctx, *args):
@@ -384,6 +388,7 @@ class Events:
 
     async def embed_handler(self, ctx, dt, event, event_id, update):
         guild = ctx.guild
+        gid = str(guild.id)
         author = ctx.author
 
         # get two times
@@ -392,8 +397,8 @@ class Events:
         with open('files/guilds.json') as f:
             thumbs = json.load(f)
         # set the thumbnail
-        if thumbs[str(guild.id)]['thumb_url'] != '':
-            thumb_url = thumbs[guild.id]['thumb_url']
+        if thumbs[gid]['thumb_url'] != '':
+            thumb_url = thumbs[gid]['thumb_url']
         else:
             thumb_url = self.client.user.avatar_url
 
