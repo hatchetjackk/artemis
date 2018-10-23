@@ -80,6 +80,8 @@ class Automod:
         data = await self.load_guilds()
         guild = member.guild
         gid = str(guild.id)
+        channel = discord.utils.get(guild.channels, name='general')
+        await channel.send('Welcome to {}, {}!'.format(guild.name, member.name))
 
         if data[gid]['auto_role'] is not None:
             role = discord.utils.get(
@@ -101,6 +103,23 @@ class Automod:
                 embed.add_field(
                     name='Alert',
                     value=msg2
+                )
+                channel = self.client.get_channel(data[gid]['spam'])
+                await channel.send(embed=embed)
+
+    async def on_member_remove(self, member):
+        # when a member joins, give them an autorole if it exists
+        data = await self.load_guilds()
+        guild = member.guild
+        gid = str(guild.id)
+
+        if gid in data:
+            if data[gid]['spam'] is not None:
+                msg = '{0.name} has left {1}.'.format(member, guild)
+                embed = discord.Embed(color=discord.Color.blue())
+                embed.add_field(
+                    name='Alert',
+                    value=msg
                 )
                 channel = self.client.get_channel(data[gid]['spam'])
                 await channel.send(embed=embed)
