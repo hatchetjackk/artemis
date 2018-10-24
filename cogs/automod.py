@@ -68,44 +68,49 @@ class Automod:
 
     @commands.command()
     @commands.has_role('mod')
-    async def clear(self, ctx, amount=2):
+    async def clear(self, ctx, amount: int):
         channel = ctx.channel
         messages = []
         async for message in self.client.logs_from(channel, limit=int(amount)):
             messages.append(message)
-            await self.client.delete_messages(messages)
+        await self.client.delete_messages(messages)
 
     async def on_member_join(self, member):
         # when a member joins, give them an autorole if it exists
         data = await self.load_guilds()
         guild = member.guild
         gid = str(guild.id)
-        channel = discord.utils.get(guild.channels, name='general')
-        await channel.send('Welcome to {}, {}!'.format(guild.name, member.name))
+        role = data[gid]['auto_role']
 
-        if data[gid]['auto_role'] is not None:
+        if role is not None:
             role = discord.utils.get(
                 member.guild.roles,
                 id=data[gid]['auto_role']
             )
-            await self.client.add_roles(member, role)
+            await  member.add_roles(role)
+            # await self.client.add_roles(member, role)
         await self.create_user(member)
 
         if gid in data:
             if data[gid]['spam'] is not None:
                 msg1 = '{0.name} joined {1}.'.format(member, guild)
-                msg2 = '{0} was assigned the autorole {1}'.format(member.name, data[gid]['auto_role'])
+                msg2 = '{0} was assigned the autorole {1}'.format(member.name, role)
                 embed = discord.Embed(color=discord.Color.blue())
+                embed.set_thumbnail(url=member.avatar_url)
                 embed.add_field(
                     name='Alert',
-                    value=msg1
+                    value=msg1,
+                    inline=False
                 )
                 embed.add_field(
                     name='Alert',
-                    value=msg2
+                    value=msg2,
+                    inline=False
                 )
                 channel = self.client.get_channel(data[gid]['spam'])
                 await channel.send(embed=embed)
+        channel = discord.utils.get(member.guild.channels, name='general')
+        await channel.send('Welcome to {}, {}!'.format(guild.name, member.name))
 
     async def on_member_remove(self, member):
         # when a member joins, give them an autorole if it exists
