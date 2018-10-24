@@ -1,7 +1,7 @@
 """
 generate embeds with user input
 """
-from discord import Color, Embed, Object
+from discord import Color, Embed
 import json
 from discord.ext import commands
 
@@ -40,8 +40,9 @@ class RichEmbed:
             for key, value in self.color_dict.items():
                 color_num = str(hash(value[0]))
                 embed.add_field(name=value[1], value=color_num)
-            embed.add_field(name='u2oob', value='Try ``colors full`` for embed examples.\n'
-                                                '**WARNING**: This will blow up your DMs!')
+            embed.add_field(name='\u200b',
+                            value='Try ``colors full`` for embed examples.\n'
+                                  '**WARNING**: This will blow up your DMs!')
             await ctx.author.send(embed=embed)
 
     @colors.group()
@@ -87,25 +88,29 @@ class RichEmbed:
             text='This is the footer.'
         )
         embed.set_image(
-            url='http://icons.iconarchive.com/icons/papirus-team/papirus-apps/512/discord-icon.png')
+            url='http://icons.iconarchive.com/icons/papirus-team/papirus-apps/512/discord-icon.png'
+        )
         embed.set_thumbnail(
-            url='http://icons.iconarchive.com/icons/papirus-team/papirus-apps/512/discord-icon.png')
+            url='http://icons.iconarchive.com/icons/papirus-team/papirus-apps/512/discord-icon.png'
+        )
         embed.set_author(
             name='Author',
-            icon_url='http://icons.iconarchive.com/icons/papirus-team/papirus-apps/512/discord-icon.png')
+            icon_url='http://icons.iconarchive.com/icons/papirus-team/papirus-apps/512/discord-icon.png'
+        )
         embed.add_field(
             name='This is the first field name.',
             value='This is the first field name value.',
-            inline=False)
+            inline=False
+        )
         embed.add_field(
             name='This is the second field name.',
             value='This is the second field name value.',
-            inline=False)
-        embed_dict = embed.to_dict()
+            inline=False
+        )
         await ctx.send(embed=embed)
-        await ctx.send(embed_dict)
 
-    async def on_message(self, message):
+    @staticmethod
+    async def on_message(message):
         embed = Embed(color=Color.blue())
         # quick embeds!
         if message.content.startswith('>'):
@@ -116,27 +121,16 @@ class RichEmbed:
             value = line2[1:]
             embed.add_field(name=title, value=value, inline=False)
             embed.set_author(name=message.author.name, icon_url=message.author.avatar_url)
-            await self.client.send_message(Object(id=message.channel.id), embed=embed)
 
-    async def choose_thumb(self, author):
-        thumb = await self.client.wait_for(author=author, timeout=60)
-        thumb = thumb.clean_content
-        return thumb
-
-    async def clear_messages(self, ctx, amount=2):
-        if 'mod' in [role.name for role in ctx.author.roles]:
-            messages = []
-            async for message in self.client.logs_from(ctx.channel, limit=int(amount)):
-                messages.append(message)
-            await self.client.delete_messages(messages)
-        else:
-            await ctx.send('You do not have permission to do that.')
-
-    async def check_colors(self, color):
-        for key, value in self.color_dict.items():
-            if color == value[1]:
-                return True, value[0]
-        return False
+    @staticmethod
+    async def on_message_error(ctx, error):
+        if isinstance(error, commands.CommandOnCooldown):
+            msg = ':sob: You\'ve triggered a cool down. Please try again in {} sec.'.format(
+                int(error.retry_after))
+            await ctx.send(msg)
+        if isinstance(error, commands.CheckFailure):
+            msg = 'You do not have permission to run this command.'
+            await ctx.send(msg)
 
 
 def setup(client):

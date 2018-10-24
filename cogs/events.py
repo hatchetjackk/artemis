@@ -1,11 +1,11 @@
 import asyncio
 import discord
-from _datetime import datetime, timedelta
 import pytz
 import json
 import random
 from discord.ext import commands
 from discord.ext.commands import BucketType
+from _datetime import datetime, timedelta
 
 """ All times in events are handled as UTC and then converted to set zone times for local reference """
 
@@ -56,7 +56,10 @@ class Events:
                 data.pop(event_id)
                 await self.dump_events(data)
                 embed = discord.Embed(color=discord.Color.blue())
-                embed.add_field(name='Event Deleted', value='{} successfully deleted.'.format(event_id))
+                embed.add_field(
+                    name='Event Deleted',
+                    value='{} successfully deleted.'.format(event_id)
+                )
                 await ctx.send(embed=embed)
             else:
                 await ctx.send('Event {} not found.'.format(event_id))
@@ -159,7 +162,10 @@ class Events:
         embed = discord.Embed(title=title, color=color)
         embed.set_thumbnail(url=thumb_url)
         embed.set_footer(text=fmt_footer)
-        embed.add_field(name=':sparkles: Upcoming Events', value='\u200b')
+        embed.add_field(
+            name=':sparkles: Upcoming Events',
+            value='\u200b'
+        )
 
         # Ensure that the event matches the guild
         # Then return a single event
@@ -187,7 +193,10 @@ class Events:
 
         # format !events timer h m "event"
         dt = datetime.utcnow()
-        td = timedelta(hours=hours, minutes=minutes)
+        td = timedelta(
+            hours=hours,
+            minutes=minutes
+        )
         dt = dt + td
         # generate the event with a unique ID
         while True:
@@ -204,7 +213,13 @@ class Events:
                 }
                 break
         await self.dump_events(data)
-        embed = await self.embed_handler(ctx, dt, event, event_id, update=False)
+        embed = await self.embed_handler(
+            ctx,
+            dt,
+            event,
+            event_id,
+            update=False
+        )
         await ctx.send(embed=embed)
         msg = 'An event was created by {0}.\n{1} [{2}]\n{3}'.format(ctx.message.author, event, event_id, dt_long)
         await self.spam(ctx, msg)
@@ -244,7 +259,13 @@ class Events:
                 }
                 break
         await self.dump_events(data)
-        embed = await self.embed_handler(ctx, dt, event, event_id, update=False)
+        embed = await self.embed_handler(
+            ctx,
+            dt,
+            event,
+            event_id,
+            update=False
+        )
         await ctx.send(embed=embed)
         msg = 'An event was created by {0}.\n{1} [{2}]\n{3}'.format(ctx.message.author, event, event_id, dt_long)
         await self.spam(ctx, msg)
@@ -252,24 +273,34 @@ class Events:
     @events.group()
     async def update(self, ctx, *args):
         if 1 > len(args) > 3:
-            await ctx.send('Please use the format ``update <event id> <h:m> <day/mnth> ``.')
+            await ctx.send('Please use the format `update event_id h:m day/mnth`.')
             return
-        event_id = str(args[0])
-        h, m = args[1].split(':')
-        day, month = args[2].split('/')
+        try:
+            event_id = str(args[0])
+            h, m = args[1].split(':')
+            day, month = args[2].split('/')
 
-        dt = await self.time_formatter(ctx, day, month, h, m)
-        data = await self.load_events()
-        if event_id in data:
-            dt_long, dt_short = await self.make_string(dt)
-            data[event_id]['time'] = dt_long
-        else:
-            await ctx.send('Event ID {} not found.'.format(event_id))
-            return
-        event = data[event_id]['event']
-        embed = await self.embed_handler(ctx, dt, event, event_id, update=True)
-        await ctx.send(embed=embed)
-        await self.dump_events(data)
+            dt = await self.time_formatter(ctx, day, month, h, m)
+            data = await self.load_events()
+            if event_id in data:
+                dt_long, dt_short = await self.make_string(dt)
+                data[event_id]['time'] = dt_long
+            else:
+                await ctx.send('Event ID {} not found.'.format(event_id))
+                return
+            event = data[event_id]['event']
+            embed = await self.embed_handler(
+                ctx,
+                dt,
+                event,
+                event_id,
+                update=True
+            )
+            await ctx.send(embed=embed)
+            await self.dump_events(data)
+        except Exception as e:
+            await ctx.send('Please use the format `update event_id h:m day/mnth`.')
+            print(e)
 
     @commands.command()
     async def mytime(self, ctx, *args):
@@ -315,8 +346,10 @@ class Events:
             dt_long, dt_short = await self.make_string(dt)
             dt_short = dt_short.replace('UTC', '')
 
-            embed.add_field(name='{}'.format(data[event_id]['event'][:50]),
-                            value='This event in {0} is {1}'.format(tz.upper(), dt_short))
+            embed.add_field(
+                name='{}'.format(data[event_id]['event'][:50]),
+                value='This event in {0} is {1}'.format(tz.upper(), dt_short)
+            )
             await ctx.send(embed=embed)
         else:
             await ctx.send('Event id {} was not found.'.format(event_id))
@@ -326,9 +359,18 @@ class Events:
     async def time(self, ctx):
         # returns an embed with popular time zones
         zones = self.tz_dict
-        embed = discord.Embed(title='──────────────── [ Time ] ────────────────', color=discord.Color.blue())
-        embed.add_field(name='Zone', value='\n'.join([zone.upper() for zone in zones]), inline=True)
-        embed.add_field(name='Time', value='\n'.join(zones[zone].strftime('%H:%M') for zone in zones))
+        embed = discord.Embed(
+            title='──────────────── [ Time ] ────────────────',
+            color=discord.Color.blue()
+        )
+        embed.add_field(
+            name='Zone',
+            value='\n'.join([zone.upper() for zone in zones]),
+            inline=True
+        )
+        embed.add_field(
+            name='Time',
+            value='\n'.join(zones[zone].strftime('%H:%M') for zone in zones))
         embed.set_footer(text='──────────────────────────────────────────')
         await ctx.send(embed=embed)
 
@@ -354,8 +396,10 @@ class Events:
             # if user already exists in notification, remove the user
             if str(author.id) in data[eid]['member_notify']:
                 data[eid]['member_notify'].pop(aid, None)
-                await ctx.send(
-                    'Removing **{author}\'s** notification for *{event}*.'.format(author=author.name, event=data[eid]['event'])
+                await ctx.send('Removing **{author}\'s** notification for *{event}*.'.format(
+                        author=author.name,
+                        event=data[eid]['event']
+                    )
                 )
                 if len(data[eid]['member_notify']) < 1:
                     data[eid]['notify'] = False
@@ -367,14 +411,16 @@ class Events:
         # takes hours and minutes and formats it to a datetime with UTC tz
         try:
             d = datetime.now
-            dt = datetime(year=d().year,
-                          month=int(month),
-                          day=int(day),
-                          hour=int(h),
-                          minute=int(m),
-                          second=d().second,
-                          microsecond=d().microsecond,
-                          tzinfo=pytz.UTC)
+            dt = datetime(
+                year=d().year,
+                month=int(month),
+                day=int(day),
+                hour=int(h),
+                minute=int(m),
+                second=d().second,
+                microsecond=d().microsecond,
+                tzinfo=pytz.UTC
+            )
             return dt
         except ValueError as e:
             print('An improper datetime was passed.', e)
@@ -384,6 +430,7 @@ class Events:
 
     async def embed_handler(self, ctx, dt, event, event_id, update):
         guild = ctx.guild
+        gid = str(guild.id)
         author = ctx.author
 
         # get two times
@@ -392,8 +439,8 @@ class Events:
         with open('files/guilds.json') as f:
             thumbs = json.load(f)
         # set the thumbnail
-        if thumbs[str(guild.id)]['thumb_url'] != '':
-            thumb_url = thumbs[guild.id]['thumb_url']
+        if thumbs[gid]['thumb_url'] != '':
+            thumb_url = thumbs[gid]['thumb_url']
         else:
             thumb_url = self.client.user.avatar_url
 
@@ -422,15 +469,21 @@ class Events:
                 new_dt_data = await self.make_datetime(dt_long)
                 eta = await self.eta(new_dt_data)
 
-                embed.add_field(name=event_title, value='**Event** [{0}]: {1}\n'
-                                                        '**Time**: {2} **──>** {3}\n'
-                                                        '**ETA**: {4}'.format(event_id, event, dt_data_short, dt_short, eta), inline=False)
+                embed.add_field(
+                    name=event_title,
+                    value='**Event** [{0}]: {1}\n'
+                          '**Time**: {2} **──>** {3}\n'
+                          '**ETA**: {4}'.format(event_id, event, dt_data_short, dt_short, eta),
+                    inline=False)
                 return embed
         dt = await self.make_datetime(dt_long)
         eta = await self.eta(dt)
-        embed.add_field(name=event_title, value='**Event** [{0}]: {1}\n'
-                                                '**Time**: {2}\n'
-                                                '**ETA**: {3}'.format(event_id, event, dt_short, eta), inline=False)
+        embed.add_field(
+            name=event_title,
+            value='**Event** [{0}]: {1}\n'
+                  '**Time**: {2}\n'
+                  '**ETA**: {3}'.format(event_id, event, dt_short, eta),
+            inline=False)
         return embed
 
     @staticmethod
@@ -493,7 +546,8 @@ class Events:
                             user = await self.client.get_user_info(user_id=int(user))
                             channel = self.client.get_channel(channel)
                             await channel.send(
-                                '{0}: **{1}** is starting in less than 1 hour!'.format(user.mention, value['event'][:50]))
+                                '{0}: **{1}** is starting in less than 1 hour!'.format(user.mention,
+                                                                                       value['event'][:50]))
                         value['notify'] = False
                         value['member_notify'] = {}
                     await self.dump_events(data_events)
@@ -507,7 +561,10 @@ class Events:
         if gid in data:
             if data[gid]['spam'] is not None:
                 embed = discord.Embed(color=discord.Color.blue())
-                embed.add_field(name='Alert', value=message)
+                embed.add_field(
+                    name='Alert',
+                    value=message
+                )
                 embed.set_footer(text='Triggered by: {0.name}'.format(author))
                 channel = self.client.get_channel(int(data[gid]['spam']))
                 await channel.send(embed=embed)

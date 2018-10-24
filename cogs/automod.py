@@ -8,19 +8,6 @@ class Automod:
     def __init__(self, client):
         self.client = client
 
-    @commands.command()
-    @commands.has_role('mod')
-    async def role(self, ctx, *args):
-        # desc that can be accessed by help commands?
-        # parent command for other functions
-        # data = await self.load_guilds()
-        # await self.dump_guilds(data)
-        # len(arg) > 1, return error
-        # try:
-        # await self.arg(ctx)
-        # except Exception
-        pass
-
     @commands.group()
     @commands.has_role('mod')
     async def autorole(self, ctx):
@@ -28,7 +15,7 @@ class Automod:
             await ctx.send('Invoke `autorole` with `add` or `remove`.')
 
     @autorole.group()
-    async def add(self, ctx, role):
+    async def set(self, ctx, role):
         data = await self.load_guilds()
         guild = ctx.guild
         gid = str(guild.id)
@@ -81,69 +68,119 @@ class Automod:
 
     @commands.command()
     @commands.has_role('mod')
-    async def clear(self, ctx, amount=2):
+    async def clear(self, ctx, amount: int):
         channel = ctx.channel
         messages = []
         async for message in self.client.logs_from(channel, limit=int(amount)):
             messages.append(message)
-            await self.client.delete_messages(messages)
+        await self.client.delete_messages(messages)
 
     async def on_member_join(self, member):
         # when a member joins, give them an autorole if it exists
         data = await self.load_guilds()
-
         guild = member.guild
         gid = str(guild.id)
+        role = data[gid]['auto_role']
 
-        if data[gid]['auto_role'] is not None:
-            role = discord.utils.get(member.guild.roles, id=data[gid]['auto_role'])
-            await self.client.add_roles(member, role)
+        if role is not None:
+            role = discord.utils.get(
+                member.guild.roles,
+                id=data[gid]['auto_role']
+            )
+            await  member.add_roles(role)
+            # await self.client.add_roles(member, role)
         await self.create_user(member)
 
         if gid in data:
             if data[gid]['spam'] is not None:
                 msg1 = '{0.name} joined {1}.'.format(member, guild)
-                msg2 = '{0} was assigned the autorole {1}'.format(member.name, data[gid]['auto_role'])
+                msg2 = '{0} was assigned the autorole {1}'.format(member.name, role)
                 embed = discord.Embed(color=discord.Color.blue())
-                embed.add_field(name='Alert', value=msg1)
-                embed.add_field(name='Alert', value=msg2)
+                embed.set_thumbnail(url=member.avatar_url)
+                embed.add_field(
+                    name='Alert',
+                    value=msg1,
+                    inline=False
+                )
+                embed.add_field(
+                    name='Alert',
+                    value=msg2,
+                    inline=False
+                )
+                channel = self.client.get_channel(data[gid]['spam'])
+                await channel.send(embed=embed)
+        channel = discord.utils.get(member.guild.channels, name='general')
+        await channel.send('Welcome to {}, {}!'.format(guild.name, member.name))
+
+    async def on_member_remove(self, member):
+        # when a member joins, give them an autorole if it exists
+        data = await self.load_guilds()
+        guild = member.guild
+        gid = str(guild.id)
+
+        if gid in data:
+            if data[gid]['spam'] is not None:
+                msg = '{0.name} has left {1}.'.format(member, guild)
+                embed = discord.Embed(color=discord.Color.blue())
+                embed.add_field(
+                    name='Alert',
+                    value=msg
+                )
                 channel = self.client.get_channel(data[gid]['spam'])
                 await channel.send(embed=embed)
 
     async def on_message_edit(self, before, after):
-        if before.author.bot:
-            return
+        try:
+            if before.author.bot:
+                return
+            guild = before.guild
+            gid = str(guild.id)
 
-        guild = before.guild
-        gid = str(guild.id)
+            embed = discord.Embed(
+                title='{0} edited a message'.format(after.author.name),
+                description='in channel {0.mention}.'.format(after.channel),
+                color=discord.Color.blue()
+            )
+            embed.set_thumbnail(url=after.author.avatar_url)
+            embed.add_field(
+                name='Before',
+                value=before.content
+            )
+            embed.add_field(
+                name='After',
+                value=after.content
+            )
 
-        embed = discord.Embed(
-            title='{0} edited a message'.format(after.author.name),
-            description='in channel {0.mention}.'.format(after.channel),
-            color=discord.Color.blue()
-        )
-        embed.set_thumbnail(url=after.author.avatar_url)
-        embed.add_field(name='Before', value=before.content)
-        embed.add_field(name='After', value=after.content)
-
-        data = await self.load_guilds()
-        channel = self.client.get_channel(data[gid]['spam'])
-        await channel.send(embed=embed)
+            data = await self.load_guilds()
+            channel = self.client.get_channel(data[gid]['spam'])
+            if channel is None:
+                return
+            await channel.send(embed=embed)
+        except Exception as e:
+            print(e)
 
     async def on_message_delete(self, message):
+        guild = message.guild
+        gid = str(guild.id)
+
         if message.author.bot:
             return
         msg = '{0.author.name}\'s message was deleted:\n' \
               '**Channel**: {0.channel.mention}\n' \
               '**Content**: {0.content}'
-        embed = discord.Embed(color=discord.Color.blue())
-        # embed.set_author(name='{0.message.author}', icon_url='{0.message.author.avatar_url}')
-        embed.add_field(name='Alert', value=msg.format(message))
+
         data = await self.load_guilds()
-        guild = message.guild.id
-        if str(guild) in data:
-            if data[guild]['spam'] is not None:
-                await self.client.send_message(discord.Object(id=data[guild]['spam']), embed=embed)
+        if gid in data:
+            if data[gid]['spam'] is not None:
+                embed = discord.Embed(color=discord.Color.blue())
+                embed.add_field(
+                    name='Alert',
+                    value=msg.format(message)
+                )
+                channel = self.client.get_channel(data[gid]['spam'])
+                if channel is None:
+                    return
+                await channel.send(embed=embed)
 
     @staticmethod
     async def create_user(member):
@@ -186,7 +223,10 @@ class Automod:
         if gid in data:
             if data[gid]['spam'] is not None:
                 embed = discord.Embed(color=discord.Color.blue())
-                embed.add_field(name='Alert', value=message)
+                embed.add_field(
+                    name='Alert',
+                    value=message
+                )
                 channel = self.client.get_channel(data[gid]['spam'])
                 await channel.send(embed=embed)
 
