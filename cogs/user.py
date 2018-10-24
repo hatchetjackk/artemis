@@ -4,6 +4,7 @@ import urllib.request
 import urllib.parse
 import re
 from discord.ext import commands
+from datetime import datetime, timedelta
 
 
 class User:
@@ -66,40 +67,38 @@ class User:
             print('{0} played rock, paper, scissors and beat Artemis!'.format(ctx.author.name))
 
     @commands.command()
-    async def guild(self, ctx):
-        # e = Emotions(self.client)
-        # start = time.time() in artemis.py
-        # uptime = time.time() - start
-        # guild_id = guild id
-        # mood = e.status
-        # thumbnail = 'https://cdn0.iconfinder.com/data/icons/cosmo-medicine/40/eye_6-512.png'
-        # embed
-        # embed = discord.Embed(
-        #     color=discord.Color.blue()
-        # )
-        # embed.set_author(name="Artemis", icon_url=thumbnail)
-        # embed.add_field(name="Uptime", value=uptime, inline=False)
-        # embed.add_field(name="guild ID", value=guild_id, inline=False)
-        # embed.add_field(name="Mood", value=mood, inline=False)
-        # await self.send(embed=embed)
-        await ctx.send('This command is not ready yet.')
-        print('{0} tried to use the guild command.'.format(ctx.author.name))
+    async def whois(self, ctx, *args):
+        user = ' '.join(args)
+        user = discord.utils.get(ctx.message.guild.members, name=user)
+        embed = discord.Embed(title=user.name, color=discord.Color.blue())
+        embed.set_thumbnail(url=user.avatar_url)
+        created = user.created_at.strftime('%H:%M UTC - %B %d, %Y')
+        # calculate lifetime as a user
+        lifetime = datetime.utcnow() - user.created_at
+        days = lifetime.days
+        years, days = divmod(days, 365)
+        hours, remainder = divmod(lifetime.seconds, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        embed.add_field(name='User Since',
+                        value='{} \n'
+                              'Lifetime: {} years, {} days, {} minutes, {} seconds'.format(created, years, days, hours, minutes, seconds),
+                        inline=False)
 
-    @commands.command()
-    async def whois(self, ctx):
-        # read message for user or part of a username
-        # joined_discord = check when joined discord
-        # joined_guild = check when joined guild
-        # user_avatar = grab user avatar
-        # roles = grab roles from list
-        # make embed
-        # add joined_discord
-        # add joined_guild
-        # add user_avatar
-        # add roles
-        # send to channel
-        await ctx.send('This command is not ready yet.')
-        print('{0} tried to use the whois command.'.format(ctx.author.name))
+        joined = user.joined_at.strftime('%H:%M UTC - %B %d, %Y')
+        lifetime = datetime.utcnow() - user.joined_at
+        days = lifetime.days
+        years, days = divmod(days, 365)
+        hours, remainder = divmod(lifetime.seconds, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        embed.add_field(name='Joined',
+                        value='{} \n'
+                              'Lifetime: {} years, {} days, {} minutes, {} seconds'.format(joined, years, days, hours, minutes, seconds),
+                        inline=False)
+
+        role_list = [role.name for role in user.roles if role.name != '@everyone']
+        embed.add_field(name='Roles',
+                        value=', '.join(role_list))
+        await ctx.send(embed=embed)
 
     @commands.command()
     async def yt(self, ctx, *args):
