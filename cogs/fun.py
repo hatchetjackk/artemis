@@ -1,4 +1,7 @@
 import random
+
+import discord
+from PyDictionary import PyDictionary
 from discord.ext import commands
 
 
@@ -39,6 +42,25 @@ class Fun:
                      "Hello, fellow human!"]
         msg = random.choice(responses).format(ctx.message)
         await ctx.send(msg)
+
+    @commands.command()
+    async def define(self, ctx, word: str):
+        dictionary = PyDictionary()
+        results = dictionary.meaning(word)
+        embed = discord.Embed(title=word.upper(), color=discord.Color.blue())
+        embed.set_thumbnail(url=self.client.user.avatar_url)
+        for key, definition in results.items():
+            all_def = '\n'.join(definition)
+            embed.add_field(name=key, value=all_def)
+        await ctx.send(embed=embed)
+
+    @staticmethod
+    async def on_message(message):
+        channel = message.channel
+        msg = message.content
+        if msg.startswith('r/'):
+            reddit_search = 'https://reddit.com/' + msg
+            await channel.send(reddit_search)
 
 
 def setup(client):
