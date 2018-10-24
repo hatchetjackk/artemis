@@ -68,37 +68,44 @@ class User:
 
     @commands.command()
     async def whois(self, ctx, *args):
-        user = ' '.join(args)
-        user = discord.utils.get(ctx.message.guild.members, name=user)
-        embed = discord.Embed(title=user.name, color=discord.Color.blue())
-        embed.set_thumbnail(url=user.avatar_url)
-        created = user.created_at.strftime('%H:%M UTC - %B %d, %Y')
-        # calculate lifetime as a user
-        lifetime = datetime.utcnow() - user.created_at
-        days = lifetime.days
-        years, days = divmod(days, 365)
-        hours, remainder = divmod(lifetime.seconds, 3600)
-        minutes, seconds = divmod(remainder, 60)
-        embed.add_field(name='User Since',
-                        value='{} \n'
-                              'Lifetime: {} years, {} days, {} minutes, {} seconds'.format(created, years, days, hours, minutes, seconds),
-                        inline=False)
+        try:
+            user = ctx.guild.get_member_named(' '.join(args).replace('@', ''))
+            members_lower_case = [member.name.lower() for member in ctx.guild.members]
+            for member in ctx.guild.members:
+                if member.mention in ' '.join(args):
+                    user = member
+            embed = discord.Embed(title=user.name, color=discord.Color.blue())
+            embed.set_thumbnail(url=user.avatar_url)
+            created = user.created_at.strftime('%H:%M UTC - %B %d, %Y')
+            # calculate lifetime as a user
+            lifetime = datetime.utcnow() - user.created_at
+            days = lifetime.days
+            years, days = divmod(days, 365)
+            hours, remainder = divmod(lifetime.seconds, 3600)
+            minutes, seconds = divmod(remainder, 60)
+            embed.add_field(name='User Since',
+                            value='{} \n'
+                                  'Lifetime: {} years, {} days, {} minutes, {} seconds'.format(created, years, days, hours, minutes, seconds),
+                            inline=False)
 
-        joined = user.joined_at.strftime('%H:%M UTC - %B %d, %Y')
-        lifetime = datetime.utcnow() - user.joined_at
-        days = lifetime.days
-        years, days = divmod(days, 365)
-        hours, remainder = divmod(lifetime.seconds, 3600)
-        minutes, seconds = divmod(remainder, 60)
-        embed.add_field(name='Joined',
-                        value='{} \n'
-                              'Lifetime: {} years, {} days, {} minutes, {} seconds'.format(joined, years, days, hours, minutes, seconds),
-                        inline=False)
+            joined = user.joined_at.strftime('%H:%M UTC - %B %d, %Y')
+            lifetime = datetime.utcnow() - user.joined_at
+            days = lifetime.days
+            years, days = divmod(days, 365)
+            hours, remainder = divmod(lifetime.seconds, 3600)
+            minutes, seconds = divmod(remainder, 60)
+            embed.add_field(name='Joined',
+                            value='{} \n'
+                                  'Lifetime: {} years, {} days, {} minutes, {} seconds'.format(joined, years, days, hours, minutes, seconds),
+                            inline=False)
 
-        role_list = [role.name for role in user.roles if role.name != '@everyone']
-        embed.add_field(name='Roles',
-                        value=', '.join(role_list))
-        await ctx.send(embed=embed)
+            role_list = [role.name for role in user.roles if role.name != '@everyone']
+            embed.add_field(name='Roles',
+                            value=', '.join(role_list))
+            await ctx.send(embed=embed)
+        except AttributeError as e:
+            print(e)
+            await ctx.send('User not found. Double check your spelling.')
 
     @commands.command()
     async def yt(self, ctx, *args):
