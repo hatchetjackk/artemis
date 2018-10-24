@@ -1,6 +1,6 @@
 {
   "status": {
-    "level": 26
+    "level": 30
   },
   "responses": {
     "great": [
@@ -53,12 +53,27 @@
       "You got it!",
       ":smile:",
       "Yeet!"
-      ],
+    ],
     "bad_response": [
       "You can't give yourself karma.",
       "Let's keep things fair here...",
       "Looks like karma abuse over here.",
       "Are you trying to farm karma?!"
+    ]
+  },
+  "status_changing_words": {
+    "good": [
+      "nice",
+      "good",
+      "love"
+    ],
+    "bad": [
+      "hate",
+      "bad",
+      "fuck",
+      "shit",
+      "bitch",
+      "ass"
     ]
   }
 }
