@@ -1,3 +1,4 @@
+import os
 import random
 import discord
 from PyDictionary import PyDictionary
@@ -11,7 +12,6 @@ class Fun:
     @commands.command()
     async def ping(self, ctx):
 
-        print("ping/pong")
         await ctx.send(':ping_pong: Pong')
 
     @commands.command()
@@ -56,6 +56,18 @@ class Fun:
             all_def = '\n'.join(definitions)
             embed.add_field(name=key, value=all_def)
         await ctx.send(embed=embed)
+
+    @commands.group()
+    async def rochembed(self, ctx):
+        if ctx.invoked_subcommand is None:
+            pass
+
+    @rochembed.group()
+    async def qizard(self, ctx):
+        directory = 'pictures/'
+        pictures = [file for file in os.listdir('pictures/')]
+        pic = directory + random.choice(pictures)
+        await ctx.send(file=discord.File(pic))
 
     @staticmethod
     async def on_message(message):

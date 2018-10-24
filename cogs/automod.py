@@ -9,7 +9,33 @@ class Automod:
         self.client = client
 
     @commands.group()
-    @commands.has_role('mod')
+    @commands.has_any_role('Moderator', 'mod', 'admin', 'Admin')
+    async def modrole(self, ctx):
+        if ctx.invoked_subcommand is None:
+            await ctx.send('Invoke `modrole` with `add` or `remove`.')
+
+    @modrole.group()
+    async def add(self, ctx, role: str):
+        guild = ctx.guild
+        gid = str(guild.id)
+        role = discord.utils.get(ctx.guild.roles, name=role)
+        data = await self.load_guilds()
+        data[gid]['mod_roles'].append(role)
+        await self.dump_guilds(data)
+        await ctx.send('{} added to the moderator list.'.format(role))
+
+    @modrole.group()
+    async def remove(self, ctx, role: str):
+        guild = ctx.guild
+        gid = str(guild.id)
+        role = discord.utils.get(ctx.guild.roles, name=role)
+        data = await self.load_guilds()
+        data[gid]['mod_roles'].remove(role)
+        await self.dump_guilds(data)
+        await ctx.send('{} removed from the moderator list.'.format(role))
+
+    @commands.group()
+    @commands.has_any_role('Moderator', 'mod')
     async def autorole(self, ctx):
         if ctx.invoked_subcommand is None:
             await ctx.send('Invoke `autorole` with `add` or `remove`.')
@@ -49,7 +75,7 @@ class Automod:
             raise
 
     @commands.command()
-    @commands.has_role('mod')
+    @commands.has_any_role('mod', 'Moderator')
     async def botspam(self, ctx, channel: str):
         guild = ctx.guild
         gid = str(guild.id)
@@ -67,7 +93,7 @@ class Automod:
         await self.spam(ctx, msg)
 
     @commands.command()
-    @commands.has_role('mod')
+    @commands.has_any_role('Moderator', 'mod')
     async def clear(self, ctx, amount: int):
         channel = ctx.channel
         messages = []

@@ -48,8 +48,10 @@ async def on_ready():
                     'thumb_url': '',
                     'prefix': '!',
                     'auto_role': None,
+                    'mod_roles': None,
                     'spam': None
                 }
+
         with open('files/guilds.json', 'w') as f:
             json.dump(guild_data, f, indent=2)
     except Exception as e:

@@ -69,13 +69,14 @@ class User:
     @commands.command()
     async def whois(self, ctx, *args):
         try:
-            user = ctx.guild.get_member_named(' '.join(args).replace('@', ''))
+            user = ctx.guild.get_member_named(' '.join(args))
             for member in ctx.guild.members:
                 if member.mention in ' '.join(args):
                     user = member
             embed = discord.Embed(title=user.name, color=discord.Color.blue())
             embed.set_thumbnail(url=user.avatar_url)
             created = user.created_at.strftime('%H:%M UTC - %B %d, %Y')
+
             # calculate lifetime as a user
             lifetime = datetime.utcnow() - user.created_at
             days = lifetime.days

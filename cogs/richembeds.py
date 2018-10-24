@@ -1,4 +1,6 @@
 import json
+
+import discord
 from discord import Color, Embed
 from discord.ext import commands
 
@@ -57,6 +59,92 @@ class RichEmbed:
             await ctx.send('Invoke `richembed` with `get`, `pasta`, or `example`.')
 
     @richembed.group()
+    async def wizard(self, ctx):
+        message = ctx.message
+        channel = ctx.channel
+
+        footer_text = None
+        color = discord.Color.blue()
+
+        def check(m):
+            return m.author == message.author and m.channel == channel
+
+        tut_embed = await self.tut_embed('Pick a color for the embed (ie dark_blue):')
+        await ctx.send(embed=tut_embed)
+        msg = await self.client.wait_for('message', check=check)
+        for key, value in self.color_dict.items():
+            if msg.content == value[1]:
+                color = value[0]
+
+        tut_embed = await self.tut_embed('Set your title: ')
+        await ctx.send(embed=tut_embed)
+        msg = await self.client.wait_for('message', check=check)
+        title = msg.content
+
+        tut_embed = await self.tut_embed('Set your description. To skip this enter "None": ')
+        await ctx.send(embed=tut_embed)
+        msg = await self.client.wait_for('message', check=check)
+        description = msg.content
+
+        embed = discord.Embed(title=title, color=color)
+        if description.lower() != 'none':
+            embed = discord.Embed(title=title, description=description, color=color)
+
+        while True:
+
+            tut_embed = await self.tut_embed('Pick an option: field, footer, quit')
+            await ctx.send(embed=tut_embed)
+            msg = await self.client.wait_for('message', check=check)
+
+            if msg.content == 'quit':
+                tut_embed = await self.tut_embed('Generating embed...')
+                await ctx.send(embed=tut_embed)
+                break
+
+            elif msg.content == 'field':
+                tut_embed = await self.tut_embed('Set the field name')
+                await ctx.send(embed=tut_embed)
+                msg = await self.client.wait_for('message', check=check)
+                field_name = msg.content
+
+                tut_embed = await self.tut_embed('Set the field value')
+                await ctx.send(embed=tut_embed)
+                msg = await self.client.wait_for('message', check=check)
+                field_value = msg.content
+
+                tut_embed = await self.tut_embed('Make inline? [yes/no] ')
+                await ctx.send(embed=tut_embed)
+                msg = await self.client.wait_for('message', check=check)
+                inline_format = False
+                if msg.content == 'yes':
+                    inline_format = True
+
+                embed.add_field(name=field_name, value=field_value, inline=inline_format)
+
+            elif msg.content == 'footer':
+                tut_embed = await self.tut_embed('Set the footer text:')
+                await ctx.send(embed=tut_embed)
+                msg = await self.client.wait_for('message', check=check)
+                footer_text = msg.content
+
+        if footer_text is not None:
+            embed.set_footer(text=footer_text)
+        await ctx.send(embed=embed)
+
+    @staticmethod
+    async def tut_embed(description):
+        tut_embed = discord.Embed(
+            title='Artemis Embed Wizard',
+            description=description,
+            color=discord.Color.blue())
+        return tut_embed
+
+    @staticmethod
+    async def author_check(author, message):
+        if author == message.author:
+            return True
+
+    @richembed.group()
     async def get(self, ctx, *args):
         msg = await ctx.get_message(id=args[0])
         e_msg = msg.embeds[0].to_dict()
@@ -108,16 +196,18 @@ class RichEmbed:
 
     @staticmethod
     async def on_message(message):
-        embed = Embed(color=Color.blue())
+        channel = message.channel
+        embed = Embed(color=000000)
         # quick embeds!
         if message.content.startswith('>'):
             lines = message.content.split('\n')
             line1 = lines[0]
             title = line1[1:]
             line2 = ' '.join(lines[1:])
-            value = line2[1:]
-            embed.add_field(name=title, value=value, inline=False)
-            embed.set_author(name=message.author.name, icon_url=message.author.avatar_url)
+            value = line2[1:].split('\n')
+            embed.add_field(name=title, value=' '.join(value), inline=False)
+            # embed.set_author(name=message.author.name, icon_url=message.author.avatar_url)
+            await channel.send(embed=embed)
 
     @staticmethod
     async def on_message_error(ctx, error):
