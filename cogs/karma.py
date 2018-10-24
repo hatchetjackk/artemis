@@ -1,7 +1,3 @@
-"""
-For adding and checking karma
-"""
-
 import discord
 import random
 import json

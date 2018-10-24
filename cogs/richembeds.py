@@ -1,8 +1,5 @@
-"""
-generate embeds with user input
-"""
-from discord import Color, Embed
 import json
+from discord import Color, Embed
 from discord.ext import commands
 
 

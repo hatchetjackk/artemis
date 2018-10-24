@@ -1,9 +1,5 @@
-"""
-Mod module for administrator commands
-"""
-import discord
-from datetime import datetime
 import json
+from datetime import datetime
 from discord.ext import commands
 
 

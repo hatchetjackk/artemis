@@ -10,8 +10,6 @@ import random
 from itertools import cycle
 from discord.ext import commands
 
-with open('files/bot.json', 'r') as b:
-    bot_data = json.load(b)
 with open('files/guilds.json', 'r') as g:
     guild_data = json.load(g)
 with open('files/credentials.json', 'r') as c:

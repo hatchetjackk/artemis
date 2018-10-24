@@ -124,7 +124,8 @@ class Automod:
                 embed = discord.Embed(color=discord.Color.blue())
                 embed.add_field(
                     name='Alert',
-                    value=msg
+                    value=msg,
+                    inline=False
                 )
                 channel = self.client.get_channel(data[gid]['spam'])
                 await channel.send(embed=embed)
@@ -144,11 +145,13 @@ class Automod:
             embed.set_thumbnail(url=after.author.avatar_url)
             embed.add_field(
                 name='Before',
-                value=before.content
+                value=before.content,
+                inline=False
             )
             embed.add_field(
                 name='After',
-                value=after.content
+                value=after.content,
+                inline=False
             )
 
             data = await self.load_guilds()

@@ -1,5 +1,4 @@
 import random
-
 import discord
 from PyDictionary import PyDictionary
 from discord.ext import commands
@@ -48,7 +47,6 @@ class Fun:
         dictionary = PyDictionary()
         results = dictionary.meaning(word)
         embed = discord.Embed(title=word.upper(), color=discord.Color.blue())
-        embed.set_thumbnail(url=self.client.user.avatar_url)
         for key, definition in results.items():
             definitions = []
             num = 1
