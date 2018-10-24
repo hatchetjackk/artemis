@@ -50,7 +50,12 @@ class Fun:
         embed = discord.Embed(title=word.upper(), color=discord.Color.blue())
         embed.set_thumbnail(url=self.client.user.avatar_url)
         for key, definition in results.items():
-            all_def = '\n'.join(definition)
+            definitions = []
+            num = 1
+            for value in definition:
+                definitions.append(str(num) + ') ' + value)
+                num += 1
+            all_def = '\n'.join(definitions)
             embed.add_field(name=key, value=all_def)
         await ctx.send(embed=embed)
 
