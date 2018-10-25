@@ -1,3 +1,4 @@
+import typing
 import discord
 # import logging
 import json
@@ -76,30 +77,33 @@ class Automod:
 
     @commands.command()
     @commands.has_any_role('mod', 'Moderator')
-    async def botspam(self, ctx, channel: str):
-        guild = ctx.guild
-        gid = str(guild.id)
+    async def botspam(self, ctx, *args):
+        try:
+            guild = ctx.guild
+            gid = str(guild.id)
 
-        data = await self.load_guilds()
-        if len(channel) < 1:
-            await ctx.send('Please use `spamchannel channel_name`.')
-        if channel not in [channel.name for channel in ctx.guild.channels]:
-            await ctx.send('{} is not a channel.'.format(channel))
-            return
-        spam = discord.utils.get(guild.channels, name=channel)
-        data[gid]['spam'] = spam.id
-        await self.dump_guilds(data)
-        msg = '{0} changed the botspam channel. It is now {1.mention}'.format(ctx.message.author.name, spam)
-        await self.spam(ctx, msg)
+            data = await self.load_guilds()
+            if len(args) < 1 or len(args) > 1:
+                await ctx.send('Please use `spamchannel channel_name`.')
+            if args[0] not in [channel.name for channel in ctx.guild.channels]:
+                await ctx.send('{} is not a channel.'.format(args[0]))
+                return
+            spam = discord.utils.get(guild.channels, name=args[0])
+            data[gid]['spam'] = spam.id
+            await self.dump_guilds(data)
+            msg = '{0} changed the botspam channel. It is now {1.mention}'.format(ctx.message.author.name, spam)
+            await self.spam(ctx, msg)
+        except Exception as e:
+            print(e)
+            raise
 
     @commands.command()
     @commands.has_any_role('Moderator', 'mod')
-    async def clear(self, ctx, amount: int):
-        channel = ctx.channel
-        messages = []
-        async for message in self.client.logs_from(channel, limit=int(amount)):
-            messages.append(message)
-        await self.client.delete_messages(messages)
+    async def clear(self, ctx, amount: typing.Optional[int] = 2):
+        if 100 < amount or amount < 2:
+            ctx.send('Amount must be between 1 and 100.')
+            return
+        await ctx.channel.purge(limit=amount)
 
     async def on_member_join(self, member):
         # when a member joins, give them an autorole if it exists
@@ -157,9 +161,11 @@ class Automod:
                 await channel.send(embed=embed)
 
     async def on_message_edit(self, before, after):
+        # if 'http' in before.content:
+        #     return
+        if before.author.bot:
+            return
         try:
-            if before.author.bot:
-                return
             guild = before.guild
             gid = str(guild.id)
 
