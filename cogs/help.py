@@ -19,7 +19,8 @@ class Help:
             )
             embed.add_field(name="ping", value="Return pong", inline=False)
             embed.add_field(name="roll", value="Roll NdN dice", inline=False)
-            embed.add_field(name="karma @user", value="Check your or another <@user>'s current level of karma",
+            embed.add_field(name="karma @user",
+                            value="Check your or another <@user>'s current level of karma",
                             inline=False)
             embed.add_field(name='hello', value='Say hi to Artemis!', inline=False)
             embed.add_field(name="status", value="Check Artemis' status", inline=False)
@@ -29,11 +30,12 @@ class Help:
             embed.add_field(name="rps choice", value="Play Rock, Paper, Scissors against the bot", inline=False)
             embed.add_field(name="whois user", value="Find user details", inline=False)
             embed.add_field(name='yt search', value='Return the first YouTube video based for <search>.', inline=False)
+            embed.add_field(name='g search', value='Return the first Google result for <search>.', inline=False)
+            embed.add_field(name='r/', value='Search for a subreddit `r/nameofsub`.', inline=False)
             embed.add_field(name='help events', value='See available options for events.', inline=False)
             embed.add_field(name='help embeds', value='See available options for embeds.', inline=False)
             embed.add_field(name='help roles', value='See available options for roles.', inline=False)
             embed.add_field(name='help mod', value='See available options for moderators.', inline=False)
-            embed.set_footer(text="Author: Hatchet Jackk")
             await ctx.author.send(embed=embed)
             print('Artemis: Sent help to {0}'.format(ctx.author.name))
 
@@ -42,7 +44,7 @@ class Help:
     async def embeds(ctx):
         embed = discord.Embed(
             title='Embeds Help',
-            color=discord.Color.blue()
+            color=discord.Color.red()
         )
         embed.add_field(
             name='richembed',
@@ -66,7 +68,7 @@ class Help:
     async def events(ctx):
         embed = discord.Embed(
             title='Events Help',
-            color=discord.Color.blue()
+            color=discord.Color.green()
         )
         embed.add_field(
             name='events',
@@ -113,7 +115,7 @@ class Help:
         embed = discord.Embed(
             title='Mods Help',
             description='Help topics for mods only.',
-            color=discord.Color.blue()
+            color=discord.Color.orange()
         )
         embed.add_field(
             name='botspam',
@@ -149,7 +151,7 @@ class Help:
     async def roles(ctx):
         embed = discord.Embed(
             title='Roles Help',
-            color=discord.Color.blue()
+            color=discord.Color.dark_magenta()
         )
         embed.add_field(
             name='autorole',
