@@ -12,7 +12,6 @@ class Fun:
 
     @commands.command()
     async def ping(self, ctx):
-
         await ctx.send(':ping_pong: Pong')
 
     @commands.command()
@@ -23,7 +22,6 @@ class Fun:
     async def roll(self, ctx, dice: str):
         try:
             rolls, limit = map(int, dice.split('d'))
-            print(rolls, limit)
         except Exception as e:
             print(e)
             await ctx.send('Please use the format "NdN" when rolling dice. Thanks!')

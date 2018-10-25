@@ -1,11 +1,9 @@
 import asyncio
-import operator
-from collections import OrderedDict
-
 import discord
 import pytz
 import json
 import random
+from collections import OrderedDict
 from discord.ext import commands
 from discord.ext.commands import BucketType
 from _datetime import datetime, timedelta
