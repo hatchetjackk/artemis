@@ -1,4 +1,7 @@
 import asyncio
+import operator
+from collections import OrderedDict
+
 import discord
 import pytz
 import json
@@ -92,8 +95,6 @@ class Events:
     @commands.group()
     @commands.cooldown(rate=1, per=5, type=BucketType.user)
     async def events(self, ctx):
-        # if subcommand isn't passed, return all events related to guild
-        # subcommands: set, find, timer
         if ctx.invoked_subcommand is None:
             data = await self.load_guilds()
             guild = ctx.guild
@@ -118,15 +119,14 @@ class Events:
 
             counter = 1
             data = await self.load_events()
-            for key, value in data.items():
+            sorted_events = OrderedDict(sorted(data.items(), key=lambda x: x[1]['time']))
+            for key, value in sorted_events.items():
                 if value['guild_id'] == guild.id:
                     diamond = ':small_orange_diamond:'
                     if counter % 2 == 0:
                         diamond = ':small_blue_diamond:'
-                    # trim long event names
                     event = value['event'][:50]
 
-                    # format the event's time
                     dt = await self.make_datetime(value['time'])
                     dt_long, dt_short = await self.make_string(dt)
                     eta = await self.eta(dt)
