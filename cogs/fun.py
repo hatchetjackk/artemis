@@ -1,6 +1,7 @@
 import os
 import random
 import discord
+import requests
 from PyDictionary import PyDictionary
 from discord.ext import commands
 
@@ -56,6 +57,12 @@ class Fun:
             all_def = '\n'.join(definitions)
             embed.add_field(name=key, value=all_def)
         await ctx.send(embed=embed)
+
+    @commands.command()
+    async def g(self, ctx, *args):
+        search = ' '.join(args)
+        r = requests.get('http://www.google.com/search?q="{}"&btnI'.format(search))
+        await ctx.send(r.url)
 
     @commands.group()
     async def rochembed(self, ctx):
