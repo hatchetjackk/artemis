@@ -99,11 +99,11 @@ class Automod:
 
     @commands.command()
     @commands.has_any_role('Moderator', 'mod')
-    async def clear(self, ctx, amount: typing.Optional[int] = 2):
+    async def clear(self, ctx, amount: int):
         if 100 < amount or amount < 2:
-            ctx.send('Amount must be between 1 and 100.')
+            await ctx.send('Amount must be between 1 and 100.')
             return
-        await ctx.channel.purge(limit=amount)
+        await ctx.channel.purge(limit=amount+1)
 
     async def on_member_join(self, member):
         # when a member joins, give them an autorole if it exists

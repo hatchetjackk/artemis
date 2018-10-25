@@ -34,7 +34,7 @@ class Events:
             'utc': pytz.timezone('UTC'),
             'cest': pytz.timezone('Europe/Brussels')}
 
-    @commands.group()
+    @commands.group(aliases=['delevents'])
     @commands.cooldown(rate=2, per=30, type=BucketType.user)
     async def delevent(self, ctx):
         # delete an event in the guild
@@ -51,23 +51,22 @@ class Events:
             return
         event_list = args[:]
         data = await self.load_events()
+        embed = discord.Embed(color=discord.Color.blue())
         for event_id in event_list:
             if event_id in data and data[event_id]['guild_id'] == gid:
                 event = data[event_id]['event']
                 data.pop(event_id)
                 await self.dump_events(data)
-                embed = discord.Embed(color=discord.Color.blue())
                 embed.add_field(
                     name='Event Deleted',
                     value='{} successfully deleted.'.format(event_id)
                 )
-                await ctx.send(embed=embed)
             else:
                 await ctx.send('Event {} not found.'.format(event_id))
                 return
-            await asyncio.sleep(5)
             msg = 'An event was deleted by {0}.\n{1} [{2}]'.format(ctx.message.author, event, event_id)
             await self.spam(ctx, msg)
+        await ctx.send(embed=embed)
 
     @delevent.group()
     @commands.has_role('mod')
@@ -90,7 +89,7 @@ class Events:
                 pass
         await ctx.send('All events deleted!')
 
-    @commands.group()
+    @commands.group(aliases=['event'])
     @commands.cooldown(rate=1, per=5, type=BucketType.user)
     async def events(self, ctx):
         if ctx.invoked_subcommand is None:

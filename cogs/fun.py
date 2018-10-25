@@ -56,8 +56,8 @@ class Fun:
             embed.add_field(name=key, value=all_def)
         await ctx.send(embed=embed)
 
-    @commands.command()
-    async def g(self, ctx, *args):
+    @commands.command(aliases=['g'])
+    async def google(self, ctx, *args):
         search = ' '.join(args)
         r = requests.get('http://www.google.com/search?q="{}"&btnI'.format(search))
         await ctx.send(r.url)

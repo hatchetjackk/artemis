@@ -26,11 +26,6 @@ class User:
         await ctx.send(coin)
 
     @commands.command()
-    async def google(self):
-        # pull the first link from a google search (ie feeling lucky)
-        pass
-
-    @commands.command()
     async def image(self):
         # pull the first image from a google search
         pass
@@ -107,8 +102,8 @@ class User:
             print(e)
             await ctx.send('User not found. Double check your spelling.')
 
-    @commands.command()
-    async def yt(self, ctx, *args):
+    @commands.command(aliases=['yt'])
+    async def youtube(self, ctx, *args):
         query_string = urllib.parse.urlencode({"search_query": ' '.join(args)})
         html_content = urllib.request.urlopen("http://www.youtube.com/results?" + query_string)
         search_results = re.findall(r'href=\"\/watch\?v=(.{11})', html_content.read().decode())
