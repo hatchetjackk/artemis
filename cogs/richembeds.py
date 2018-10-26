@@ -192,6 +192,7 @@ class RichEmbed:
             line2 = ' '.join(lines[1:])
             value = line2[1:].split('\n')
             embed.add_field(name=title, value=' '.join(value), inline=False)
+            embed.set_footer(text='Created by {}'.format(message.author.name))
             await message.channel.purge(limit=len(lines))
             await channel.send(embed=embed)
 
