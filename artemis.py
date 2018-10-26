@@ -1,13 +1,10 @@
 #! python3
 import os
 import discord
-import asyncio
 import json
 import datetime
 # import traceback
 import logging
-import random
-from itertools import cycle
 from discord.ext import commands
 
 with open('files/guilds.json', 'r') as g:
@@ -65,13 +62,6 @@ async def on_resumed():
     print(message)
 
 
-# @client.event
-# async def on_error(event):
-#     now = datetime.datetime.now().strftime('%d/%Y %H:%M')
-#     msg = "An error has occurred.\n[{0}] Error: {1}".format(now, event)
-#     await
-
-
 @client.event
 async def on_message(message):
 
@@ -80,50 +70,7 @@ async def on_message(message):
     if not message.content.startswith('!'):
         await update_users(message)
 
-        bot_kudos = [
-            'good bot', 'good job bot', 'good job, bot',
-            'good artemis', 'good, artie', 'good artie'
-        ]
-        bad_bot = [
-            'bad bot', 'bad artie', 'bad artemis', 'damnit artie',
-            'damn it, artemis', 'you suck, Artemis'
-        ]
-        for value in bot_kudos:
-            if value in message.content.lower():
-                responses = [
-                    "You're welcome!", "No problem.",
-                    "Anytime!", "Sure thing, fellow human!",
-                    "*eats karma* Mmm.", 'I try!', 'I do it for the kudos!', ':wink:',
-                    'Appreciate it!', 'You got it!', ':smile:', 'Yeet!',
-                    '( ͡° ͜ʖ ͡°)'
-                ]
-                await message.channel.send(random.choice(responses))
-        for value in bad_bot:
-            if value in message.content.lower():
-                responses = [
-                    ':sob:', ':cry:', 'Oh... ok',
-                    'S-sorry.', '( ͡° ͜ʖ ͡°)', 'Sowwy onyii-chan'
-                ]
-                await message.channel.send(random.choice(responses))
-
     await client.process_commands(message)
-
-
-async def change_status():
-    # Change Artemis' play status every 5 minutes
-    await client.wait_until_ready()
-    status_response = [
-        'type !help',
-        'with 1\'s and 0\'s',
-        'with fellow humans',
-        'with infinite loops',
-        'with Python'
-    ]
-    msg = cycle(status_response)
-    while not client.is_closed():
-        current_status = next(msg)
-        await client.change_presence(game=discord.Game(name=current_status))
-        await asyncio.sleep(60*5)
 
 
 async def update_users(message):
@@ -175,7 +122,6 @@ async def dump_guilds(data):
     with open('files/guilds.json', 'w') as f:
         json.dump(data, f, indent=2)
 
-client.loop.create_task(change_status())
 
 if __name__ == '__main__':
     for extension in [f.replace('.py', '') for f in os.listdir('cogs/')]:

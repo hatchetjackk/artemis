@@ -41,7 +41,7 @@ class Automod:
         if ctx.invoked_subcommand is None:
             await ctx.send('Invoke `autorole` with `add` or `remove`.')
 
-    @autorole.group()
+    @autorole.group(aliases=['add'])
     async def set(self, ctx, role):
         data = await self.load_guilds()
         guild = ctx.guild
@@ -75,7 +75,7 @@ class Automod:
             print(e)
             raise
 
-    @commands.command()
+    @commands.command(aliases=['spam'])
     @commands.has_any_role('mod', 'Moderator')
     async def botspam(self, ctx, *args):
         try:

@@ -1,6 +1,6 @@
 {
   "status": {
-    "level": 33
+    "level": 9
   },
   "responses": {
     "great": [
@@ -28,9 +28,10 @@
       "Artemis is doing terribly",
       "Couldn't get any worse in here.",
       "Artemis is operating at sub-optimal levels.",
-      "Everything is on fire!",
+      ":fire: Everything is on fire! :fire:",
       "I feel pretty bad. I mean... yeah.",
-      "Just... ugh."
+      "Just... ugh.",
+      ":middle_finger:"
     ]
   },
   "karma_responses": {
@@ -39,20 +40,6 @@
       ":sparkles: Cha-ching! You got some karma, {0}!",
       ":sparkles: What's that? Sounds like that karma train, {0}!",
       ":sparkles: +1 karma for {0}!"
-    ],
-    "client_response": [
-      "You're welcome!",
-      "No problem.",
-      "Anytime!",
-      "Sure thing, fellow human!",
-      "*eats karma* Mmm.",
-      "I try!",
-      "I do it for the kudos!",
-      ":wink:",
-      "Appreciate it!",
-      "You got it!",
-      ":smile:",
-      "Yeet!"
     ],
     "bad_response": [
       "You can't give yourself karma.",
@@ -74,6 +61,53 @@
       "shit",
       "bitch",
       "ass"
+    ]
+  },
+  "bot": {
+    "good": [
+      "good bot",
+      "good job bot",
+      "good job, bot",
+      "good artemis",
+      "good, artie",
+      "good artie"
+    ],
+    "good_response": [
+      "You're welcome!",
+      "No problem.",
+      "Anytime!",
+      "Sure thing, fellow human!",
+      "*eats karma* Mmm.",
+      "I try!",
+      "I do it for the kudos!",
+      ":wink:",
+      "Appreciate it!",
+      "You got it!",
+      ":smile:",
+      "Yeet!"
+    ],
+    "bad": [
+      "bad bot",
+      "bad artie",
+      "bad artemis",
+      "damnit artie",
+      "damn it, artemis",
+      "you suck, Artemis"
+    ],
+    "bad_response": [
+      ":sob:",
+      ":cry:",
+      ":weary:\nOh... ok",
+      ":bow:\nS-sorry.",
+      ":fearful:\nB-but... ",
+      ":pensive:\nSowwy onyii-chan"
+    ],
+    "status_response": [
+      "type !help",
+      "with 1's and 0's",
+      "with fellow humans",
+      "with infinite loops",
+      "with Python"
     ]
   }
 }

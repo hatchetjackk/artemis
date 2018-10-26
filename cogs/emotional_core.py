@@ -1,5 +1,8 @@
+import asyncio
 import random
 import json
+import discord
+from itertools import cycle
 from discord.ext import commands
 
 
@@ -8,17 +11,27 @@ class Emotions:
         self.client = client
 
     async def on_message(self, message):
-        message = [word.lower() for word in message.content.split()]
+        channel = message.channel
+        msg = [word.lower() for word in message.content.split()]
+        content = message.content.lower()
         data = await self.load_status()
         good_keys = data['status_changing_words']['good']
         bad_keys = data['status_changing_words']['bad']
-        for word in message:
+        good_bot = data['bot']['good']
+        bad_bot = data['bot']['bad']
+        for word in msg:
             if word in good_keys:
                 good = 1
                 await self.emotional_level(good)
             if word in bad_keys:
                 bad = -1
                 await self.emotional_level(bad)
+        for value in good_bot:
+            if value in content:
+                await channel.send(random.choice(data['bot']['good_response']))
+        for value in bad_bot:
+            if value in content:
+                await channel.send(random.choice(data['bot']['bad_response']))
 
     async def emotional_level(self, value):
         status = await self.load_status()
@@ -53,6 +66,16 @@ class Emotions:
         print('Mood: {0:<5} Level: {1}/50'.format(mood, level))
         return mood
 
+    async def change_status(self):
+        await self.client.wait_until_ready()
+        data = await self.load_status()
+        status_response = data['bot']['status_response']
+        msg = cycle(status_response)
+        while not self.client.is_closed():
+            current_status = next(msg)
+            await self.client.change_presence(game=discord.Game(name=current_status))
+            await asyncio.sleep(60 * 5)
+
     @staticmethod
     async def load_status():
         with open('files/status.json') as f:
@@ -67,3 +90,4 @@ class Emotions:
 
 def setup(client):
     client.add_cog(Emotions(client))
+    client.loop.create_task(Emotions(client).change_status())

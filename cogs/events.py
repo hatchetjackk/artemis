@@ -34,63 +34,8 @@ class Events:
             'utc': pytz.timezone('UTC'),
             'cest': pytz.timezone('Europe/Brussels')}
 
-    @commands.group(aliases=['delevents'])
-    @commands.cooldown(rate=2, per=30, type=BucketType.user)
-    async def delevent(self, ctx):
-        # delete an event in the guild
-        if ctx.invoked_subcommand is None:
-            await ctx.send('Use `delevent id event_id1 event_id2` to delete an event.')
-
-    @delevent.group()
-    async def id(self, ctx, *args):
-        guild = ctx.guild
-        gid = guild.id
-        # delete specific events
-        if len(args) < 1:
-            await ctx.send('Use `delevent id event_id1 event_id2` to delete an event.')
-            return
-        event_list = args[:]
-        data = await self.load_events()
-        embed = discord.Embed(color=discord.Color.blue())
-        for event_id in event_list:
-            if event_id in data and data[event_id]['guild_id'] == gid:
-                event = data[event_id]['event']
-                data.pop(event_id)
-                await self.dump_events(data)
-                embed.add_field(
-                    name='Event Deleted',
-                    value='{} successfully deleted.'.format(event_id)
-                )
-            else:
-                await ctx.send('Event {} not found.'.format(event_id))
-                return
-            msg = 'An event was deleted by {0}.\n{1} [{2}]'.format(ctx.message.author, event, event_id)
-            await self.spam(ctx, msg)
-        await ctx.send(embed=embed)
-
-    @delevent.group()
-    @commands.has_role('mod')
-    async def all(self, ctx):
-        # delete all events
-        gid = ctx.guild.id
-        data = await self.load_events()
-        num = 0
-        for event in data:
-            if data[event]['guild_id'] == gid:
-                num += 1
-        while num > 0:
-            try:
-                for event in data:
-                    if data[event]['guild_id'] == gid:
-                        data.pop(event)
-                        await self.dump_events(data)
-                        num = num - 1
-            except RuntimeError:
-                pass
-        await ctx.send('All events deleted!')
-
-    @commands.group(aliases=['event'])
-    @commands.cooldown(rate=1, per=5, type=BucketType.user)
+    @commands.group(aliases=['event', 'e'])
+    @commands.cooldown(rate=2, per=5, type=BucketType.user)
     async def events(self, ctx):
         if ctx.invoked_subcommand is None:
             data = await self.load_guilds()
@@ -137,8 +82,35 @@ class Events:
                     counter += 1
             await ctx.send(embed=embed)
 
-    @events.group()
-    async def find(self, ctx, event_id: str):
+    @events.group(aliases=['d'])
+    async def delete(self, ctx, *args):
+        guild = ctx.guild
+        gid = guild.id
+        if len(args) < 1:
+            await ctx.send('Use `event delete event_id1 event_id2` to delete an event or events.')
+            return
+        event_list = args[:]
+        data = await self.load_events()
+        embed = discord.Embed(color=discord.Color.blue())
+        for event_id in event_list:
+            if event_id in data and data[event_id]['guild_id'] == gid:
+                event = data[event_id]['event']
+                data.pop(event_id)
+                await self.dump_events(data)
+                embed.add_field(
+                    name='Event Deleted',
+                    value='{} successfully deleted.'.format(event_id)
+                )
+            else:
+                await ctx.send('Event {} not found.'.format(event_id))
+                return
+            msg = 'An event was deleted by {0}.\n{1} [{2}]'.format(ctx.message.author, event, event_id)
+            await self.spam(ctx, msg)
+        await ctx.send(embed=embed)
+
+    @events.group(aliases=['f'])
+    async def find(self, ctx, *, event_title: str):
+        event_title = event_title.lower()
         # find a single event in the events file if it is in the guild
         data_guilds = await self.load_guilds()
         guild = ctx.guild
@@ -167,23 +139,23 @@ class Events:
         # Ensure that the event matches the guild
         # Then return a single event
         data_events = await self.load_events()
-        if event_id in data_events and data_events[event_id]['guild_id'] == int(gid):
-            event = data_events[event_id]['event'][:50]
-            dt = await self.make_datetime(data_events[event_id]['time'])
-            dt_long, dt_short = await self.make_string(dt)
-            eta = await self.eta(dt)
-            embed.add_field(
-                name=event,
-                value='**Event** [{0}]: {1}\n'
-                      '**Time**: {2}\n'
-                      '**ETA**: {3}'.format(event_id, event, dt_short, eta),
-                inline=False
-            )
-            await ctx.send(embed=embed)
-            return
+        for key, value in data_events.items():
+            if event_title in data_events[key]['event'].lower() and data_events[key]['guild_id'] == int(gid):
+                event = data_events[key]['event'][:50]
+                dt = await self.make_datetime(data_events[key]['time'])
+                dt_long, dt_short = await self.make_string(dt)
+                eta = await self.eta(dt)
+                embed.add_field(
+                    name=event,
+                    value='**Event** [{0}]: {1}\n'
+                          '**Time**: {2}\n'
+                          '**ETA**: {3}'.format(key, event, dt_short, eta),
+                    inline=False
+                )
+        await ctx.send(embed=embed)
 
-    @events.group()
-    async def timer(self, ctx, hours: int, minutes: int, event: str):
+    @events.group(aliases=['t'])
+    async def timer(self, ctx, hours: int, minutes: int, *, event: str):
         data = await self.load_events()
         guild = ctx.guild
         author = ctx.author
@@ -221,7 +193,7 @@ class Events:
         msg = 'An event was created by {0}.\n{1} [{2}]\n{3}'.format(ctx.message.author, event, event_id, dt_long)
         await self.spam(ctx, msg)
 
-    @events.group()
+    @events.group(aliases=['add', 'a'])
     async def set(self, ctx, *args):
         # set an event using a time (hours:minutes) and date {day/month)
         data = await self.load_events()
@@ -232,6 +204,7 @@ class Events:
             await ctx.send('Please use the format `setevent h:m day/mnth event`.')
             return
 
+        # add year
         h, m = args[0].split(':')
         day, month = args[1].split('/')
         event = ' '.join(args[2:])
@@ -267,7 +240,7 @@ class Events:
         msg = 'An event was created by {0}.\n{1} [{2}]\n{3}'.format(ctx.message.author, event, event_id, dt_long)
         await self.spam(ctx, msg)
 
-    @events.group()
+    @events.group(aliases=['u'])
     async def update(self, ctx, *args):
         if 1 > len(args) > 3:
             await ctx.send('Please use the format `update event_id h:m day/mnth`.')
@@ -299,8 +272,8 @@ class Events:
             await ctx.send('Please use the format `update event_id h:m day/mnth`.')
             print(e)
 
-    @commands.command()
-    async def mytime(self, ctx, *args):
+    @commands.command(aliases=['local'])
+    async def mytime(self, ctx, event_id: str, tz: str):
         guild = ctx.guild
         author = ctx.author
 
@@ -320,36 +293,31 @@ class Events:
         embed.set_thumbnail(url=thumb_url)
         embed.set_footer(text=fmt_footer)
 
-        # Check if the right number of arguments have been passed
         try:
-            event_id = args[0]
-            tz = args[1]
-        except IndexError:
-            await ctx.send('Use `mytime <event id> <time zone>` to check an event in a specific timezone.')
-            return
+            # find events in data that match the current guild
+            data = await self.load_events()
+            if event_id in data:
+                # Format the event's time
+                dt = await self.make_datetime(data[event_id]['time'])
+                verify, tz_conversion = await self.timezones(tz)
 
-        # find events in data that match the current guild
-        data = await self.load_events()
-        if event_id in data:
-            # Format the event's time
-            dt = await self.make_datetime(data[event_id]['time'])
-            verify, tz_conversion = await self.timezones(tz)
+                # Convert the time with set tz
+                new_dt = dt.astimezone(tz_conversion)
+                dt = dt + datetime.utcoffset(new_dt)
 
-            # Convert the time with set tz
-            new_dt = dt.astimezone(tz_conversion)
-            dt = dt + datetime.utcoffset(new_dt)
+                # Make the datetime object a string and format it
+                dt_long, dt_short = await self.make_string(dt)
+                dt_short = dt_short.replace('UTC', '')
 
-            # Make the datetime object a string and format it
-            dt_long, dt_short = await self.make_string(dt)
-            dt_short = dt_short.replace('UTC', '')
-
-            embed.add_field(
-                name='{}'.format(data[event_id]['event'][:50]),
-                value='This event in {0} is {1}'.format(tz.upper(), dt_short)
-            )
-            await ctx.send(embed=embed)
-        else:
-            await ctx.send('Event id {} was not found.'.format(event_id))
+                embed.add_field(
+                    name='{}'.format(data[event_id]['event'][:50]),
+                    value='This event in {0} is {1}'.format(tz.upper(), dt_short)
+                )
+                await ctx.send(embed=embed)
+            else:
+                await ctx.send('Event id {} was not found.'.format(event_id))
+        except TypeError:
+            await ctx.send('That didn\'t work. Make sure that your command matches the required format.')
 
     @commands.command()
     @commands.cooldown(rate=1, per=30, type=BucketType.user)
@@ -538,8 +506,6 @@ class Events:
                     minutes = int(minutes.strip('m'))
                     if days < 1 and hours < 1 and minutes > 0:
                         for user, channel in value['member_notify'].items():
-                            # print(members)
-                            # for user, channel in members.items():
                             user = await self.client.get_user_info(user_id=int(user))
                             channel = self.client.get_channel(channel)
                             await channel.send(
@@ -597,6 +563,7 @@ class Events:
             json.dump(data, f, indent=2)
 
     @events.error
+    # @mytime.error
     async def on_message_error(self, ctx, error):
         if isinstance(error, commands.CommandOnCooldown):
             msg = ':sob: You\'ve triggered a cool down. Please try again in {} sec.'.format(
@@ -605,6 +572,9 @@ class Events:
         if isinstance(error, commands.CheckFailure):
             msg = 'You do not have permission to run this command.'
             await ctx.send(msg)
+        # if isinstance(error, TypeError):
+        #     msg = 'There was an error with the command. Please check the command format.'
+        #     await ctx.send(msg)
 
 
 def setup(client):

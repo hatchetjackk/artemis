@@ -1,5 +1,4 @@
 import json
-
 import discord
 from discord import Color, Embed
 from discord.ext import commands
@@ -9,6 +8,7 @@ class RichEmbed:
 
     def __init__(self, client):
         self.client = client
+        self.client_color = 000000
         self.color_dict = {
             1: [Color.teal(), 'teal'],
             2: [Color.dark_teal(), 'dark_teal'],
@@ -131,19 +131,6 @@ class RichEmbed:
             embed.set_footer(text=footer_text)
         await ctx.send(embed=embed)
 
-    @staticmethod
-    async def tut_embed(description):
-        tut_embed = discord.Embed(
-            title='Artemis Embed Wizard',
-            description=description,
-            color=discord.Color.blue())
-        return tut_embed
-
-    @staticmethod
-    async def author_check(author, message):
-        if author == message.author:
-            return True
-
     @richembed.group()
     async def get(self, ctx, *args):
         msg = await ctx.get_message(id=args[0])
@@ -194,10 +181,9 @@ class RichEmbed:
         )
         await ctx.send(embed=embed)
 
-    @staticmethod
-    async def on_message(message):
+    async def on_message(self, message):
         channel = message.channel
-        embed = Embed(color=000000)
+        embed = Embed(color=self.client_color)
         # quick embeds!
         if message.content.startswith('>'):
             lines = message.content.split('\n')
@@ -208,6 +194,14 @@ class RichEmbed:
             embed.add_field(name=title, value=' '.join(value), inline=False)
             # embed.set_author(name=message.author.name, icon_url=message.author.avatar_url)
             await channel.send(embed=embed)
+
+    @staticmethod
+    async def tut_embed(description):
+        tut_embed = discord.Embed(
+            title='Artemis Embed Wizard',
+            description=description,
+            color=discord.Color.blue())
+        return tut_embed
 
     @staticmethod
     async def on_message_error(ctx, error):
