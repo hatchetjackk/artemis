@@ -65,18 +65,14 @@ class Help:
             name='events',
             value='Show all events in the guild. New events are UTC by default.\n'
                   '**Add new events with**: \n'
-                  '`events set h:m day/mnth event_description`\n'
-                  '`events timer hours minutes "event description"`\n'
+                  '`event add h:m day/mnth event_description`\n'
+                  '`event timer int_hours int_minutes event description`\n'
                   '**Find individual events with**: \n'
-                  '`events find event_id`\n'
+                  '`events find keyword`\n'
                   '**Update existing events with**:\n'
-                  '`events update event_id h:m day/mnth`',
-            inline=False
-        )
-        embed.add_field(
-            name='delevent',
-            value='Delete an event\n'
-                  '`delevent event_id`',
+                  '`event update event_id h:m day/mnth/year`\n'
+                  '**Delete an event** Only event authors or mods can delete events\n'
+                  '`event delete event_id1 event_id2 ...',
             inline=False
         )
         embed.add_field(
