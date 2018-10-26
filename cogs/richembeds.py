@@ -192,7 +192,7 @@ class RichEmbed:
             line2 = ' '.join(lines[1:])
             value = line2[1:].split('\n')
             embed.add_field(name=title, value=' '.join(value), inline=False)
-            # embed.set_author(name=message.author.name, icon_url=message.author.avatar_url)
+            await message.channel.purge(limit=len(lines))
             await channel.send(embed=embed)
 
     @staticmethod
