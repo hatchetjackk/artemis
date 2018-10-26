@@ -1,4 +1,4 @@
-import json
+from artemis import load_json, dump_json
 from discord.ext import commands
 
 
@@ -9,11 +9,43 @@ class User:
     async def on_member_join(self, member):
         await self.create_user(member)
 
-    async def create_user(self, member):
+    async def on_message(self, message):
+        if message.author.id == self.client.user.id:
+            return
+        if not message.content.startswith('!'):
+            await self.update_users(message)
+        await self.client.process_commands(message)
+
+    @staticmethod
+    async def update_users(message):
+        try:
+            guild = message.guild
+            gid = str(guild.id)
+            data_users = await load_json('users')
+
+            for member in message.guild.members:
+                mid = str(member.id)
+                if mid not in data_users:
+                    data_users[mid] = {
+                        'username': member.name,
+                        'guild': {},
+                        'karma': 0,
+                        'karma_cooldown': 0
+                    }
+                if gid not in data_users[mid]['guild']:
+                    data_users[mid]['guild'].update({gid: guild.name})
+            await dump_json('users', data_users)
+
+        except Exception as e:
+            print(e)
+            raise
+
+    @staticmethod
+    async def create_user(member):
         guild = member.guild
         gid = str(guild.id)
         mid = str(member.id)
-        data_users = await self.load_json('users')
+        data_users = await load_json('users')
         if mid not in data_users:
             data_users[member.id] = {
                 'username': member.name,
@@ -21,18 +53,7 @@ class User:
             }
         if gid not in data_users[mid]['guild']:
             data_users[mid]['guild'].update({gid: guild.name})
-        await self.dump_json('users', data_users)
-
-    @staticmethod
-    async def load_json(f):
-        with open('files/{}.json'.format(f)) as g:
-            data = json.load(g)
-        return data
-
-    @staticmethod
-    async def dump_json(f, data):
-        with open('files/{}.json'.format(f), 'w') as g:
-            json.dump(data, g, indent=2)
+        await dump_json('users', data_users)
 
     @staticmethod
     async def on_message_error(ctx, error):

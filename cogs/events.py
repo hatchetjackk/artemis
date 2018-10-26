@@ -3,6 +3,7 @@ import discord
 import pytz
 import json
 import random
+from artemis import load_json, dump_json
 from collections import OrderedDict
 from discord.ext import commands
 from discord.ext.commands import BucketType, CommandNotFound
@@ -39,7 +40,7 @@ class Events:
     @commands.cooldown(rate=2, per=5, type=BucketType.user)
     async def events(self, ctx):
         if ctx.invoked_subcommand is None:
-            data = await self.load_guilds()
+            data = await load_json('guilds')
             guild = ctx.guild
             author = ctx.author
             gid = str(guild.id)
@@ -61,7 +62,7 @@ class Events:
             embed.add_field(name=':sparkles: Upcoming Events', value='\u200b')
 
             counter = 1
-            data = await self.load_events()
+            data = await load_json('events')
             sorted_events = OrderedDict(sorted(data.items(), key=lambda x: x[1]['time']))
             for key, value in sorted_events.items():
                 if value['guild_id'] == guild.id:
@@ -95,33 +96,34 @@ class Events:
             await ctx.send('Use `event delete event_id1 event_id2` to delete an event or events.')
             return
         event_list = args[:]
-        data = await self.load_events()
+        data = await load_json('events')
         embed = discord.Embed(color=discord.Color.blue())
         for event_id in event_list:
             if event_id in data and data[event_id]['guild_id'] == gid:
                 if ctx.author.id == data[event_id]['user_id'] or 'Moderator' in author.roles:
                     event = data[event_id]['event']
                     data.pop(event_id)
-                    await self.dump_events(data)
+                    await dump_json('events', data)
                     embed.add_field(
                         name='Event Deleted',
                         value='{} successfully deleted.'.format(event_id)
                     )
                     msg = 'An event was deleted by {0}.\n{1} [{2}]'.format(author, event, event_id)
                     await self.spam(ctx, msg)
-                    await ctx.send(embed=embed)
                 else:
                     await ctx.send('You did not make this event. Only the author or a moderator can delete it.')
             else:
                 await ctx.send('Event {} not found.'.format(event_id))
                 return
+
+        await ctx.send(embed=embed)
         # await ctx.message.channel.purge(limit=1)
 
     @events.group(aliases=['f'])
     async def find(self, ctx, *, event_title: str):
         event_title = event_title.lower()
         # find a single event in the events file if it is in the guild
-        data_guilds = await self.load_guilds()
+        data_guilds = await load_json('guilds')
         guild = ctx.guild
         author = ctx.author
         gid = str(guild.id)
@@ -147,7 +149,7 @@ class Events:
 
         # Ensure that the event matches the guild
         # Then return a single event
-        data_events = await self.load_events()
+        data_events = await load_json('events')
         for key, value in data_events.items():
             if event_title in data_events[key]['event'].lower() and data_events[key]['guild_id'] == int(gid):
                 event = data_events[key]['event'][:50]
@@ -166,7 +168,7 @@ class Events:
 
     @events.group(aliases=['t'])
     async def timer(self, ctx, hours: int, minutes: int, *, event: str):
-        data = await self.load_events()
+        data = await load_json('events')
         guild = ctx.guild
         author = ctx.author
 
@@ -191,7 +193,7 @@ class Events:
                     'member_notify': {}
                 }
                 break
-        await self.dump_events(data)
+        await dump_json('events', data)
         embed = await self.embed_handler(
             ctx,
             dt,
@@ -199,7 +201,6 @@ class Events:
             event_id,
             update=False
         )
-        # await ctx.message.channel.purge(limit=1)
         await ctx.send(embed=embed)
         msg = 'An event was created by {0}.\n{1} [{2}]\n{3}'.format(ctx.message.author, event, event_id, dt_long)
         await self.spam(ctx, msg)
@@ -207,7 +208,7 @@ class Events:
     @events.group(aliases=['add', 'a'])
     async def set(self, ctx, *args):
         # set an event using a time (hours:minutes) and date {day/month)
-        data = await self.load_events()
+        data = await load_json('events')
         guild = ctx.guild
         author = ctx.author
 
@@ -242,7 +243,7 @@ class Events:
                     'member_notify': {}
                 }
                 break
-        await self.dump_events(data)
+        await dump_json('events', data)
         embed = await self.embed_handler(
             ctx,
             dt,
@@ -270,7 +271,7 @@ class Events:
                 year = datetime.utcnow().year - 2000
 
             dt = await self.time_formatter(ctx, day, month, year, h, m)
-            data = await self.load_events()
+            data = await load_json('events')
             if event_id in data:
                 dt_long, dt_short = await self.make_string(dt)
                 data[event_id]['time'] = dt_long
@@ -286,11 +287,11 @@ class Events:
                 update=True
             )
             await ctx.send(embed=embed)
-            await self.dump_events(data)
+            await dump_json('events', data)
         except Exception as e:
             await ctx.send('Please use the format `update event_id h:m day/mnth`.')
-            raise
             print(e)
+            raise
 
     @commands.command(aliases=['local'])
     async def mytime(self, ctx, event_id: str, tz: str):
@@ -315,7 +316,7 @@ class Events:
 
         try:
             # find events in data that match the current guild
-            data = await self.load_events()
+            data = await load_json('events')
             if event_id in data:
                 # Format the event's time
                 dt = await self.make_datetime(data[event_id]['time'])
@@ -369,14 +370,14 @@ class Events:
         author = ctx.author
         aid = str(author.id)
 
-        data = await self.load_events()
+        data = await load_json('events')
         if eid in data:
             if aid not in data[eid]['member_notify']:
                 data[eid]['notify'] = True
                 data[eid]['member_notify'].update({aid: cid})
                 await ctx.send('Set to notify **{author}** when *{event}* is 1 hour away from '
                                'starting!'.format(author=author.name, event=data[eid]['event']))
-                await self.dump_events(data)
+                await dump_json('events', data)
                 return
             # if user already exists in notification, remove the user
             if str(author.id) in data[eid]['member_notify']:
@@ -388,7 +389,7 @@ class Events:
                 )
                 if len(data[eid]['member_notify']) < 1:
                     data[eid]['notify'] = False
-                await self.dump_events(data)
+                await dump_json('events', data)
                 return
 
     @staticmethod
@@ -446,7 +447,7 @@ class Events:
         embed.set_footer(text=fmt_footer)
 
         if update:
-            data = await self.load_events()
+            data = await load_json('events')
             if event_id in data:
                 dt_data = data[event_id]['time']
                 dt_data = await self.make_datetime(dt_data)
@@ -515,7 +516,7 @@ class Events:
         await self.client.wait_until_ready()
         while not self.client.is_closed():
             await asyncio.sleep(60 * 2)
-            data_events = await self.load_events()
+            data_events = await load_json('events')
             for key, value in data_events.items():
                 if value['notify'] is True:
                     dt = await Events.make_datetime(value['time'])
@@ -533,14 +534,14 @@ class Events:
                                                                                        value['event'][:50]))
                         value['notify'] = False
                         value['member_notify'] = {}
-                    await self.dump_events(data_events)
+                    await dump_json('events', data_events)
 
     async def spam(self, ctx, message):
         guild = ctx.guild
         author = ctx.author
         gid = str(guild.id)
 
-        data = await self.load_guilds()
+        data = await load_json('guilds')
         if gid in data:
             if data[gid]['spam'] is not None:
                 embed = discord.Embed(color=discord.Color.blue())
@@ -548,7 +549,6 @@ class Events:
                     name='Alert',
                     value=message
                 )
-                embed.set_footer(text='Triggered by: {0.name}'.format(author))
                 channel = self.client.get_channel(int(data[gid]['spam']))
                 await channel.send(embed=embed)
 
@@ -564,23 +564,6 @@ class Events:
             }
         with open('files/users.json', 'w') as f:
             json.dump(data_users, f, indent=2)
-
-    @staticmethod
-    async def load_guilds():
-        with open('files/guilds.json') as f:
-            data = json.load(f)
-        return data
-
-    @staticmethod
-    async def load_events():
-        with open('files/events.json') as f:
-            data = json.load(f)
-        return data
-
-    @staticmethod
-    async def dump_events(data):
-        with open('files/events.json', 'w') as f:
-            json.dump(data, f, indent=2)
 
     @staticmethod
     async def on_command_error(ctx, error):

@@ -1,7 +1,7 @@
 import asyncio
 import random
-import json
 import discord
+from artemis import load_json, dump_json
 from itertools import cycle
 from discord.ext import commands
 
@@ -14,7 +14,7 @@ class Emotions:
         channel = message.channel
         msg = [word.lower() for word in message.content.split()]
         content = message.content.lower()
-        data = await self.load_status()
+        data = await load_json('status')
         good_keys = data['status_changing_words']['good']
         bad_keys = data['status_changing_words']['bad']
         good_bot = data['bot']['good']
@@ -33,19 +33,20 @@ class Emotions:
             if value in content:
                 await channel.send(random.choice(data['bot']['bad_response']))
 
-    async def emotional_level(self, value):
-        status = await self.load_status()
-        if value < 0 and status["status"]["level"] == 0:
+    @staticmethod
+    async def emotional_level(value):
+        data = await load_json('status')
+        if value < 0 and data["status"]["level"] == 0:
             return
-        if value > 0 and status["status"]["level"] == 50:
+        if value > 0 and data["status"]["level"] == 50:
             return
-        status["status"]["level"] += value
-        print('Artemis emotional level change: {0}'.format(status["status"]["level"]))
-        await self.dump_status(status)
+        data["status"]["level"] += value
+        print('Artemis emotional level change: {0}'.format(data["status"]["level"]))
+        await dump_json('status', data)
 
     @commands.command()
     async def status(self, ctx):
-        data = await self.load_status()
+        data = await load_json('status')
         level = data["status"]["level"]
 
         if level >= 40:
@@ -68,24 +69,13 @@ class Emotions:
 
     async def change_status(self):
         await self.client.wait_until_ready()
-        data = await self.load_status()
+        data = await load_json('status')
         status_response = data['bot']['status_response']
         msg = cycle(status_response)
         while not self.client.is_closed():
             current_status = next(msg)
             await self.client.change_presence(game=discord.Game(name=current_status))
             await asyncio.sleep(60 * 5)
-
-    @staticmethod
-    async def load_status():
-        with open('files/status.json') as f:
-            data = json.load(f)
-            return data
-
-    @staticmethod
-    async def dump_status(data):
-        with open('files/status.json', 'w') as f:
-            json.dump(data, f, indent=2)
 
 
 def setup(client):

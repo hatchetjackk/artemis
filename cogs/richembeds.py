@@ -8,7 +8,7 @@ class RichEmbed:
 
     def __init__(self, client):
         self.client = client
-        self.client_color = 000000
+        self.client_color = Color.red()
         self.color_dict = {
             1: [Color.teal(), 'teal'],
             2: [Color.dark_teal(), 'dark_teal'],

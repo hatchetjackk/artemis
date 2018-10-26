@@ -1,5 +1,6 @@
 import json
 import discord
+from artemis import load_json, dump_json
 from discord.ext import commands
 
 
@@ -14,7 +15,7 @@ class Mod:
             guild = ctx.guild
             gid = str(guild.id)
 
-            data = await self.load_json('guilds')
+            data = await load_json('guilds')
             if len(args) < 1 or len(args) > 1:
                 await ctx.send('Please use `spamchannel channel_name`.')
             if args[0] not in [channel.name for channel in ctx.guild.channels]:
@@ -22,7 +23,7 @@ class Mod:
                 return
             spam = discord.utils.get(guild.channels, name=args[0])
             data[gid]['spam'] = spam.id
-            await self.dump_json('guilds', data)
+            await dump_json('guilds', data)
             msg = '{0} changed the botspam channel. It is now {1.mention}'.format(ctx.message.author.name, spam)
             await self.spam(ctx, msg)
         except Exception as e:
@@ -33,7 +34,7 @@ class Mod:
         guild = ctx.guild
         gid = str(guild.id)
 
-        data = await self.load_json('guilds')
+        data = await load_json('guilds')
         if gid in data:
             if data[gid]['spam'] is not None:
                 embed = discord.Embed(color=discord.Color.blue())
@@ -101,17 +102,6 @@ class Mod:
         with open('files/guilds.json', 'w') as f:
             json.dump(data, f, indent=2)
         await ctx.send('Changed guild prefix to {}'.format(prefix))
-
-    @staticmethod
-    async def load_json(f):
-        with open('files/{}.json'.format(f)) as g:
-            data = json.load(g)
-        return data
-
-    @staticmethod
-    async def dump_json(f, data):
-        with open('files/{}.json'.format(f), 'w') as g:
-            json.dump(data, g, indent=2)
 
     @prefix.error
     async def on_message_error(self, ctx, error):
