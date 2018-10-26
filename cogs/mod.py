@@ -8,7 +8,7 @@ class Mod:
         self.client = client
 
     @commands.command(aliases=['spam'])
-    @commands.has_any_role('mod', 'Moderator')
+    @commands.has_any_role('mod', 'Moderators', 'moderator', 'moderators')
     async def botspam(self, ctx, *args):
         try:
             guild = ctx.guild
