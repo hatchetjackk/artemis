@@ -1,5 +1,8 @@
 import os
 import random
+import re
+import urllib.request
+import urllib.parse
 import discord
 import requests
 from PyDictionary import PyDictionary
