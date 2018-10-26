@@ -1,6 +1,6 @@
 {
   "status": {
-    "level": 88
+    "level": 50
   },
   "responses": {
     "great": [
@@ -58,7 +58,8 @@
     "good": [
       "nice",
       "good",
-      "love"
+      "love",
+      "great"
     ],
     "bad": [
       "hate",
@@ -66,7 +67,8 @@
       "fuck",
       "shit",
       "bitch",
-      "ass"
+      "ass",
+      "dick"
     ]
   },
   "bot": {
@@ -77,6 +79,15 @@
       "good artemis",
       "good, artie",
       "good artie"
+    ],
+    "bad": [
+      "bad bot",
+      "bad artie",
+      "bad artemis",
+      "damnit artie",
+      "damn it, artemis",
+      "you suck, artemis",
+      "god damn, artemis"
     ],
     "good_response": [
       "You're welcome!",
@@ -92,17 +103,9 @@
       ":smile:",
       "Yeet!"
     ],
-    "bad": [
-      "bad bot",
-      "bad artie",
-      "bad artemis",
-      "damnit artie",
-      "damn it, artemis",
-      "you suck, Artemis"
-    ],
     "bad_response": [
-      ":sob:",
-      ":cry:",
+      ":sob:\nI'm just doing what I'm programmed to do!",
+      ":cry:\nI'm so sorry!",
       ":weary:\nOh... ok",
       ":bow:\nS-sorry.",
       ":fearful:\nB-but... ",
@@ -119,7 +122,8 @@
       "Did you mean to try another command?",
       "Perhaps you would like to look at the help message...",
       "I'm sorry. I didn't catch what you were trying to do...",
-      "I don't know that command."
+      "I don't know that command.",
+      "Was that geared towards me?"
     ]
   }
 }
