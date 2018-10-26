@@ -11,7 +11,8 @@ class Help:
         if ctx.invoked_subcommand is None:
             embed = discord.Embed(color=discord.Color.blue())
             embed.set_author(name="Help Page")
-            embed.add_field(name='Artemis is in Beta', value='Things are likely to break, be broken, or be removed.\n')
+            embed.add_field(name='Artemis is in Beta',
+                            value='Things might bend, break, or tear a whole into another dimension.\n')
             embed.add_field(
                 name="How do I give karma?",
                 value="Just say thanks and mention the target\nEx: 'Thanks @Hatchet Jackk'",
