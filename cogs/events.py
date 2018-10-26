@@ -5,7 +5,7 @@ import json
 import random
 from collections import OrderedDict
 from discord.ext import commands
-from discord.ext.commands import BucketType
+from discord.ext.commands import BucketType, CommandNotFound
 from _datetime import datetime, timedelta
 
 """ All times in events are handled as UTC and then converted to set zone times for local reference """
@@ -84,8 +84,11 @@ class Events:
 
     @events.group(aliases=['d'])
     async def delete(self, ctx, *args):
+        message = ctx.message
+        author = message.author
         guild = ctx.guild
         gid = guild.id
+
         if len(args) < 1:
             await ctx.send('Use `event delete event_id1 event_id2` to delete an event or events.')
             return
@@ -94,19 +97,22 @@ class Events:
         embed = discord.Embed(color=discord.Color.blue())
         for event_id in event_list:
             if event_id in data and data[event_id]['guild_id'] == gid:
-                event = data[event_id]['event']
-                data.pop(event_id)
-                await self.dump_events(data)
-                embed.add_field(
-                    name='Event Deleted',
-                    value='{} successfully deleted.'.format(event_id)
-                )
+                if ctx.author.id == data[event_id]['user_id'] or 'mod' in author.roles:
+                    event = data[event_id]['event']
+                    data.pop(event_id)
+                    await self.dump_events(data)
+                    embed.add_field(
+                        name='Event Deleted',
+                        value='{} successfully deleted.'.format(event_id)
+                    )
+                    msg = 'An event was deleted by {0}.\n{1} [{2}]'.format(author, event, event_id)
+                    await self.spam(ctx, msg)
+                    await ctx.send(embed=embed)
+                else:
+                    await ctx.send('You did not make this event. Only the author or a moderator can delete it.')
             else:
                 await ctx.send('Event {} not found.'.format(event_id))
                 return
-            msg = 'An event was deleted by {0}.\n{1} [{2}]'.format(ctx.message.author, event, event_id)
-            await self.spam(ctx, msg)
-        await ctx.send(embed=embed)
 
     @events.group(aliases=['f'])
     async def find(self, ctx, *, event_title: str):
@@ -204,13 +210,16 @@ class Events:
             await ctx.send('Please use the format `setevent h:m day/mnth event`.')
             return
 
-        # add year
         h, m = args[0].split(':')
-        day, month = args[1].split('/')
         event = ' '.join(args[2:])
+        try:
+            day, month, year = args[1].split('/')
+        except ValueError:
+            day, month = args[1].split('/')
+            year = datetime.utcnow().year - 2000
 
         # format the time to be timezone ready
-        dt = await self.time_formatter(ctx, day, month, h, m)
+        dt = await self.time_formatter(ctx, day, month, year, h, m)
         if dt is None:
             return
 
@@ -248,9 +257,9 @@ class Events:
         try:
             event_id = str(args[0])
             h, m = args[1].split(':')
-            day, month = args[2].split('/')
+            day, month, year = args[2].split('/')
 
-            dt = await self.time_formatter(ctx, day, month, h, m)
+            dt = await self.time_formatter(ctx, day, month, year, h, m)
             data = await self.load_events()
             if event_id in data:
                 dt_long, dt_short = await self.make_string(dt)
@@ -372,12 +381,12 @@ class Events:
                 return
 
     @staticmethod
-    async def time_formatter(ctx, day, month, h, m):
+    async def time_formatter(ctx, day, month, year, h, m):
         # takes hours and minutes and formats it to a datetime with UTC tz
         try:
             d = datetime.now
             dt = datetime(
-                year=d().year,
+                year=int('20{}'.format(year)),
                 month=int(month),
                 day=int(day),
                 hour=int(h),
@@ -390,7 +399,7 @@ class Events:
         except ValueError as e:
             print('An improper datetime was passed.', e)
             await ctx.send('An incorrect datetime was passed: {}\n'
-                           'Use the format `setevent <h:m> <day/mnth> <event>`'.format(e))
+                           'Use the format `event add h:m day/mnth/year event`'.format(e))
             return None
 
     async def embed_handler(self, ctx, dt, event, event_id, update):
@@ -562,6 +571,14 @@ class Events:
         with open('files/events.json', 'w') as f:
             json.dump(data, f, indent=2)
 
+    @staticmethod
+    async def on_command_error(ctx, error):
+        if isinstance(error, CommandNotFound):
+            with open('files/status.json') as f:
+                data = json.load(f)
+            msg = data['bot']['error_response']
+            await ctx.send(random.choice(msg))
+
     @events.error
     # @mytime.error
     async def on_message_error(self, ctx, error):
@@ -572,9 +589,9 @@ class Events:
         if isinstance(error, commands.CheckFailure):
             msg = 'You do not have permission to run this command.'
             await ctx.send(msg)
-        # if isinstance(error, TypeError):
-        #     msg = 'There was an error with the command. Please check the command format.'
-        #     await ctx.send(msg)
+        if isinstance(error, CommandNotFound):
+            msg = 'Did you mean to try another command?'
+            await ctx.send(msg)
 
 
 def setup(client):
