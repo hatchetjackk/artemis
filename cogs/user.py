@@ -14,7 +14,7 @@ class User:
             return
         if not message.content.startswith('!'):
             await self.update_users(message)
-        await self.client.process_commands(message)
+        # await self.client.process_commands(message)
 
     @staticmethod
     async def update_users(message):
