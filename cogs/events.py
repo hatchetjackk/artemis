@@ -33,7 +33,7 @@ class Events:
             'bst': pytz.timezone('Europe/London'),
             'utc': pytz.timezone('UTC'),
             'cest': pytz.timezone('Europe/Brussels')}
-        self.moderators = ['mod', 'moderator', 'admin', 'administrator']
+        self.moderators = ['mod', 'moderator', 'moderators', 'admin', 'administrator']
 
     @commands.group(aliases=['event', 'e'])
     @commands.cooldown(rate=2, per=5, type=BucketType.user)
