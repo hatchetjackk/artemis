@@ -1,6 +1,6 @@
 {
   "status": {
-    "level": 9
+    "level": 89
   },
   "responses": {
     "great": [
@@ -108,6 +108,12 @@
       "with fellow humans",
       "with infinite loops",
       "with Python"
+    ],
+    "error_response": [
+      "Did you mean to try another command?",
+      "Perhaps you would like to look at the help message...",
+      "I'm sorry. I didn't catch what you were trying to do...",
+      "I don't know that command."
     ]
   }
 }
