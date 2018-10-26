@@ -1,10 +1,48 @@
 import json
+import discord
 from discord.ext import commands
 
 
 class Mod:
     def __init__(self, client):
         self.client = client
+
+    @commands.command(aliases=['spam'])
+    @commands.has_any_role('mod', 'Moderator')
+    async def botspam(self, ctx, *args):
+        try:
+            guild = ctx.guild
+            gid = str(guild.id)
+
+            data = await self.load_json('guilds')
+            if len(args) < 1 or len(args) > 1:
+                await ctx.send('Please use `spamchannel channel_name`.')
+            if args[0] not in [channel.name for channel in ctx.guild.channels]:
+                await ctx.send('{} is not a channel.'.format(args[0]))
+                return
+            spam = discord.utils.get(guild.channels, name=args[0])
+            data[gid]['spam'] = spam.id
+            await self.dump_json('guilds', data)
+            msg = '{0} changed the botspam channel. It is now {1.mention}'.format(ctx.message.author.name, spam)
+            await self.spam(ctx, msg)
+        except Exception as e:
+            print(e)
+            raise
+
+    async def spam(self, ctx, message):
+        guild = ctx.guild
+        gid = str(guild.id)
+
+        data = await self.load_json('guilds')
+        if gid in data:
+            if data[gid]['spam'] is not None:
+                embed = discord.Embed(color=discord.Color.blue())
+                embed.add_field(
+                    name='Alert',
+                    value=message
+                )
+                channel = self.client.get_channel(data[gid]['spam'])
+                await channel.send(embed=embed)
 
     # owner command
     @commands.command()
@@ -64,6 +102,17 @@ class Mod:
             json.dump(data, f, indent=2)
         await ctx.send('Changed guild prefix to {}'.format(prefix))
 
+    @staticmethod
+    async def load_json(f):
+        with open('files/{}.json'.format(f)) as g:
+            data = json.load(g)
+        return data
+
+    @staticmethod
+    async def dump_json(f, data):
+        with open('files/{}.json'.format(f), 'w') as g:
+            json.dump(data, g, indent=2)
+
     @prefix.error
     async def on_message_error(self, ctx, error):
         if isinstance(error, commands.CommandOnCooldown):
@@ -73,9 +122,6 @@ class Mod:
         if isinstance(error, commands.CheckFailure):
             msg = 'You do not have permission to run this command.'
             await ctx.send(msg)
-
-    # async def artemis(self, ctx):
-    #     # talk about the bot
 
 
 def setup(client):
