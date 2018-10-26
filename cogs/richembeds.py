@@ -32,7 +32,7 @@ class RichEmbed:
             20: [Color.darker_grey(), 'darker_grey']
         }
 
-    @commands.group()
+    @commands.group(aliases=['colours', 'color', 'colour'])
     async def colors(self, ctx):
         if ctx.invoked_subcommand is None:
             embed = Embed(colors=Color.blue())
@@ -58,7 +58,7 @@ class RichEmbed:
         if ctx.invoked_subcommand is None:
             await ctx.send('Invoke `richembed` with `get`, `pasta`, or `example`.')
 
-    @richembed.group()
+    @richembed.group(aliases=['wiz', 'w'])
     async def wizard(self, ctx):
         message = ctx.message
         channel = ctx.channel
@@ -72,6 +72,8 @@ class RichEmbed:
         tut_embed = await self.tut_embed('Pick a color for the embed (ie dark_blue):')
         await ctx.send(embed=tut_embed)
         msg = await self.client.wait_for('message', check=check)
+        if len(msg.content) == 7:
+            color = int(msg.content)
         for key, value in self.color_dict.items():
             if msg.content == value[1]:
                 color = value[0]
