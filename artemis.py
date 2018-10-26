@@ -45,7 +45,7 @@ async def on_ready():
                     'thumb_url': '',
                     'prefix': '!',
                     'auto_role': None,
-                    'mod_roles': None,
+                    'mod_roles': [],
                     'spam': None
                 }
 
