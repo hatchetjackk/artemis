@@ -46,6 +46,12 @@
       "Let's keep things fair here...",
       "Looks like karma abuse over here.",
       "Are you trying to farm karma?!"
+    ],
+    "client_response": [
+      "Karma for me!",
+      "Why thank you!",
+      "*nom nom nom*",
+      "I can feeeeeel the **powaaaaaaaaaaa*!"
     ]
   },
   "status_changing_words": {

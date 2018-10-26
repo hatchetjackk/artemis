@@ -85,7 +85,10 @@ class Karma:
                 if len(karma_key) > 0:
                     # check if someone is trying to give artemis karma
                     if member.id == self.client.user.id:
-                        await message.channel.send(random.choice(karma_responses['karma_responses']['bad_response']))
+                        await message.channel.send(random.choice(karma_responses['karma_responses']['client_response']))
+                        data[mid]['karma'] += 1
+                        with open('files/users.json', 'w') as f:
+                            json.dump(data, f, sort_keys=True, indent=2)
                         return
                     # check if someone is trying to give karma for their self
                     if member.id is author.id:
