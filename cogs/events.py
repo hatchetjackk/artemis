@@ -120,9 +120,8 @@ class Events:
         # await ctx.message.channel.purge(limit=1)
 
     @events.group(aliases=['f'])
-    async def find(self, ctx, *, event_title: str):
-        event_title = event_title.lower()
-        # find a single event in the events file if it is in the guild
+    async def find(self, ctx, *, keyword: str):
+        keyword = keyword.lower()
         data_guilds = await load_json('guilds')
         guild = ctx.guild
         author = ctx.author
@@ -147,20 +146,20 @@ class Events:
             value='\u200b'
         )
 
-        # Ensure that the event matches the guild
-        # Then return a single event
-        data_events = await load_json('events')
-        for key, value in data_events.items():
-            if event_title in data_events[key]['event'].lower() and data_events[key]['guild_id'] == int(gid):
-                event = data_events[key]['event'][:50]
-                dt = await self.make_datetime(data_events[key]['time'])
+        # check if keyword is in a title and return all events
+        data = await load_json('events')
+        sorted_events = OrderedDict(sorted(data.items(), key=lambda x: x[1]['time']))
+        for key, value in sorted_events.items():
+            if keyword in value['event'].lower() and value['guild_id'] == int(gid):
+                event = value['event'][:50]
+                dt = await self.make_datetime(value['time'])
                 dt_long, dt_short = await self.make_string(dt)
                 eta = await self.eta(dt)
                 embed.add_field(
                     name=event,
-                    value='**Event** [{0}]: {1}\n'
-                          '**Time**: {2}\n'
-                          '**ETA**: {3}'.format(key, event, dt_short, eta),
+                    value='**Event ID**: {0}\n'
+                          '**Time**: {1}\n'
+                          '**ETA**: {2}'.format(key, dt_short, eta),
                     inline=False
                 )
         # await ctx.message.channel.purge(limit=1)
