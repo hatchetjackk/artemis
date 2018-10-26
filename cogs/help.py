@@ -13,16 +13,8 @@ class Help:
             embed.set_author(name="Help Page")
             embed.add_field(name='Artemis is in Beta',
                             value='Things might bend, break, or tear a whole into another dimension.\n')
-            embed.add_field(
-                name="How do I give karma?",
-                value="Just say thanks and mention the target\nEx: 'Thanks @Hatchet Jackk'",
-                inline=False
-            )
             embed.add_field(name="ping", value="Return pong", inline=False)
             embed.add_field(name="roll", value="Roll NdN dice", inline=False)
-            embed.add_field(name="karma @user",
-                            value="Check your or another <@user>'s current level of karma",
-                            inline=False)
             embed.add_field(name='hello', value='Say hi to Artemis!', inline=False)
             embed.add_field(name="status", value="Check Artemis' status", inline=False)
             # embed.add_field(name="leaderboard", value="Check karma levels (WIP)", inline=False)
