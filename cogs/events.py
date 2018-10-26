@@ -33,6 +33,7 @@ class Events:
             'bst': pytz.timezone('Europe/London'),
             'utc': pytz.timezone('UTC'),
             'cest': pytz.timezone('Europe/Brussels')}
+        self.moderators = ['mod', 'moderator', 'admin', 'administrator']
 
     @commands.group(aliases=['event', 'e'])
     @commands.cooldown(rate=2, per=5, type=BucketType.user)
@@ -80,6 +81,7 @@ class Events:
                               '**ID**: {2}'.format(dt_short, eta, key),
                         inline=False)
                     counter += 1
+            # await ctx.message.channel.purge(limit=1)
             await ctx.send(embed=embed)
 
     @events.group(aliases=['d'])
@@ -97,7 +99,7 @@ class Events:
         embed = discord.Embed(color=discord.Color.blue())
         for event_id in event_list:
             if event_id in data and data[event_id]['guild_id'] == gid:
-                if ctx.author.id == data[event_id]['user_id'] or 'mod' in author.roles:
+                if ctx.author.id == data[event_id]['user_id'] or 'Moderator' in author.roles:
                     event = data[event_id]['event']
                     data.pop(event_id)
                     await self.dump_events(data)
@@ -113,6 +115,7 @@ class Events:
             else:
                 await ctx.send('Event {} not found.'.format(event_id))
                 return
+        # await ctx.message.channel.purge(limit=1)
 
     @events.group(aliases=['f'])
     async def find(self, ctx, *, event_title: str):
@@ -158,6 +161,7 @@ class Events:
                           '**ETA**: {3}'.format(key, event, dt_short, eta),
                     inline=False
                 )
+        # await ctx.message.channel.purge(limit=1)
         await ctx.send(embed=embed)
 
     @events.group(aliases=['t'])
@@ -195,6 +199,7 @@ class Events:
             event_id,
             update=False
         )
+        # await ctx.message.channel.purge(limit=1)
         await ctx.send(embed=embed)
         msg = 'An event was created by {0}.\n{1} [{2}]\n{3}'.format(ctx.message.author, event, event_id, dt_long)
         await self.spam(ctx, msg)
@@ -245,19 +250,24 @@ class Events:
             event_id,
             update=False
         )
+        # await ctx.message.channel.purge(limit=1)
         await ctx.send(embed=embed)
         msg = 'An event was created by {0}.\n{1} [{2}]\n{3}'.format(ctx.message.author, event, event_id, dt_long)
         await self.spam(ctx, msg)
 
     @events.group(aliases=['u'])
     async def update(self, ctx, *args):
-        if 1 > len(args) > 3:
+        if 1 > len(args):
             await ctx.send('Please use the format `update event_id h:m day/mnth`.')
             return
         try:
             event_id = str(args[0])
             h, m = args[1].split(':')
-            day, month, year = args[2].split('/')
+            try:
+                day, month, year = args[2].split('/')
+            except ValueError:
+                day, month = args[2].split('/')
+                year = datetime.utcnow().year - 2000
 
             dt = await self.time_formatter(ctx, day, month, year, h, m)
             data = await self.load_events()
@@ -279,6 +289,7 @@ class Events:
             await self.dump_events(data)
         except Exception as e:
             await ctx.send('Please use the format `update event_id h:m day/mnth`.')
+            raise
             print(e)
 
     @commands.command(aliases=['local'])
