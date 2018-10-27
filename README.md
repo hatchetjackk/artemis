@@ -4,6 +4,9 @@ Discord Bot written in Python
 ## Author
 Hatchet Jackk
 
+### Special Thanks
+Lyxavier for design ideas, pictures, and beta testing
+
 # License
 Copyright 2018 
 
