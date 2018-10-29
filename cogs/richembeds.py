@@ -70,6 +70,7 @@ class RichEmbed:
                                          'Use `colors` for a full list of presets.')
         await ctx.send(embed=tut_embed)
         msg = await self.client.wait_for('message', check=check)
+        await channel.purge(limit=2)
 
         color = discord.Color.blue()
         if len(msg.content) == 7:
@@ -82,11 +83,13 @@ class RichEmbed:
         await ctx.send(embed=tut_embed)
         msg = await self.client.wait_for('message', check=check)
         title = msg.content
+        await channel.purge(limit=2)
 
         tut_embed = await self.tut_embed('Set your description. To skip this enter "None": ')
         await ctx.send(embed=tut_embed)
         msg = await self.client.wait_for('message', check=check)
         description = msg.content
+        await channel.purge(limit=2)
 
         embed = discord.Embed(title=title, color=color)
         if description.lower() != 'none':
@@ -97,11 +100,12 @@ class RichEmbed:
             tut_embed = await self.tut_embed('Pick an option: \n> field \n> footer \n> quit')
             await ctx.send(embed=tut_embed)
             msg = await self.client.wait_for('message', check=check)
+            await channel.purge(limit=2)
 
             quit_list = ['quit', 'q']
             if msg.content in quit_list:
                 tut_embed = await self.tut_embed('Generating embed...')
-                await ctx.send(embed=tut_embed)
+                await ctx.send(embed=tut_embed, delete_after=2)
                 break
 
             if msg.content == 'field':
@@ -109,11 +113,13 @@ class RichEmbed:
                 await ctx.send(embed=tut_embed)
                 msg = await self.client.wait_for('message', check=check)
                 field_name = msg.content
+                await channel.purge(limit=2)
 
                 tut_embed = await self.tut_embed('Set the field value')
                 await ctx.send(embed=tut_embed)
                 msg = await self.client.wait_for('message', check=check)
                 field_value = msg.content
+                await channel.purge(limit=2)
 
                 yes_list = ['yes', 'y']
                 tut_embed = await self.tut_embed('Make inline? [yes/no] ')
@@ -123,6 +129,7 @@ class RichEmbed:
                 if msg.content.lower() in yes_list:
                     inline_format = True
                 embed.add_field(name=field_name, value=field_value, inline=inline_format)
+                await channel.purge(limit=2)
 
             footer_list = ['footer', 'foot', 'f']
             if msg.content in footer_list:
@@ -130,6 +137,7 @@ class RichEmbed:
                 await ctx.send(embed=tut_embed)
                 msg = await self.client.wait_for('message', check=check)
                 embed.set_footer(text=msg.content)
+                await channel.purge(limit=2)
 
         await ctx.send(embed=embed)
 
@@ -187,7 +195,7 @@ class RichEmbed:
         channel = message.channel
         embed = Embed(color=self.client_color)
         # quick embeds!
-        if message.content.startswith('>'):
+        if message.content.startswith('>') and message.author.id != 148213829061443584:
             try:
                 lines = message.content.split('\n')
                 line1 = lines[0]
@@ -196,11 +204,11 @@ class RichEmbed:
                 value = line2[1:].split('\n')
                 embed.add_field(name=title, value=' '.join(value), inline=False)
                 embed.set_footer(text='Created by {}'.format(message.author.name))
-                await message.channel.purge(limit=0)
+                await message.channel.purge(limit=1)
                 await channel.send(embed=embed)
             except Exception as e:
                 print(e)
-                await channel.send('Quick embed requires 2 lines.')
+                pass
 
     @staticmethod
     async def tut_embed(description):

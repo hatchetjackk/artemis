@@ -19,19 +19,47 @@ class Emotions:
         bad_keys = data['status_changing_words']['bad']
         good_bot = data['bot']['good']
         bad_bot = data['bot']['bad']
+        good_morning = ['good morning', 'morning guys', 'morning, guys', 'morning artie',
+                        'good morning, artie', 'good morning, Artemis',
+                        'good morning, Artie', 'morning artemis', 'good morning, arty',
+                        'good morning arty']
+        morning_response = ['Good morning!', 'Good morning, {}!'.format(message.author.name)]
+        trigger = False
         for word in msg:
             if word in good_keys:
-                good = 1
-                await self.emotional_level(good)
+                trigger = True
+                await self.emotional_level(1)
             if word in bad_keys:
-                bad = -1
-                await self.emotional_level(bad)
+                trigger = True
+                await self.emotional_level(-1)
+        for value in good_morning:
+            if value in content and message.author.id != self.client.user.id:
+                # trigger = True
+                await channel.send(random.choice(morning_response))
+                return
         for value in good_bot:
             if value in content:
+                trigger = True
+
+                def check(m):
+                    return m.author == message.author and m.channel == channel
+
+                neg_responses = ['not u', 'jk', 'just kidding', 'not you', 'nevermind',
+                                 'nvm']
                 await channel.send(random.choice(data['bot']['good_response']))
+                msg = await self.client.wait_for('message', check=check)
+                if msg.content in neg_responses:
+                    await channel.send(random.choice(data['bot']['bad_response']))
+                    bad = -1
+                    await self.emotional_level(bad)
         for value in bad_bot:
             if value in content:
+                trigger = True
                 await channel.send(random.choice(data['bot']['bad_response']))
+        if ('artemis' in content or 'artie' in content) and trigger is False:
+            random_response = ['Hm?', 'Yes?', 'Someone call me?', 'You rang?',
+                               'Did you need something?']
+            await channel.send(random.choice(random_response))
 
     @staticmethod
     async def emotional_level(value):
