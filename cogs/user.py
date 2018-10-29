@@ -42,18 +42,21 @@ class User:
 
     @staticmethod
     async def create_user(member):
-        guild = member.guild
-        gid = str(guild.id)
-        mid = str(member.id)
-        data_users = await load_json('users')
-        if mid not in data_users:
-            data_users[member.id] = {
-                'username': member.name,
-                'guild': {},
-            }
-        if gid not in data_users[mid]['guild']:
-            data_users[mid]['guild'].update({gid: guild.name})
-        await dump_json('users', data_users)
+        try:
+            guild = member.guild
+            gid = str(guild.id)
+            mid = str(member.id)
+            data_users = await load_json('users')
+            if mid not in data_users:
+                data_users[member.id] = {
+                    'username': member.name,
+                    'guild': {},
+                }
+            if gid not in data_users[str(member.id)]['guild']:
+                data_users[str(member.id)]['guild'].update({gid: guild.name})
+            await dump_json('users', data_users)
+        except KeyError as e:
+            print('KeyError: {} when creating user. {}'.format(str(member.id), e))
 
     @staticmethod
     async def on_message_error(ctx, error):
