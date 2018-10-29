@@ -23,7 +23,8 @@ class Emotions:
                         'good morning, artie', 'good morning, Artemis',
                         'good morning, Artie', 'morning artemis', 'good morning, arty',
                         'good morning arty']
-        morning_response = ['Good morning!', 'Good morning, {}!'.format(message.author.name)]
+        morning_response = ['Good morning!', 'Mornin!',
+                            'Good morning, {}!'.format(message.author.name)]
         trigger = False
         for word in msg:
             if word in good_keys:
@@ -44,8 +45,7 @@ class Emotions:
                 def check(m):
                     return m.author == message.author and m.channel == channel
 
-                neg_responses = ['not u', 'jk', 'just kidding', 'not you', 'nevermind',
-                                 'nvm']
+                neg_responses = ['not u', 'jk', 'just kidding', 'not you', 'nevermind', 'nvm']
                 await channel.send(random.choice(data['bot']['good_response']))
                 msg = await self.client.wait_for('message', check=check)
                 if msg.content in neg_responses:
