@@ -1,6 +1,6 @@
 {
   "status": {
-    "level": 50
+    "level": 49
   },
   "responses": {
     "great": [
@@ -74,11 +74,21 @@
   "bot": {
     "good": [
       "good bot",
+      "good, bot",
       "good job bot",
       "good job, bot",
+      "good job artie",
+      "good job, artie",
+      "good job artemis",
+      "good job, artemis",
       "good artemis",
+      "good, artemis",
       "good, artie",
-      "good artie"
+      "good artie",
+      "love you artie",
+      "love you, artie",
+      "love you artemis",
+      "love you, artemis"
     ],
     "bad": [
       "bad bot",
@@ -94,7 +104,6 @@
       "No problem.",
       "Anytime!",
       "Sure thing, fellow human!",
-      "*eats karma* Mmm.",
       "I try!",
       "I do it for the kudos!",
       ":wink:",
