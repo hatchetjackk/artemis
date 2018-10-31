@@ -16,16 +16,17 @@ class Events:
     def __init__(self, client):
         self.client = client
         self.tz_dict = {
-            'pst/pdt': datetime.now(pytz.timezone('US/Alaska')),
-            'cst/cdt': datetime.now(pytz.timezone('US/Mountain')),
-            'est/edt': datetime.now(pytz.timezone('US/Eastern')),
-            'utc/gmt': datetime.now(pytz.timezone('GMT')),
-            'bst': datetime.now(pytz.timezone('Europe/London')),
-            'cest': datetime.now(pytz.timezone('Europe/Brussels')),
-            'awst': datetime.now(pytz.timezone('Australia/Perth')),
-            'acst': datetime.now(pytz.timezone('Australia/Darwin')),
-            'aest': datetime.now(pytz.timezone('Australia/Brisbane')),
-            'aedt': datetime.now(pytz.timezone('Australia/Melbourne'))
+            'America (pst/pdt)': datetime.now(pytz.timezone('US/Alaska')),
+            'America (cst/cdt)': datetime.now(pytz.timezone('US/Mountain')),
+            'America (est/edt)': datetime.now(pytz.timezone('US/Eastern')),
+            'Coordinated Universal (utc/gmt)': datetime.now(pytz.timezone('GMT')),
+            'Europe (bst)': datetime.now(pytz.timezone('Europe/London')),
+            'Europe(cest)': datetime.now(pytz.timezone('Europe/Brussels')),
+            'India (ist)': datetime.now(pytz.timezone('Asia/Calcutta')),
+            'Aussie (awst)': datetime.now(pytz.timezone('Australia/Perth')),
+            'Aussie (acst)': datetime.now(pytz.timezone('Australia/Darwin')),
+            'Aussie (aest)': datetime.now(pytz.timezone('Australia/Brisbane')),
+            'Aussie (aedt)': datetime.now(pytz.timezone('Australia/Melbourne'))
         }
         self.pop_zones = {
             'pst': pytz.timezone('US/Alaska'),
@@ -37,6 +38,7 @@ class Events:
             'gmt': pytz.timezone('GMT'),
             'bst': pytz.timezone('Europe/London'),
             'utc': pytz.timezone('UTC'),
+            'ist': pytz.timezone('Asia/Calcutta'),
             'cest': pytz.timezone('Europe/Brussels'),
             'aest': pytz.timezone('Australia/Brisbane'),
             'aedt': pytz.timezone('Australia/Melbourne')
@@ -362,19 +364,14 @@ class Events:
     @commands.cooldown(rate=1, per=30, type=BucketType.user)
     async def time(self, ctx):
         # returns an embed with popular time zones
-        zones = self.tz_dict
+        desc = []
+        for key, value in self.tz_dict.items():
+            fmt = '{} ─ {}'.format(value.strftime('%H:%M'), key.upper())
+            desc.append(fmt)
         embed = discord.Embed(
-            title='Time',
-            color=discord.Color.blue()
-        )
-        embed.add_field(
-            name='Zone',
-            value='\n'.join([zone.upper() for zone in zones]),
-            inline=True
-        )
-        embed.add_field(
-            name='Time',
-            value='\n'.join(zones[zone].strftime('%H:%M') for zone in zones))
+            title='Popular Timezones',
+            color=discord.Color.blue(),
+            description='\n'.join(value for value in desc))
         await ctx.send(embed=embed)
 
     @commands.command()
