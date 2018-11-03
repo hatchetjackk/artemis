@@ -1,5 +1,7 @@
 import json
+import random
 import discord
+from discord.ext.commands import CommandNotFound
 from artemis import load_json, dump_json
 from discord.ext import commands
 
@@ -102,6 +104,14 @@ class Mod:
         with open('files/guilds.json', 'w') as f:
             json.dump(data, f, indent=2)
         await ctx.send('Changed guild prefix to {}'.format(prefix))
+
+    @staticmethod
+    async def on_command_error(ctx, error):
+        if isinstance(error, CommandNotFound):
+            with open('files/status.json') as f:
+                data = json.load(f)
+            msg = data['bot']['error_response']
+            await ctx.send(random.choice(msg))
 
     @prefix.error
     async def on_message_error(self, ctx, error):
