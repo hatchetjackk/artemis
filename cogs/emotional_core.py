@@ -56,11 +56,11 @@ class Emotions:
             if value in content:
                 trigger = True
                 await channel.send(random.choice(data['bot']['bad_response']))
-        if ('artemis' in content or 'artie' in content) and trigger is False:
-            random_response = ['Hm?', 'Yes?', 'Someone call me?', 'You rang?',
-                               'Did you need something?']
-            if random.randint(0, 100) % 10 == 0:
-                await channel.send(random.choice(random_response))
+        # if ('artemis' in content or 'artie' in content) and trigger is False:
+        #     random_response = ['Hm?', 'Yes?', 'Someone call me?', 'You rang?',
+        #                        'Did you need something?']
+        #     if random.randint(0, 100) % 10 == 0:
+        #         await channel.send(random.choice(random_response))
 
     @staticmethod
     async def emotional_level(value):
