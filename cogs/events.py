@@ -21,7 +21,7 @@ class Events:
             3: ['est', datetime.now(pytz.timezone('US/Eastern'))],
             4: ['utc', datetime.now(pytz.timezone('GMT'))],
             5: ['bst', datetime.now(pytz.timezone('Europe/London'))],
-            6: ['cest', datetime.now(pytz.timezone('Europe/Brussels'))],
+            6: ['cet', datetime.now(pytz.timezone('Europe/Brussels'))],
             7: ['ist', datetime.now(pytz.timezone('Asia/Calcutta'))],
             8: ['awst', datetime.now(pytz.timezone('Australia/Perth'))],
             9: ['acst', datetime.now(pytz.timezone('Australia/Darwin'))],
@@ -76,7 +76,7 @@ class Events:
                     diamond = ':small_orange_diamond:'
                     if counter % 2 == 0:
                         diamond = ':small_blue_diamond:'
-                    event = value['event'][:50]
+                    event = value['event'][:200]
 
                     dt = await self.make_datetime(value['time'])
                     dt_long, dt_short = await self.make_string(dt)
@@ -610,14 +610,6 @@ class Events:
             }
         with open('files/users.json', 'w') as f:
             json.dump(data_users, f, indent=2)
-
-    @staticmethod
-    async def on_command_error(ctx, error):
-        if isinstance(error, CommandNotFound):
-            with open('files/status.json') as f:
-                data = json.load(f)
-            msg = data['bot']['error_response']
-            await ctx.send(random.choice(msg))
 
     @events.error
     # @mytime.error
