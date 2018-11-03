@@ -14,7 +14,6 @@ class User:
             return
         if not message.content.startswith('!'):
             await self.update_users(message)
-        # await self.client.process_commands(message)
 
     @staticmethod
     async def update_users(message):
@@ -29,11 +28,9 @@ class User:
                     data_users[mid] = {
                         'username': member.name,
                         'guild': {},
-                        'karma': 0,
-                        'karma_cooldown': 0
                     }
-                if gid not in data_users[mid]['guild']:
-                    data_users[mid]['guild'].update({gid: guild.name})
+                # data_users[mid].update({'hp': 100})
+                data_users[mid]['guild'].update({gid: {guild.name: member.nick}})
             await dump_json('users', data_users)
 
         except Exception as e:
@@ -52,6 +49,8 @@ class User:
                     'username': member.name,
                     'guild': {},
                 }
+            if 'hp' not in data_users[mid]:
+                data_users[mid].update({'hp': 100})
             if gid not in data_users[str(member.id)]['guild']:
                 data_users[str(member.id)]['guild'].update({gid: guild.name})
             await dump_json('users', data_users)
