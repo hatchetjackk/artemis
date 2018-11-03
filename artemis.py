@@ -29,29 +29,12 @@ client.remove_command('help')
 
 @client.event
 async def on_ready():
-    data = await load_json('guilds')
     now = datetime.datetime.now()
     print("{0:<15} {1}".format("Logged in as", client.user.name))
     print("{0:<15} {1}".format("Client", client.user.id))
     print('{0:<15} {1}'.format('Discord.py', discord.__version__))
     print("---------------------------------------")
     print("[{0}] Artemis is online.".format(now))
-
-    try:
-        for guild in client.guilds:
-            if str(guild.id) not in data:
-                data[guild.id] = {
-                    'guild_name': guild.name,
-                    'thumb_url': '',
-                    'prefix': '!',
-                    'auto_role': None,
-                    'mod_roles': [],
-                    'spam': None
-                }
-        await dump_json('guilds', data)
-
-    except Exception as e:
-        print(e)
 
 
 @client.event
@@ -77,11 +60,11 @@ async def on_guild_join(guild):
             data_users[mid] = {
                 'username': member.name,
                 'guild': {},
-                'karma': 0,
-                'karma_cooldown': 0
             }
+        if 'hp' not in data_users[mid]:
+            data_users[mid].update({'hp': 100})
         if gid not in data_users[mid]['guild']:
-            data_users[mid]['guild'].update({gid: guild.name})
+            data_users[mid]['guild'].update({gid: {guild.name: member.nick}})
 
     await dump_json('users', data_guild)
 
