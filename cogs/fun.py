@@ -79,22 +79,24 @@ class Fun:
         pic = directory + random.choice(pictures)
         await ctx.send(file=discord.File(pic))
 
-    async def on_message(self, message):
+    @staticmethod
+    async def on_message(message):
         channel = message.channel
         msg = message.content
         if msg.startswith('r/'):
             reddit_search = 'https://reddit.com/' + msg
             await channel.send(reddit_search)
         if msg == '(╯°□°）╯︵ ┻━┻' or msg == '(∩⩺ロ⩹)⊃━☆ﾟ.* ︵ ┻━┻':
-            roll = random.randint(1, 100)
-            for member in message.channel.guild.members:
-                mid = str(member.id)
-                if member.name == 'Jorer':
-                    data = await load_json('users')
-                    await message.channel.send('Jorer took {} HP of damage!'.format(roll))
-                    data[mid]['hp'] -= roll
-                    await dump_json('users', data)
-        # await self.client.process_commands(message)
+            # roll = random.randint(1, 100)
+            # for member in message.channel.guild.members:
+            #     mid = str(member.id)
+            #     if member.name == 'Jorer':
+            #         data = await load_json('users')
+            #         await message.channel.send('Jorer took {} HP of damage!'.format(roll))
+            #         data[mid]['hp'] -= roll
+            #         await dump_json('users', data)
+            table_fix = ['┬─┬ ノ( ゜-゜ノ)', '┬─┬ ノ( ⩺ロ⩹ノ)']
+            await channel.send(random.choice(table_fix))
 
     @commands.command(aliases=['health'])
     @commands.cooldown(rate=1, per=15, type=BucketType.user)
@@ -123,7 +125,6 @@ class Fun:
 
     @commands.command()
     async def rps(self, ctx, choice: str):
-        # data = await load_json('users')
         rps = ['rock', 'paper', 'scissors']
         lose = {'rock': 'paper', 'paper': 'scissors', 'scissors': 'rock'}
         win = {'paper': 'rock', 'rock': 'scissors', 'scissors': 'paper'}
