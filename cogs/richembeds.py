@@ -149,15 +149,19 @@ class RichEmbed:
 
     @richembed.group()
     async def pasta(self, ctx, *args):
-        msg = ' '.join(args)
-        # format for json
-        msg = msg.replace('True', 'true')
-        msg = msg.replace('False', 'false')
-        msg = msg.replace('None', 'null')
-        msg = msg.replace('\'', '"')
-        d = json.loads(msg)
-        embed = Embed.from_data(d)
-        await ctx.send(embed=embed)
+        try:
+            msg = ' '.join(args)
+            # format for json
+            msg = msg.replace('True', 'true')
+            msg = msg.replace('False', 'false')
+            msg = msg.replace('None', 'null')
+            msg = msg.replace('\'', '"')
+            d = json.loads(msg)
+            embed = Embed.from_data(d)
+            await ctx.send(embed=embed)
+        except Exception as e:
+            print(e)
+            raise
 
     @richembed.group()
     async def example(self, ctx):
@@ -191,24 +195,20 @@ class RichEmbed:
         )
         await ctx.send(embed=embed)
 
-    async def on_message(self, message):
-        channel = message.channel
-        embed = Embed(color=self.client_color)
-        # quick embeds!
-        if message.content.startswith('>') and message.author.id != 148213829061443584:
-            try:
-                lines = message.content.split('\n')
-                line1 = lines[0]
-                title = line1[1:]
-                line2 = ' '.join(lines[1:])
-                value = line2[1:].split('\n')
-                embed.add_field(name=title, value=' '.join(value), inline=False)
-                embed.set_footer(text='Created by {}'.format(message.author.name))
-                await message.channel.purge(limit=1)
-                await channel.send(embed=embed)
-            except Exception as e:
-                print(e)
-                pass
+    # async def on_message(self, message):
+    #     channel = message.channel
+    #
+    #     # quick embeds!
+    #     if message.content.startswith('>') and message.author.id != 148213829061443584:
+    #         try:
+    #             lines = [line[1:] for line in message.content.split('\n')]
+    #             embed = Embed(color=self.client_color, description='\n'.join(lines))
+    #             embed.set_footer(text='{}'.format(message.author.name))
+    #             await message.channel.purge(limit=1)
+    #             await channel.send(embed=embed)
+    #         except Exception as e:
+    #             print(e)
+    #             pass
 
     @staticmethod
     async def tut_embed(description):
@@ -218,8 +218,8 @@ class RichEmbed:
             color=discord.Color.blue())
         return tut_embed
 
-    @staticmethod
-    async def on_message_error(ctx, error):
+    @richembed.error
+    async def on_message_error(self, ctx, error):
         if isinstance(error, commands.CommandOnCooldown):
             msg = ':sob: You\'ve triggered a cool down. Please try again in {} sec.'.format(
                 int(error.retry_after))
@@ -227,6 +227,7 @@ class RichEmbed:
         if isinstance(error, commands.CheckFailure):
             msg = 'You do not have permission to run this command.'
             await ctx.send(msg)
+        print(error)
 
 
 def setup(client):
