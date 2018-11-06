@@ -29,7 +29,23 @@ class User:
                         'username': member.name,
                         'guild': {},
                     }
-                # data_users[mid].update({'hp': 100})
+                if 'hp' in data_users[mid]:
+                    data_users[mid].pop('hp')
+                if 'health' not in data_users[mid]:
+                    data_users[mid].update({'health': {'hp': 100, 'mp': 100}})
+                if 'inventory' not in data_users[mid]:
+                    data_users[mid].update({'inventory': {
+                        'gold': 10,
+                        'healing': 5,
+                        'revive': 2
+                    }})
+                if 'equipped' not in data_users[mid]:
+                    data_users[mid].update({'equipped': {
+                        'weapon': None,
+                        'armor': None,
+                        'acc.': None}
+                    })
+                data_users[mid].update({'username': member.name})
                 data_users[mid]['guild'].update({gid: {guild.name: member.nick}})
             await dump_json('users', data_users)
 
@@ -49,10 +65,16 @@ class User:
                     'username': member.name,
                     'guild': {},
                 }
-            if 'hp' not in data_users[mid]:
-                data_users[mid].update({'hp': 100})
             if gid not in data_users[str(member.id)]['guild']:
                 data_users[str(member.id)]['guild'].update({gid: guild.name})
+            if 'health' not in data_users[mid]:
+                data_users[mid]['health'].update({'hp': 100, 'mp': 100})
+            if 'inventory' not in data_users[mid]:
+                data_users[mid]['inventory'].update({})
+            if 'equipped' not in data_users[mid]:
+                data_users[mid]['equipped'].update({'weapon': None,
+                                                    'armor': None,
+                                                    'Acc.': None})
             await dump_json('users', data_users)
         except KeyError as e:
             print('KeyError: {} when creating user. {}'.format(str(member.id), e))
