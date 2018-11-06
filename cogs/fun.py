@@ -87,24 +87,18 @@ class Fun:
             reddit_search = 'https://reddit.com/' + msg
             await channel.send(reddit_search)
         if msg == '(╯°□°）╯︵ ┻━┻' or msg == '(∩⩺ロ⩹)⊃━☆ﾟ.* ︵ ┻━┻':
-            # roll = random.randint(1, 100)
-            # for member in message.channel.guild.members:
-            #     mid = str(member.id)
-            #     if member.name == 'Jorer':
-            #         data = await load_json('users')
-            #         await message.channel.send('Jorer took {} HP of damage!'.format(roll))
-            #         data[mid]['hp'] -= roll
-            #         await dump_json('users', data)
             table_fix = ['┬─┬ ノ( ゜-゜ノ)', '┬─┬ ノ( ⩺ロ⩹ノ)']
             await channel.send(random.choice(table_fix))
 
     @commands.command(aliases=['health'])
-    @commands.cooldown(rate=1, per=15, type=BucketType.user)
+    @commands.cooldown(rate=1, per=3, type=BucketType.user)
     async def hp(self, ctx, *, target: str):
         embed = discord.Embed()
         data = await load_json('users')
         for member in ctx.guild.members:
+            member_name = await self.member_name(member)
             mid = str(member.id)
+
             if target.lower() == self.client.user.name.lower() or target == self.client.user.mention:
                 embed.add_field(name='Artemis',
                                 value='{} has {}/1000 HP'.format(
@@ -112,16 +106,19 @@ class Fun:
                                     data[str(self.client.user.id)]['hp']))
                 await ctx.send(embed=embed)
                 return
-            if member.nick is not None:
-                if member.mention == target or member.name.lower() == target.lower() or member.nick.lower() == target.lower():
-                    embed.add_field(name=member.nick,
-                                    value='{}/100 HP'.format(data[mid]['hp']))
-                    await ctx.send(embed=embed)
-            else:
-                if member.mention == target or member.name.lower() == target.lower():
-                    embed.add_field(name=member.name,
-                                    value='{}/100 HP'.format(data[mid]['hp']))
-                    await ctx.send(embed=embed)
+
+            if member.mention == target or member_name.lower() == target.lower():
+                embed.add_field(name=member_name,
+                                value='{}/100 HP'.format(data[mid]['health']['hp']))
+        await ctx.send(embed=embed)
+
+    @staticmethod
+    async def member_name(member):
+        # grab author nick
+        member_name = member.nick
+        if member_name is None:
+            member_name = member.name
+        return member_name
 
     @commands.command()
     async def rps(self, ctx, choice: str):
