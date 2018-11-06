@@ -1,0 +1,437 @@
+{
+  "monsters": {
+    "beasts": {
+      "giant bat": {
+        "armor": 13,
+        "hp": [
+          4,
+          10,
+          0
+        ],
+        "speed": 60,
+        "exp": 0,
+        "description": "A giant bat with sharp fangs and claws!",
+        "attacks": {
+          "bite": {
+            "rolls": 1,
+            "limit": 6,
+            "modifier": 2,
+            "attack descriptions": [
+              "The giant bat bit ferociously!",
+              "The giant bat clawed savagely!",
+              "The giant bat bit down hard!"
+            ]
+          }
+        }
+      },
+      "giant badger": {
+        "armor": 10,
+        "hp": [
+          2,
+          8,
+          4
+        ],
+        "speed": 30,
+        "exp": 0,
+        "description": "Its a badger! It looks much bigger than a badger should be.",
+        "attacks": {
+          "bite": {
+            "rolls": 1,
+            "limit": 6,
+            "modifier": 1,
+            "attack descriptions": [
+              "The giant badger bit ferociously!",
+              "The giant bat clawed savagely!",
+              "The giant badger bit down hard!"
+            ]
+          },
+          "claw": {
+            "rolls": 2,
+            "limit": 4,
+            "modifier": 1,
+            "attack descriptions": [
+              "The giant badger clawed wildly!",
+              "The giant badger clawed savagely!",
+              "The giant badger rushed foward with its claws!"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "items": {
+    "potions": {
+      "healing": {
+        "id": "i001",
+        "effect": [2, 4, 2],
+        "buy": 25,
+        "description": "A simple bottle filled with a sweet liquid. \nRecovers 2d4+2 HP."
+      },
+      "greater healing": {
+        "id": "i002",
+        "effect": [4, 4, 4],
+        "buy": 50,
+        "description": "An glass bottle filled with an red liquid. \nRecovers 4d4+4 HP."
+      },
+      "superior healing": {
+        "id": "i005",
+        "effect": [8, 4, 8],
+        "buy": 75,
+        "description": "An ornate bottle filled with a opalescent liquid. \nRecovers 8d4+8 HP."
+      },
+      "supreme healing": {
+        "id": "i006",
+        "effect": [10, 4, 20],
+        "buy": 100,
+        "description": "An artisan bottle filled with a red, glowing liquid. \nRecovers 10d4+20 HP."
+      }
+    },
+    "bombs": null
+  },
+  "spells": {
+
+  },
+  "weapons": {
+    "swords": {
+      "shortsword": {
+        "id": "w003",
+        "rolls": 1,
+        "limit": 6,
+        "modifier": 0,
+        "defense": 0,
+        "description": "A dull, old sword likely passed down through the generations.",
+        "weight": 2,
+        "buy": 10,
+        "sell": 5
+      },
+      "longsword": {
+        "id": "w004",
+        "rolls": 1,
+        "limit": 10,
+        "modifier": 0,
+        "defense": 0,
+        "description": "A craftsman long sword. It has reach and strength thanks to ages old smithing techniques.",
+        "weight": 3,
+        "buy": 15,
+        "sell": 7
+      },
+      "greatsword": {
+        "id": "w005",
+        "rolls": 2,
+        "limit": 6,
+        "modifier": 0,
+        "defense": 0,
+        "description": "A heavy two-handed sword. It can be difficult to wield, but a masterful swordsman shouldn't have a problem.",
+        "weight": 6,
+        "buy": 50,
+        "sell": 25
+      },
+      "double-bladed scimitar": {
+        "id": "w009",
+        "rolls": 2,
+        "limit": 6,
+        "modifier": 4,
+        "defense": 0,
+        "description": "A two-bladed scimitar from a foreign land. The extra blade inflicts more damage.",
+        "weight": 6,
+        "buy": 100,
+        "sell": 50
+      },
+      "scimitar": {
+        "id": "w027",
+        "rolls": 1,
+        "limit": 6,
+        "modifier": 0,
+        "defense": 0,
+        "description": "A curved sword from a foreign land. Impressive and lightweight.",
+        "weight": 3,
+        "buy": 25,
+        "sell": 12
+      },
+      "rapier": {
+        "id": "w026",
+        "rolls": 1,
+        "limit": 8,
+        "modifier": 0,
+        "defense": 0,
+        "description": "A light sword more akin to a work of art than a killing weapon.",
+        "weight": 2,
+        "buy": 25,
+        "sell": 12
+      }
+    },
+    "axes": {
+      "handaxe": {
+        "id": "w006",
+        "rolls": 1,
+        "limit": 6,
+        "modifier": 0,
+        "defense": 0,
+        "description": "A simple hatchet. The blade is chipped and dull.",
+        "weight": 2,
+        "buy": 5,
+        "sell": 2
+      },
+      "battleaxe": {
+        "id": "w007",
+        "rolls": 1,
+        "limit": 10,
+        "modifier": 0,
+        "defense": 0,
+        "description": "A double-edged axe designed more for war than for downing trees.",
+        "weight": 4,
+        "buy": 10,
+        "sell": 5
+      },
+      "greataxe": {
+        "id": "w008",
+        "rolls": 1,
+        "limit": 12,
+        "modifier": 0,
+        "defense": 0,
+        "description": "A heavy two-handed axe. It can crush armor as much as it can chop flesh.",
+        "weight": 6,
+        "buy": 30,
+        "sell": 15
+      }
+    },
+    "crossbows": {
+      "hand crossbow": {
+        "id": "w012",
+        "rolls": 1,
+        "limit": 6,
+        "modifier": 0,
+        "defense": 0,
+        "description": "A small crossbow designed to be fired single handedly. One might wonder what purpose this serves.",
+        "weight": 5,
+        "buy": 75,
+        "sell": 37
+      },
+      "light crossbow": {
+        "id": "w010",
+        "rolls": 1,
+        "limit": 8,
+        "modifier": 0,
+        "defense": 0,
+        "description": "A simple lightweight crossbow. The wood is a little cracked, but it does the job.",
+        "weight": 5,
+        "buy": 25,
+        "sell": 12
+      },
+      "heavy crossbow": {
+        "id": "w011",
+        "rolls": 1,
+        "limit": 10,
+        "modifier": 0,
+        "defense": 0,
+        "description": "A hefty crossbow designed to increase the bolt's velocity.",
+        "weight": 5,
+        "buy": 50,
+        "sell": 25
+      }
+    },
+    "daggers": {
+      "dagger": {
+        "id": "w013",
+        "rolls": 1,
+        "limit": 4,
+        "modifier": 0,
+        "defense": 0,
+        "description": "A small dagger. This glorified knife has seen better days. Best for buttering bread.",
+        "weight": 1,
+        "buy": 2,
+        "sell": 1
+      }
+    },
+    "clubs": {
+      "club": {
+        "id": "w014",
+        "rolls": 1,
+        "limit": 4,
+        "modifier": 0,
+        "defense": 0,
+        "description": "A knotted branch one might call a club. Its hefty, but uncomfortable to wield.",
+        "weight": 2,
+        "buy": 1,
+        "sell": 1
+      },
+      "great club": {
+        "id": "w016",
+        "rolls": 1,
+        "limit": 8,
+        "modifier": 0,
+        "defense": 0,
+        "description": "A large branch cut and shaped into a bludgeoning device. Great for crushing things.",
+        "weight": 10,
+        "buy": 2,
+        "sell": 1
+      },
+      "flail": {
+        "id": "w015",
+        "rolls": 1,
+        "limit": 8,
+        "modifier": 0,
+        "defense": 0,
+        "description": "A spiked iron ball attached to a handle by a chain. Seems dangerous to enemies and the wielder alike.",
+        "weight": 2,
+        "buy": 10,
+        "sell": 5
+      },
+      "mace": {
+        "id": "w022",
+        "rolls": 1,
+        "limit": 6,
+        "modifier": 0,
+        "defense": 0,
+        "description": "A heavy iron sphere atop a wooden handle. Great for smashing armor, faces, hands, feet...",
+        "weight": 4,
+        "buy": 5,
+        "sell": 2
+      },
+      "morning star": {
+        "id": "w024",
+        "rolls": 1,
+        "limit": 8,
+        "modifier": 0,
+        "defense": 0,
+        "description": "The mace's edgy brother. Heavy, sharp, and bad ass.",
+        "weight": 10,
+        "buy": 15,
+        "sell": 7
+      }
+    },
+    "staffs": {
+      "glaive": {
+        "id": "w017",
+        "rolls": 1,
+        "limit": 10,
+        "modifier": 0,
+        "defense": 0,
+        "description": "A long staff that ends in a slim blade.",
+        "weight": 6,
+        "buy": 20,
+        "sell": 10
+      },
+      "halberd": {
+        "id": "w018",
+        "rolls": 1,
+        "limit": 10,
+        "modifier": 0,
+        "defense": 0,
+        "description": "A long staff that ends in a hefty axe-like curve.",
+        "weight": 6,
+        "buy": 20,
+        "sell": 10
+      },
+      "lance": {
+        "id": "w019",
+        "rolls": 1,
+        "limit": 12,
+        "modifier": 0,
+        "defense": 0,
+        "description": "A long pole-arm used primarily in jousting.",
+        "weight": 6,
+        "buy": 10,
+        "sell": 5
+      },
+      "pike": {
+        "id": "w025",
+        "rolls": 1,
+        "limit": 10,
+        "modifier": 0,
+        "defense": 0,
+        "description": "A long shaft with an arrow-like tip. Great for piercing or slashing enemies at a distance.",
+        "weight": 18,
+        "buy": 5,
+        "sell": 2
+      },
+      "sickle": {
+        "id": "w029",
+        "rolls": 1,
+        "limit": 4,
+        "modifier": 0,
+        "defense": 0,
+        "description": "A farmer's tool not typically used for battle.",
+        "weight": 2,
+        "buy": 1,
+        "sell": 1
+      }
+    },
+    "hammers": {
+      "hell's ban hammer": {
+        "id": "w020",
+        "rolls": 10,
+        "limit": 20,
+        "modifier": 0,
+        "defense": 0,
+        "description": "The spirit of this hammer is said to be the devil himself.",
+        "weight": 2,
+        "buy": 999999,
+        "sell": 1
+      },
+      "light hammer": {
+        "id": "w020",
+        "rolls": 1,
+        "limit": 4,
+        "modifier": 0,
+        "defense": 0,
+        "description": "A small workman's hammer. Used for nailing boards together or bashing in heads.",
+        "weight": 2,
+        "buy": 2,
+        "sell": 1
+      },
+      "maul": {
+        "id": "w023",
+        "rolls": 2,
+        "limit": 6,
+        "modifier": 0,
+        "defense": 0,
+        "description": "A heavy two-handed hammer. People that use these like to crush things flat.",
+        "weight": 10,
+        "buy": 10,
+        "sell": 5
+      },
+      "warhammer": {
+        "id": "w030",
+        "rolls": 1,
+        "limit": 8,
+        "modifier": 0,
+        "defense": 0,
+        "description": "A lightweight but dangerous hammer used for denting armor.",
+        "weight": 2,
+        "buy": 15,
+        "sell": 7
+      }
+    },
+    "bows": {
+      "long bow": {
+        "id": "w021",
+        "rolls": 1,
+        "limit": 8,
+        "modifier": 0,
+        "defense": 0,
+        "description": "An artisan bow strung with high tensile string to deliver high speed projectiles.",
+        "weight": 2,
+        "buy": 50,
+        "sell": 25
+      },
+      "short bow": {
+        "id": "w028",
+        "rolls": 1,
+        "limit": 6,
+        "modifier": 0,
+        "defense": 0,
+        "description": "A typical hunting bow. Great for small and medium game.",
+        "weight": 2,
+        "buy": 25,
+        "sell": 12
+      }
+    }
+  },
+  "accessories": {
+
+  },
+  "armor": {
+
+  }
+}
