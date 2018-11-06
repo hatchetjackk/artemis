@@ -110,6 +110,8 @@ class Fun:
             if member.mention == target or member_name.lower() == target.lower():
                 embed.add_field(name=member_name,
                                 value='{}/100 HP'.format(data[mid]['health']['hp']))
+                embed.set_thumbnail(url=member.avatar_url)
+
         await ctx.send(embed=embed)
 
     @staticmethod
