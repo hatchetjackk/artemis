@@ -303,19 +303,21 @@ class Arena:
             await ctx.send(embed=embed)
 
     @commands.group()
-    async def heal(self, ctx):
+    async def use(self, ctx):
         if ctx.invoked_subcommand is None:
-            await ctx.send('Invoke heal with `potion`, `megapotion`, or `revive`!')
+            await ctx.send('Invoke use with `item type`!')
 
-    @heal.group()
+    @use.group()
     @commands.cooldown(rate=1, per=3, type=BucketType.user)
     async def healing(self, ctx, *, target: str):
+        item = 'healing'
         client = self.client
         author = ctx.author
         guild = ctx.guild
 
+        rpg = await load_json('rpg')
         data = await load_json('users')
-        if data[str(author.id)]['inventory']['healing'] > 0:
+        if data[str(author.id)]['inventory'][item] > 0:
             for member in guild.members:
                 mid = str(member.id)
                 if target.lower() == client.user.name.lower() or target == client.user.mention:
@@ -327,11 +329,60 @@ class Arena:
 
                 if member.mention == target or member_name.lower() == target.lower():
                     if data[mid]['health']['hp'] > 0:
-                        hp_gained = sum([random.randint(1, 4) for roll in range(2)] + 2)
+                        rolls, limit, modifier = rpg['items']['potions'][item]['effect']
+                        hp_gained = sum([random.randint(1, limit) for roll in range(rolls)]) + modifier
                         data[mid]['health']['hp'] += hp_gained
                         if data[mid]['health']['hp'] > 100:
                             data[mid]['health']['hp'] = 100
-                        data[str(author.id)]['inventory']['healing'] -= 1
+                        data[str(author.id)]['inventory'][item] -= 1
+                        if data[str(author.id)]['inventory'][item] == 0:
+                            data[str(author.id)]['inventory'].pop(item, None)
+                        embed = Embed(
+                            description='{} recovered {} HP! :sparkling_heart:'.format(member_name, hp_gained),
+                            color=Color.green())
+                        await ctx.send(embed=embed)
+                        await dump_json('users', data)
+                        return
+                    else:
+                        embed = Embed(description='{} cannot be revived with a potion.'.format(member_name),
+                                      color=Color.green())
+                        await ctx.send(embed=embed)
+                        return
+        else:
+            embed = Embed(description='You don\'t have any {}s in your inventory!'.format(item),
+                          color=Color.green())
+            await ctx.send(embed=embed)
+
+    @use.group()
+    @commands.cooldown(rate=1, per=3, type=BucketType.user)
+    async def greater_healing(self, ctx, *, target: str):
+        item = 'greater healing'
+        client = self.client
+        author = ctx.author
+        guild = ctx.guild
+
+        rpg = await load_json('rpg')
+        data = await load_json('users')
+        if data[str(author.id)]['inventory'][item] > 0:
+            for member in guild.members:
+                mid = str(member.id)
+                if target.lower() == client.user.name.lower() or target == client.user.mention:
+                    embed = Embed(title='{} cannot be healed this way.'.format(client.user.name))
+                    await ctx.send(embed=embed)
+                    return
+
+                member_name = await self.member_name(member)
+
+                if member.mention == target or member_name.lower() == target.lower():
+                    if data[mid]['health']['hp'] > 0:
+                        rolls, limit, modifier = rpg['items']['potions'][item]['effect']
+                        hp_gained = sum([random.randint(1, limit) for roll in range(rolls)]) + modifier
+                        data[mid]['health']['hp'] += hp_gained
+                        if data[mid]['health']['hp'] > 100:
+                            data[mid]['health']['hp'] = 100
+                        data[str(author.id)]['inventory'][item] -= 1
+                        if data[str(author.id)]['inventory'][item] == 0:
+                            data[str(author.id)]['inventory'].pop(item, None)
                         embed = Embed(description='{} recovered {} HP! :sparkling_heart:'.format(member_name, hp_gained),
                                       color=Color.green())
                         await ctx.send(embed=embed)
@@ -343,11 +394,11 @@ class Arena:
                         await ctx.send(embed=embed)
                         return
         else:
-            embed = Embed(description='You don\'t have any potions in your inventory!',
+            embed = Embed(description='You don\'t have any {}s in your inventory!'.format(item),
                           color=Color.green())
             await ctx.send(embed=embed)
 
-    @heal.group(aliases=['mega-potion'])
+    @use.group(aliases=['mega-potion'])
     @commands.cooldown(rate=1, per=3, type=BucketType.user)
     async def megapotion(self, ctx, *, target: str):
         client = self.client
@@ -386,7 +437,7 @@ class Arena:
                           color=Color.green())
             await ctx.send(embed=embed)
 
-    @heal.group()
+    @use.group()
     @commands.cooldown(rate=1, per=60 * 5, type=BucketType.user)
     async def revive(self, ctx, *, target: str):
         client = self.client
@@ -513,7 +564,7 @@ class Arena:
                 limit = value[weapon]['limit']
                 return rolls, limit, weapon
 
-    @potion.error
+    @healing.error
     @megapotion.error
     @revive.error
     @attack.error
