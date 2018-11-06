@@ -1,7 +1,6 @@
 import asyncio
 import random
 from discord import Embed, Color
-from .rpg import Monsters
 from discord.ext.commands import BucketType, CommandNotFound
 from artemis import load_json, dump_json
 from discord.ext import commands
@@ -11,13 +10,14 @@ class Arena:
     def __init__(self, client):
         self.client = client
         self.artemis_is_vulnerable = False
-
-    @commands.command()
-    async def test(self, ctx):
-        await ctx.send(Monsters.giant_bat())
+        self.raid_is_active = False
 
     @commands.command()
     async def raid(self, ctx):
+        if self.raid_is_active:
+            await ctx.send('A raid is already active!')
+            return
+        self.raid_is_active = True
         client = self.client
         channel = ctx.channel
         fighters = []
@@ -43,6 +43,7 @@ class Arena:
                     title='The raid was stopped.',
                     color=Color.blue())
                 await ctx.send(embed=embed)
+                self.raid_is_active = False
                 return
             if 'start' in msg.content:
                 if len(fighters) < 1:
@@ -130,6 +131,7 @@ class Arena:
                       color=Color.dark_magenta())
         await ctx.send(embed=embed)
         self.artemis_is_vulnerable = False
+        self.raid_is_active = False
         print('A raid has ended!')
 
     @commands.command(aliases=['hit', 'kick', 'punch', 'jab', 'headbutt', 'slap', 'stomp', 'atk',
@@ -150,7 +152,8 @@ class Arena:
             return
 
         # generate attack
-        user_attack, roll_results = await self.calculate_attack_power(dice=1, sides=20)
+        rolls, limit, weapon = await self.get_member_weapon(author)
+        user_attack, roll_results = await self.calculate_attack_power(dice=rolls, sides=limit)
         msg, user_attack = await self.critical_check(ctx, user_attack, author_name)
         if user_attack is None:
             return
@@ -205,18 +208,99 @@ class Arena:
 
     @cast.group()
     async def ice(self, ctx, target: str):
-        attack_power, rolls = await self.calculate_attack_power(dice=2, sides=20)
-        await ctx.send('You attack {} with ice for {} HP! :snowflake: '.format(target, sum(attack_power)))
+        client = self.client
+        author = ctx.author
+        guild = ctx.guild
+
+        # stop artemis from activating herself
+        if author.id == client.user.id:
+            return
+        author_name = await self.member_name(author)
+        embed = await self.is_member_exhausted(author)
+        if embed is not None:
+            await ctx.send(embed=embed)
+            return
+
+        # generate attack
+        user_attack, rolls = await self.calculate_attack_power(dice=2, sides=20)
+        msg, user_attack = await self.critical_check(ctx, user_attack, author_name)
+        if user_attack is None:
+            return
+
+        # if target is artemis
+        embed = await self.is_target_artemis(target, user_attack)
+        if embed is not None:
+            await ctx.send(embed=embed)
+            return
+
+        # if target is a member
+        embed = await self.is_target_member(guild, target, user_attack, msg)
+        if embed is not None:
+            await ctx.send(embed=embed)
 
     @cast.group()
     async def thunder(self, ctx, target: str):
-        attack_power, rolls = await self.calculate_attack_power(dice=2, sides=20)
-        await ctx.send('You attack {} with thunder for {} HP! :zap:'.format(target, sum(attack_power)))
+        client = self.client
+        author = ctx.author
+        guild = ctx.guild
+
+        # stop artemis from activating herself
+        if author.id == client.user.id:
+            return
+        author_name = await self.member_name(author)
+        embed = await self.is_member_exhausted(author)
+        if embed is not None:
+            await ctx.send(embed=embed)
+            return
+
+        # generate attack
+        user_attack, rolls = await self.calculate_attack_power(dice=2, sides=20)
+        msg, user_attack = await self.critical_check(ctx, user_attack, author_name)
+        if user_attack is None:
+            return
+
+        # if target is artemis
+        embed = await self.is_target_artemis(target, user_attack)
+        if embed is not None:
+            await ctx.send(embed=embed)
+            return
+
+        # if target is a member
+        embed = await self.is_target_member(guild, target, user_attack, msg)
+        if embed is not None:
+            await ctx.send(embed=embed)
 
     @cast.group()
     async def soul_stream(self, ctx, target: str):
-        attack_power, rolls = await self.calculate_attack_power(dice=2, sides=20)
-        await ctx.send('You attack {} with a torrential volley of souls for {} HP! :ghost: '.format(target, sum(attack_power)))
+        client = self.client
+        author = ctx.author
+        guild = ctx.guild
+
+        # stop artemis from activating herself
+        if author.id == client.user.id:
+            return
+        author_name = await self.member_name(author)
+        embed = await self.is_member_exhausted(author)
+        if embed is not None:
+            await ctx.send(embed=embed)
+            return
+
+        # generate attack
+        user_attack, rolls = await self.calculate_attack_power(dice=2, sides=20)
+        msg, user_attack = await self.critical_check(ctx, user_attack, author_name)
+        if user_attack is None:
+            return
+
+        # if target is artemis
+        embed = await self.is_target_artemis(target, user_attack)
+        if embed is not None:
+            await ctx.send(embed=embed)
+            return
+
+        # if target is a member
+        embed = await self.is_target_member(guild, target, user_attack, msg)
+        if embed is not None:
+            await ctx.send(embed=embed)
 
     @commands.group()
     async def heal(self, ctx):
@@ -224,106 +308,119 @@ class Arena:
             await ctx.send('Invoke heal with `potion`, `megapotion`, or `revive`!')
 
     @heal.group()
-    @commands.cooldown(rate=1, per=30, type=BucketType.user)
-    async def potion(self, ctx, *, target: str):
+    @commands.cooldown(rate=1, per=3, type=BucketType.user)
+    async def healing(self, ctx, *, target: str):
         client = self.client
+        author = ctx.author
         guild = ctx.guild
 
         data = await load_json('users')
-        for member in guild.members:
-            mid = str(member.id)
-            if target.lower() == client.user.name.lower() or target == client.user.mention:
-                embed = Embed(title='{} cannot be healed this way.'.format(client.user.name))
-                await ctx.send(embed=embed)
-                return
-
-            member_name = member.nick
-            if member_name is None:
-                member_name = member.name
-
-            if member.mention == target or member_name.lower() == target.lower():
-                if data[mid]['hp'] > 0:
-                    data[mid]['hp'] += 20
-                    if data[mid]['hp'] > 100:
-                        data[mid]['hp'] = 100
-                    embed = Embed(title='{} recovered 20 HP! :sparkling_heart:'.format(member_name),
-                                  color=Color.green())
-                    await ctx.send(embed=embed)
-                    await dump_json('users', data)
-                    return
-                else:
-                    embed = Embed(title='{} cannot be revived with a potion.'.format(member_name),
-                                  color=Color.green())
+        if data[str(author.id)]['inventory']['healing'] > 0:
+            for member in guild.members:
+                mid = str(member.id)
+                if target.lower() == client.user.name.lower() or target == client.user.mention:
+                    embed = Embed(title='{} cannot be healed this way.'.format(client.user.name))
                     await ctx.send(embed=embed)
                     return
-        embed = Embed(title='You fumbled your potion!',
-                      color=Color.green())
-        await ctx.send(embed=embed)
+
+                member_name = await self.member_name(member)
+
+                if member.mention == target or member_name.lower() == target.lower():
+                    if data[mid]['health']['hp'] > 0:
+                        hp_gained = sum([random.randint(1, 4) for roll in range(2)] + 2)
+                        data[mid]['health']['hp'] += hp_gained
+                        if data[mid]['health']['hp'] > 100:
+                            data[mid]['health']['hp'] = 100
+                        data[str(author.id)]['inventory']['healing'] -= 1
+                        embed = Embed(description='{} recovered {} HP! :sparkling_heart:'.format(member_name, hp_gained),
+                                      color=Color.green())
+                        await ctx.send(embed=embed)
+                        await dump_json('users', data)
+                        return
+                    else:
+                        embed = Embed(description='{} cannot be revived with a potion.'.format(member_name),
+                                      color=Color.green())
+                        await ctx.send(embed=embed)
+                        return
+        else:
+            embed = Embed(description='You don\'t have any potions in your inventory!',
+                          color=Color.green())
+            await ctx.send(embed=embed)
 
     @heal.group(aliases=['mega-potion'])
-    @commands.cooldown(rate=1, per=60*3, type=BucketType.user)
+    @commands.cooldown(rate=1, per=3, type=BucketType.user)
     async def megapotion(self, ctx, *, target: str):
         client = self.client
+        author = ctx.author
         guild = ctx.guild
 
         data = await load_json('users')
-        for member in guild.members:
-            mid = str(member.id)
-            if target.lower() == client.user.name.lower() or target == client.user.mention:
-                embed = Embed(title='{} cannot be healed this way.'.format(client.user.name))
-                await ctx.send(embed=embed)
-                return
+        if data[str(author.id)]['inventory']['megapotion'] > 0:
+            for member in guild.members:
+                mid = str(member.id)
+                member_name = await self.member_name(member)
 
-            member_name = await self.member_name(member)
-            if member.mention == target or member_name.lower() == target.lower():
-                if data[mid]['hp'] > 0:
-                    data[mid]['hp'] = 100
-                    await dump_json('users', data)
-                    embed = Embed(title='{} is fully healed! :sparkling_heart: '.format(member_name),
-                                  color=Color.green())
+                if target.lower() == client.user.name.lower() or target == client.user.mention:
+                    embed = Embed(title='{} cannot be healed this way.'.format(client.user.name))
                     await ctx.send(embed=embed)
                     return
-                else:
-                    embed = Embed(title='{} cannot be revived with a potion.'.format(member_name),
-                                  color=Color.green())
-                    await ctx.send(embed=embed)
-                    return
-        embed = Embed(title='You fumbled your megapotion!',
-                      color=Color.green())
-        await ctx.send(embed=embed)
+
+                if member.mention == target or member_name.lower() == target.lower():
+                    if data[mid]['health']['hp'] > 0:
+                        data[mid]['health']['hp'] += 50
+                        if data[mid]['health']['hp'] > 100:
+                            data[mid]['health']['hp'] = 100
+                        data[str(author.id)]['inventory']['megapotion'] -= 1
+                        await dump_json('users', data)
+                        embed = Embed(description='{} regained 50 HP! :sparkling_heart: '.format(member_name),
+                                      color=Color.green())
+                        await ctx.send(embed=embed)
+                        return
+                    else:
+                        embed = Embed(title='{} cannot be revived with a megapotion.'.format(member_name),
+                                      color=Color.green())
+                        await ctx.send(embed=embed)
+                        return
+        else:
+            embed = Embed(description='You don\'t have any megapotions in your inventory!',
+                          color=Color.green())
+            await ctx.send(embed=embed)
 
     @heal.group()
     @commands.cooldown(rate=1, per=60 * 5, type=BucketType.user)
     async def revive(self, ctx, *, target: str):
         client = self.client
+        author = ctx.author
+
         data = await load_json('users')
-        for member in ctx.guild.members:
-            mid = str(member.id)
-            if target.lower() == client.user.name.lower() or target == client.user.mention:
-                embed = Embed(title='{} cannot be healed this way.'.format(client.user.name))
-                await ctx.send(embed=embed)
-                return
+        if data[str(author.id)]['inventory']['revive'] > 0:
+            for member in ctx.guild.members:
+                mid = str(member.id)
+                member_name = await self.member_name(member)
 
-            member_name = member.nick
-            if member_name is None:
-                member_name = member.name
-
-            if member.mention == target or member_name.lower() == target.lower():
-                if data[mid]['hp'] <= 0:
-                    data[mid]['hp'] = 100
-                    embed = Embed(title='{} has been revived!'.format(member_name),
-                                  color=Color.green())
-                    await ctx.send(embed=embed)
-                    await dump_json('users', data)
-                    return
-                else:
-                    embed = Embed(title='{} is not unconscious.'.format(member_name),
-                                  color=Color.green())
+                if target.lower() == client.user.name.lower() or target == client.user.mention:
+                    embed = Embed(title='{} cannot be healed this way.'.format(client.user.name))
                     await ctx.send(embed=embed)
                     return
-        embed = Embed(title='You fumbled your revive!',
-                      color=Color.green())
-        await ctx.send(embed=embed)
+
+                if member.mention == target or member_name.lower() == target.lower():
+                    if data[mid]['health']['hp'] <= 0:
+                        data[mid]['health']['hp'] = 100
+                        data[str(author.id)]['inventory']['revive'] -= 1
+                        embed = Embed(title='{} has been revived!'.format(member_name),
+                                      color=Color.green())
+                        await ctx.send(embed=embed)
+                        await dump_json('users', data)
+                        return
+                    else:
+                        embed = Embed(title='{} is not unconscious.'.format(member_name),
+                                      color=Color.green())
+                        await ctx.send(embed=embed)
+                        return
+        else:
+            embed = Embed(description='You don\'t have any revives in your inventory!',
+                          color=Color.green())
+            await ctx.send(embed=embed)
 
     @staticmethod
     async def member_name(member):
@@ -336,7 +433,7 @@ class Arena:
     @staticmethod
     async def is_member_exhausted(member):
         data = await load_json('users')
-        if data[str(member.id)]['hp'] <= 0:
+        if data[str(member.id)]['health']['hp'] <= 0:
             embed = Embed(title='You are too exhausted to attack!',
                           color=Color.orange())
             return embed
@@ -352,7 +449,7 @@ class Arena:
                 embed = Embed(title=random.choice(artemis_react),
                               color=Color.dark_red())
                 return embed
-            data[str(self.client.user.id)]['hp'] -= roll
+            data[str(self.client.user.id)]['health']['hp'] -= roll
             await dump_json('users', data)
         return None
 
@@ -362,15 +459,16 @@ class Arena:
             member_name = await self.member_name(member)
             if member.mention == target or member_name.lower() == target.lower():
                 mid = str(member.id)
-                data[mid]['hp'] -= roll
-                if data[mid]['hp'] <= 0:
-                    embed = Embed(description='{} has lost consciousness! :dizzy: '.format(member.nick),
+                data[mid]['health']['hp'] -= roll
+                await dump_json('users', data)
+                if data[mid]['health']['hp'] <= 0:
+                    embed = Embed(description='{} has lost consciousness! :dizzy: '.format(member_name),
                                   color=Color.red())
                     await dump_json('users', data)
-                    return True, embed
+                    return embed
                 else:
                     damage = '{} took {} points of damage!'.format(member_name, roll)
-                    hp_left = '{} has {}/100 HP left!'.format(member_name, data[mid]['hp'])
+                    hp_left = '{} has {}/100 HP left!'.format(member_name, data[mid]['health']['hp'])
                     embed = Embed(description='{}\n{}\n{}'.format(msg, damage, hp_left),
                                   color=Color.dark_blue())
                     await dump_json('users', data)
@@ -379,7 +477,6 @@ class Arena:
 
     @staticmethod
     async def critical_check(ctx, user_attack, author_name):
-        print('crit check')
         critical = random.randint(1, 20)
         if critical == 1:
             msg = '{} missed!'.format(author_name)
@@ -400,6 +497,21 @@ class Arena:
         rolls = [random.randint(1, sides) for roll in range(dice)]
         total = sum(rolls)
         return total, rolls
+
+    @staticmethod
+    async def get_member_weapon(member):
+        mid = str(member.id)
+        user_data = await load_json('users')
+        rpg_data = await load_json('rpg')
+
+        weapon = user_data[mid]['equipped']['weapon']
+        if weapon is None:
+            return 1, 4, weapon
+        for key, value in rpg_data['weapons'].items():
+            if weapon in value:
+                rolls = value[weapon]['rolls']
+                limit = value[weapon]['limit']
+                return rolls, limit, weapon
 
     @potion.error
     @megapotion.error
