@@ -31,6 +31,8 @@ class User:
                     }
                 if 'hp' in data_users[mid]:
                     data_users[mid].pop('hp')
+                if 'alignment' not in data_users[mid]:
+                    data_users[mid]['alignment'] = None
                 if 'health' not in data_users[mid]:
                     data_users[mid].update({'health': {'hp': 100, 'mp': 100}})
                 if 'inventory' not in data_users[mid]:
