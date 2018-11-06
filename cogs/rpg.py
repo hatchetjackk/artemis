@@ -35,23 +35,52 @@ class RPG:
                 return
 
     @commands.command()
-    async def status(self, ctx):
+    async def status(self, ctx, *args):
+        target_name = await self.member_name(ctx.author)
+        avatar = ctx.author.avatar_url
+        target = ctx.author
+        if len(args) > 0:
+            target = ' '.join(args)
+            for member in ctx.guild.members:
+                member_name = await self.member_name(member)
+                if member_name.lower() == target.lower() or member.mention == target:
+                    target_name = await self.member_name(member)
+                    avatar = member.avatar_url
+                    target = member
+                    break
         users = await load_json('users')
         rpg = await load_json('rpg')
-        author_name = await self.member_name(ctx.author)
-        hp = users[str(ctx.author.id)]['health']['hp']
-        weapon = (users[str(ctx.author.id)]['equipped']['weapon'])
+        hp = users[str(target.id)]['health']['hp']
+        weapon = (users[str(target.id)]['equipped']['weapon'])
         damage = ''
         for key, value in rpg['weapons'].items():
             if weapon in value:
                 damage = '[{}d{}]'.format(value[weapon]['rolls'], value[weapon]['limit'])
-        armor = users[str(ctx.author.id)]['equipped']['armor']
-        accessory = users[str(ctx.author.id)]['equipped']['acc.']
-        status = Embed(title='{} ({}/100)'.format(author_name, hp),
-                       description='**Equipment**\n'
+        armor = users[str(target.id)]['equipped']['armor']
+        accessory = users[str(target.id)]['equipped']['acc.']
+        alignment = None
+        if users[str(target.id)]['alignment'] is not None:
+            alignment = users[str(target.id)]['alignment']
+        inventory_description = []
+        for key, value in users[str(target.id)]['inventory'].items():
+            if type(value) is list:
+                values = [x for x in value]
+                inventory_description.append('‣ {}: [{}] *{}*'.format(key, values[0], values[1]))
+            else:
+                inventory_description.append('‣ {}: *{}*'.format(key, value))
+        status = Embed(title='{} ({}/100)'.format(target_name, hp),
+                       color=Color.dark_blue(),
+                       description='*{}*\n'
+                                   'Level: 0\n'
+                                   'Exp to Next: 0\n\n'
+                                   '**__Equipped__**\n'
                                    '**Weapon**: {} {}\n'
                                    '**Armor**: {}\n'
-                                   '**Acc.**: {}'.format(weapon, damage, armor, accessory))
+                                   '**Acc.**: {}\n\n'
+                                   '**__Inventory__**\n'
+                                   '{}'.format(alignment, weapon, damage, armor, accessory,
+                                               '\n'.join(value for value in inventory_description)))
+        status.set_thumbnail(url=avatar)
         await ctx.send(embed=status)
 
     @commands.command(aliases=['inv'])
@@ -61,12 +90,34 @@ class RPG:
         for key, value in users[str(ctx.author.id)]['inventory'].items():
             if type(value) is list:
                 values = [x for x in value]
-                inventory_description.append('**{}**: [{}] {}'.format(key, values[0], values[1]))
+                inventory_description.append('‣ {}: [{}] *{}*'.format(key, values[0], values[1]))
             else:
-                inventory_description.append('**{}**: {}'.format(key, value))
+                inventory_description.append('‣ {}: *{}*'.format(key, value))
         inventory = Embed(title='Your Inventory',
+                          color=Color.dark_blue(),
                           description='\n'.join(value for value in inventory_description))
+        inventory.set_thumbnail(url='http://darksouls3.wdfiles.com/local--files/image-set-equipment:valorheart/Valorheart.png')
         await ctx.send(embed=inventory)
+
+    @commands.group()
+    async def set(self, ctx):
+        if ctx.invoked_subcommand is None:
+            await ctx.send('Invoke set with `alignment` or `description`!')
+
+    @set.command()
+    async def alignment(self, ctx, *, alignment: str):
+        alignment_list = ['lawful good', 'neutral good', 'chaotic good',
+                          'lauwful neutral', 'true neutral', 'chaotic neutral',
+                          'lawful evil', 'neutral evil', 'chaotic evil']
+        if alignment.lower() in alignment_list:
+            users = await load_json('users')
+            users[str(ctx.author.id)].update({'alignment': alignment})
+            await dump_json('users', users)
+            embed = Embed(title='Your alignment is now {}'.format(alignment))
+            await ctx.send(embed=embed, delete_after=5)
+        else:
+            embed = Embed(title='{} was not found in the alignment list.'.format(alignment))
+            await ctx.send(embed=embed, delete_after=5)
 
     @commands.command()
     async def store(self, ctx):
@@ -133,8 +184,17 @@ class RPG:
                 item = msg.content[4:]
                 cost = rpg_data['items']['potions'][item]['buy']
                 user_data = await load_json('users')
+
+                # check if the user can afford the item then subtract the cost
                 if user_data[str(ctx.author.id)]['inventory']['gold'] >= cost:
                     user_data[str(ctx.author.id)]['inventory']['gold'] -= cost
+
+                    # if potion item does not exist in inventory, add it
+                    for key, value in rpg_data['items']['potions'].items():
+                        if key == item and key not in user_data[str(ctx.author.id)]['inventory']:
+                            user_data[str(ctx.author.id)]['inventory'].update({item: 0})
+
+                    # add one to the item
                     user_data[str(ctx.author.id)]['inventory'][item] += 1
                     await dump_json('users', user_data)
                     purchase = Embed(description='You purchased a {} potion for {}GP.'.format(item, cost))
