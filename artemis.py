@@ -61,10 +61,16 @@ async def on_guild_join(guild):
                 'username': member.name,
                 'guild': {},
             }
-        if 'hp' not in data_users[mid]:
-            data_users[mid].update({'hp': 100})
         if gid not in data_users[mid]['guild']:
             data_users[mid]['guild'].update({gid: {guild.name: member.nick}})
+        if 'health' not in data_users[mid]:
+            data_users[mid]['health'].update({'hp': 100, 'mp': 100})
+        if 'inventory' not in data_users[mid]:
+            data_users[mid]['inventory'].update({})
+        if 'equipped' not in data_users[mid]:
+            data_users[mid]['equipped'].update({'weapon': None,
+                                                'armor': None,
+                                                'Acc.': None})
 
     await dump_json('users', data_guild)
 
