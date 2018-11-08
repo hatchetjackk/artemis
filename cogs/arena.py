@@ -21,6 +21,7 @@ class Arena:
         self.use_item = Color.green()
         self.revive_user = Color.dark_gold()
         self.rpg_info = Color.blue()
+        self.error = Color.orange()
 
     @commands.command()
     async def raid(self, ctx):
@@ -228,7 +229,8 @@ class Arena:
                     for match in matches:
                         target_id = str(member.id)
                         if target_id == str(client.user.id):
-                            embed = Embed(title='{} cannot be revived this way.'.format(client.user.name))
+                            embed = Embed(title='{} cannot be revived this way.'.format(client.user.name),
+                                          color=self.error)
                             await ctx.send(embed=embed)
                         elif data[target_id]['hp'] <= 0:
                             data[target_id]['hp'] = 100
@@ -237,15 +239,17 @@ class Arena:
                                 data[str(author.id)]['inventory'].pop(item, None)
                             embed = Embed(
                                 description='{} woke up! :scream: '.format(member_name),
-                                color=Color.green())
+                                color=self.revive_user)
                             await ctx.send(embed=embed)
                             await dump_json('users', data)
                         else:
                             embed = Embed(description='{} is not unconscious!'.format(member_name),
-                                          color=Color.green())
+                                          color=self.error)
                             await ctx.send(embed=embed)
             else:
-                await ctx.send('You don\'t have any more smelling salts.')
+                embed = Embed(description='You don\'t have any more smelling salts.',
+                              color=self.error)
+                await ctx.send(embed=embed, delete_after=3)
 
         elif data[str(author.id)]['inventory'][item] > 0:
             pattern = re.compile(r'' + re.escape(target.lower()))
@@ -255,7 +259,8 @@ class Arena:
                 for match in matches:
                     mid = str(member.id)
                     if mid == str(client.user.id):
-                        embed = Embed(title='{} cannot be healed this way.'.format(client.user.name))
+                        embed = Embed(title='{} cannot be healed this way.'.format(client.user.name),
+                                      color=self.error)
                         await ctx.send(embed=embed)
                         return
                     elif data[mid]['hp'] > 0:
@@ -269,18 +274,18 @@ class Arena:
                             data[str(author.id)]['inventory'].pop(item, None)
                         embed = Embed(
                             description='{} recovered {} HP! :sparkling_heart:'.format(member_name, hp_gained),
-                            color=Color.green())
+                            color=self.use_item)
                         await ctx.send(embed=embed)
                         await dump_json('users', data)
                         return
                     else:
                         embed = Embed(description='{} cannot be revived with a potion.'.format(member_name),
-                                      color=Color.green())
+                                      color=self.error)
                         await ctx.send(embed=embed)
                         return
         else:
             embed = Embed(description='You don\'t have any {}s in your inventory!'.format(item),
-                          color=Color.green())
+                          color=self.error)
             await ctx.send(embed=embed)
 
     @staticmethod
@@ -291,12 +296,11 @@ class Arena:
             member_name = member.name
         return member_name
 
-    @staticmethod
-    async def is_member_exhausted(member):
+    async def is_member_exhausted(self, member):
         data = await load_json('users')
         if data[str(member.id)]['hp'] <= 0:
             embed = Embed(title='You are too exhausted to attack!',
-                          color=Color.orange())
+                          color=self.lose_the_fight)
             return embed
         return None
 
@@ -313,7 +317,7 @@ class Arena:
                                          'Artemis brushes off the attack.',
                                          'Artemis ignores the attack.']
                         embed = Embed(title=random.choice(artemis_react),
-                                      color=Color.dark_red())
+                                      color=self.enemy_miss)
                         return embed
                     data[str(self.client.user.id)]['hp'] -= roll
                     await dump_json('users', data)
@@ -331,7 +335,7 @@ class Arena:
                     damage = '{} took {} points of damage!'.format(member_name, roll)
                     unconscious = '{} is already unconscious! :dizzy: '.format(member_name)
                     embed = Embed(description='{}\n{}'.format(damage, unconscious),
-                                  color=Color.red())
+                                  color=self.user_attack)
                     await dump_json('users', data)
                     return embed
                 data[mid]['hp'] -= roll
@@ -340,14 +344,14 @@ class Arena:
                     damage = '{} took {} points of damage!'.format(member_name, roll)
                     unconscious = '{} has lost consciousness! :dizzy: '.format(member_name)
                     embed = Embed(description='{}\n{}'.format(damage, unconscious),
-                                  color=Color.red())
+                                  color=self.user_attack)
                     await dump_json('users', data)
                     return embed
                 else:
                     damage = '{} took {} points of damage!'.format(member_name, roll)
                     hp_left = '{} has {}/100 HP left!'.format(member_name, data[mid]['hp'])
                     embed = Embed(description='{}\n{}\n{}'.format(msg, damage, hp_left),
-                                  color=Color.red())
+                                  color=self.user_attack)
                     await dump_json('users', data)
                     return embed
             matches = pattern.finditer(member_name.lower())
@@ -358,7 +362,7 @@ class Arena:
                     damage = '{} took {} points of damage!'.format(member_name, roll)
                     unconscious = '{} is already unconscious! :dizzy: '.format(member_name)
                     embed = Embed(description='{}\n{}'.format(damage, unconscious),
-                                  color=Color.red())
+                                  color=self.user_attack)
                     await dump_json('users', data)
                     return embed
                 data[mid]['hp'] -= roll
@@ -367,14 +371,14 @@ class Arena:
                     damage = '{} took {} points of damage!'.format(member_name, roll)
                     unconscious = '{} has lost consciousness! :dizzy: '.format(member_name)
                     embed = Embed(description='{}\n{}'.format(damage, unconscious),
-                                  color=Color.red())
+                                  color=self.user_attack)
                     await dump_json('users', data)
                     return embed
                 else:
                     damage = '{} took {} points of damage!'.format(member_name, roll)
                     hp_left = '{} has {}/100 HP left!'.format(member_name, data[mid]['hp'])
                     embed = Embed(description='{}\n{}\n{}'.format(msg, damage, hp_left),
-                                  color=Color.dark_blue())
+                                  color=self.user_attack)
                     await dump_json('users', data)
                     return embed
         return None
