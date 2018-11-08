@@ -1,4 +1,5 @@
 import random
+import re
 from artemis import load_json, dump_json
 from discord import Embed, Color
 from discord.ext import commands
@@ -35,50 +36,90 @@ class RPG:
                 return
 
     @commands.command()
+    async def unequip(self, ctx, *, item: str):
+        users = await load_json('users')
+        accessory = ['accessory', 'access', 'acc']
+        weapon = ['weapon', 'wep']
+        armor = ['armor', 'armour']
+        if item in weapon:
+            users[str(ctx.author.id)]['equipped']['weapon'] = None
+            await dump_json('users', users)
+            equipped = Embed(description='You unequipped your weapon!')
+            await ctx.send(embed=equipped)
+        elif item in armor:
+            users[str(ctx.author.id)]['equipped']['armor'] = None
+            await dump_json('users', users)
+            equipped = Embed(description='You unequipped your armor!')
+            await ctx.send(embed=equipped)
+        elif item in accessory:
+            users[str(ctx.author.id)]['equipped']['acc.'] = None
+            await dump_json('users', users)
+            equipped = Embed(description='You unequipped your accessory!')
+            await ctx.send(embed=equipped)
+
+    @commands.command(aliases=['stats'])
     async def status(self, ctx, *args):
         target_name = await self.member_name(ctx.author)
         avatar = ctx.author.avatar_url
         target = ctx.author
         if len(args) > 0:
             target = ' '.join(args)
+            pattern = re.compile(r'' + re.escape(target.lower()))
             for member in ctx.guild.members:
                 member_name = await self.member_name(member)
-                if member_name.lower() == target.lower() or member.mention == target:
+                matches = pattern.finditer(member_name.lower())
+                for match in matches:
                     target_name = await self.member_name(member)
                     avatar = member.avatar_url
                     target = member
                     break
         users = await load_json('users')
         rpg = await load_json('rpg')
-        hp = users[str(target.id)]['health']['hp']
-        weapon = (users[str(target.id)]['equipped']['weapon'])
+        race = users[str(target.id)]['race']
+        hp = users[str(target.id)]['hp']
+        weapon = users[str(target.id)]['equipped']['weapon']
         damage = ''
         for key, value in rpg['weapons'].items():
             if weapon in value:
                 damage = '[{}d{}]'.format(value[weapon]['rolls'], value[weapon]['limit'])
         armor = users[str(target.id)]['equipped']['armor']
         accessory = users[str(target.id)]['equipped']['acc.']
-        alignment = None
-        if users[str(target.id)]['alignment'] is not None:
-            alignment = users[str(target.id)]['alignment']
+        alignment = users[str(target.id)]['alignment']
+        level = users[str(target.id)]['level']
         inventory_description = []
         for key, value in users[str(target.id)]['inventory'].items():
-            if type(value) is list:
-                values = [x for x in value]
-                inventory_description.append('‣ {}: [{}] *{}*'.format(key, values[0], values[1]))
-            else:
-                inventory_description.append('‣ {}: *{}*'.format(key, value))
+            for wep_type, wep in rpg['weapons'].items():
+                if key in wep:
+                    description = rpg['weapons'][wep_type][key]['description']
+                    rolls = rpg['weapons'][wep_type][key]['rolls']
+                    limit = rpg['weapons'][wep_type][key]['limit']
+                    key_damage = '({}d{})'.format(rolls, limit)
+                    weight = 'weight: {} lbs.'.format(rpg['weapons'][wep_type][key]['weight'])
+                    inventory_description.append('‣ **{}** {}, {}\n'
+                                                 '*{}*'.format(key, key_damage, weight, description))
+            if key in rpg['items']['potions']:
+                description = rpg['items']['potions'][key]['description']
+                amount = users[str(target.id)]['inventory'][key]
+                effect = rpg['items']['potions'][key]['effect']
+                if key == 'smelling salts':
+                    healing_effect = ''
+                else:
+                    healing_effect = '({}d{}+{})'.format(effect[0], effect[1], effect[2])
+                item = '**{}** {}, amt: {} \n*{}*'.format(key, healing_effect, amount, description)
+                inventory_description.append('‣ {}'.format(item))
+            if key == 'gold':
+                inventory_description.append('‣ {}: {}'.format(key, value))
         status = Embed(title='{} ({}/100)'.format(target_name, hp),
                        color=Color.dark_blue(),
-                       description='*{}*\n'
-                                   'Level: 0\n'
+                       description='*{} {}*\n'
+                                   'Level: {}\n'
                                    'Exp to Next: 0\n\n'
                                    '**__Equipped__**\n'
                                    '**Weapon**: {} {}\n'
                                    '**Armor**: {}\n'
                                    '**Acc.**: {}\n\n'
                                    '**__Inventory__**\n'
-                                   '{}'.format(alignment, weapon, damage, armor, accessory,
+                                   '{}'.format(alignment, race, level, weapon, damage, armor, accessory,
                                                '\n'.join(value for value in inventory_description)))
         status.set_thumbnail(url=avatar)
         await ctx.send(embed=status)
@@ -86,13 +127,28 @@ class RPG:
     @commands.command(aliases=['inv'])
     async def inventory(self, ctx):
         users = await load_json('users')
+        rpg = await load_json('rpg')
         inventory_description = []
         for key, value in users[str(ctx.author.id)]['inventory'].items():
-            if type(value) is list:
-                values = [x for x in value]
-                inventory_description.append('‣ {}: [{}] *{}*'.format(key, values[0], values[1]))
-            else:
-                inventory_description.append('‣ {}: *{}*'.format(key, value))
+            for wep_type, wep in rpg['weapons'].items():
+                if key in wep:
+                    description = rpg['weapons'][wep_type][key]['description']
+                    rolls = rpg['weapons'][wep_type][key]['rolls']
+                    limit = rpg['weapons'][wep_type][key]['limit']
+                    key_damage = '({}d{})'.format(rolls, limit)
+                    weight = 'weight: {} lbs.'.format(rpg['weapons'][wep_type][key]['weight'])
+                    inventory_description.append('‣ **{}** {}, {}\n'
+                                                 '*{}*'.format(key, key_damage, weight, description))
+            if key in rpg['items']['potions']:
+                description = rpg['items']['potions'][key]['description']
+                amount = users[str(ctx.author.id)]['inventory'][key]
+                effect = rpg['items']['potions'][key]['effect']
+                if key == 'smelling salts':
+                    healing_effect = ''
+                else:
+                    healing_effect = '({}d{}+{})'.format(effect[0], effect[1], effect[2])
+                item = '**{}** {}, amt: {} \n*{}*'.format(key, healing_effect, amount, description)
+                inventory_description.append('‣ {}'.format(item))
         inventory = Embed(title='Your Inventory',
                           color=Color.dark_blue(),
                           description='\n'.join(value for value in inventory_description))
@@ -102,7 +158,7 @@ class RPG:
     @commands.group()
     async def set(self, ctx):
         if ctx.invoked_subcommand is None:
-            await ctx.send('Invoke set with `alignment` or `description`!')
+            await ctx.send('Invoke `set` with `alignment`, `description`, or `race`!')
 
     @set.command()
     async def alignment(self, ctx, *, alignment: str):
@@ -118,6 +174,25 @@ class RPG:
         else:
             embed = Embed(title='{} was not found in the alignment list.'.format(alignment))
             await ctx.send(embed=embed, delete_after=5)
+
+    @set.command()
+    async def description(self, ctx, *, description: str):
+        pass
+
+    @set.command()
+    async def race(self, ctx, *, race: str):
+        users = await load_json('users')
+        author = ctx.author
+        users[str(author.id)]['race'] = race
+        await dump_json('users', users)
+        embed = Embed(title='You are now a {}!'.format(race))
+        if race.startswith(('a', 'e', 'i', 'o', 'u')):
+            embed = Embed(title='You are now an {}!'.format(race))
+        await ctx.send(embed=embed, delete_after=5)
+
+    @commands.command()
+    async def look(self, ctx, *, target: str):
+        pass
 
     @commands.command()
     async def store(self, ctx):
@@ -150,7 +225,7 @@ class RPG:
             await store_message.delete()
             await self.store_potions(ctx)
 
-        weapons = ['weapons', 'weapon', 'weps']
+        weapons = ['weapons', 'weapon', 'weps', 'wep']
         if msg.content.lower() in weapons:
             await store_message.delete()
             await self.store_weapons(ctx)
