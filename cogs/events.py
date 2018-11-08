@@ -421,18 +421,20 @@ class Events:
             if aid not in data[eid]['member_notify']:
                 data[eid]['notify'] = True
                 data[eid]['member_notify'].update({aid: cid})
-                await ctx.send('Set to notify **{author}** when *{event}* is 1 hour away from '
-                               'starting!'.format(author=author.name, event=data[eid]['event']))
+                msg = 'Set to notify **{author}** when ' \
+                      '*{event}* is 1 hour away from starting!'.format(author=author.name, event=data[eid]['event'])
+                embed = discord.Embed(title=msg, color=discord.Color.dark_purple())
+                await ctx.send(embed=embed, delete_after=5)
                 await dump_json('events', data)
                 return
             # if user already exists in notification, remove the user
             if str(author.id) in data[eid]['member_notify']:
                 data[eid]['member_notify'].pop(aid, None)
-                await ctx.send('Removing **{author}\'s** notification for *{event}*.'.format(
+                msg = 'Removing **{author}\'s** notification for *{event}*.'.format(
                         author=author.name,
-                        event=data[eid]['event']
-                    )
-                )
+                        event=data[eid]['event'])
+                embed = discord.Embed(title=msg, color=discord.Color.dark_purple())
+                await ctx.send(embed=embed, delete_after=5)
                 if len(data[eid]['member_notify']) < 1:
                     data[eid]['notify'] = False
                 await dump_json('events', data)
