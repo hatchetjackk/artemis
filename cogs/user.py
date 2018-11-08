@@ -29,12 +29,18 @@ class User:
                         'username': member.name,
                         'guild': {},
                     }
-                if 'hp' in data_users[mid]:
-                    data_users[mid].pop('hp')
+                if 'level' not in data_users[mid]:
+                    data_users[mid]['level'] = 1
+                if 'exp' not in data_users[mid]:
+                    data_users[mid]['exp'] = 0
                 if 'alignment' not in data_users[mid]:
-                    data_users[mid]['alignment'] = None
-                if 'health' not in data_users[mid]:
-                    data_users[mid].update({'health': {'hp': 100, 'mp': 100}})
+                    data_users[mid]['alignment'] = 'Unaligned'
+                if 'race' not in data_users[mid]:
+                    data_users[mid]['race'] = 'Human'
+                if 'description' not in data_users[mid]:
+                    data_users[mid]['description'] = None
+                if 'hp' not in data_users[mid]:
+                    data_users[mid]['hp'] = 100
                 if 'inventory' not in data_users[mid]:
                     data_users[mid].update({'inventory': {
                         'gold': 10,
