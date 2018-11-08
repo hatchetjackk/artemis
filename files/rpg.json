@@ -65,25 +65,31 @@
         "id": "i001",
         "effect": [2, 4, 2],
         "buy": 25,
-        "description": "A simple bottle filled with a sweet liquid. \nRecovers 2d4+2 HP."
+        "description": "A simple bottle filled with a sweet liquid."
       },
       "greater healing": {
         "id": "i002",
         "effect": [4, 4, 4],
         "buy": 50,
-        "description": "An glass bottle filled with an red liquid. \nRecovers 4d4+4 HP."
+        "description": "A glass bottle filled with an red liquid."
       },
       "superior healing": {
         "id": "i005",
         "effect": [8, 4, 8],
         "buy": 75,
-        "description": "An ornate bottle filled with a opalescent liquid. \nRecovers 8d4+8 HP."
+        "description": "An ornate bottle filled with a opalescent liquid."
       },
       "supreme healing": {
         "id": "i006",
         "effect": [10, 4, 20],
         "buy": 100,
-        "description": "An artisan bottle filled with a red, glowing liquid. \nRecovers 10d4+20 HP."
+        "description": "An artisan bottle filled with a red, glowing liquid."
+      },
+      "smelling salts": {
+        "id": "i007",
+        "effect": 0,
+        "buy": 150,
+        "description": "A vial filled with a pungent substance that can revive a downed player."
       }
     },
     "bombs": null
@@ -93,6 +99,17 @@
   },
   "weapons": {
     "swords": {
+      "The Mad Max": {
+        "id": "w003",
+        "rolls": 8,
+        "limit": 15,
+        "modifier": 0,
+        "defense": 0,
+        "description": "This sword is dirty, bloody, and warm to the touch. The blade singes the flesh.",
+        "weight": 2,
+        "buy": 10,
+        "sell": 5
+      },
       "shortsword": {
         "id": "w003",
         "rolls": 1,
@@ -386,7 +403,7 @@
         "limit": 6,
         "modifier": 0,
         "defense": 0,
-        "description": "A heavy two-handed hammer. People that use these like to crush things flat.",
+        "description": "A heavy two-handed hammer. People that use these to crush things flat.",
         "weight": 10,
         "buy": 10,
         "sell": 5
