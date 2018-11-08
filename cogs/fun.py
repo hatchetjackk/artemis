@@ -95,21 +95,14 @@ class Fun:
     async def hp(self, ctx, *, target: str):
         embed = discord.Embed()
         data = await load_json('users')
+        pattern = re.compile(r'' + re.escape(target.lower()))
         for member in ctx.guild.members:
             member_name = await self.member_name(member)
-            mid = str(member.id)
-
-            if target.lower() == self.client.user.name.lower() or target == self.client.user.mention:
-                embed.add_field(name='Artemis',
-                                value='{} has {}/1000 HP'.format(
-                                    self.client.user.name,
-                                    data[str(self.client.user.id)]['hp']))
-                await ctx.send(embed=embed)
-                return
-
-            if member.mention == target or member_name.lower() == target.lower():
+            matches = pattern.finditer(member_name.lower())
+            for match in matches:
+                mid = str(member.id)
                 embed.add_field(name=member_name,
-                                value='{}/100 HP'.format(data[mid]['health']['hp']))
+                                value='{}/100 HP'.format(data[mid]['hp']))
                 embed.set_thumbnail(url=member.avatar_url)
 
         await ctx.send(embed=embed)
