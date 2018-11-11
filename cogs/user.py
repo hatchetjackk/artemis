@@ -31,8 +31,8 @@ class User:
                     }
                 if 'level' not in data_users[mid]:
                     data_users[mid]['level'] = 1
-                if 'exp' not in data_users[mid]:
-                    data_users[mid]['exp'] = 0
+                # if 'exp' not in data_users[mid]:
+                #     data_users[mid]['exp'] = 0
                 if 'alignment' not in data_users[mid]:
                     data_users[mid]['alignment'] = 'Unaligned'
                 if 'race' not in data_users[mid]:
@@ -40,7 +40,8 @@ class User:
                 if 'description' not in data_users[mid]:
                     data_users[mid]['description'] = None
                 if 'hp' not in data_users[mid]:
-                    data_users[mid]['hp'] = 100
+                    data_users[mid]['hp'] = 10
+                    data_users[mid]['max hp'] = 10
                 if 'inventory' not in data_users[mid]:
                     data_users[mid].update({'inventory': {
                         'gold': 10,
