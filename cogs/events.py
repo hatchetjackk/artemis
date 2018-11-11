@@ -157,7 +157,7 @@ class Events:
         count = 0
         for key, value in sorted_events.items():
             if keyword in value['event'].lower() and value['guild_id'] == int(gid):
-                event = value['event'][:50]
+                event = value['event'][:200]
                 dt = await self.make_datetime(value['time'])
                 dt_long, dt_short = await self.make_string(dt)
                 eta = await self.eta(dt)
@@ -412,10 +412,14 @@ class Events:
                     if aid in value['member_notify']:
                         notifications.append('**{}**: *{}*'.format(event, value['event']))
             if len(notifications) > 0:
-                await ctx.send('Events you have notifications set for:\n'
-                               '{}'.format('\n'.join(notifications)))
+                embed = discord.Embed(title='Events you have notifications set for:',
+                                      description='\n'.join(notifications),
+                                      color=discord.Color.blue())
+                await ctx.send(embed=embed, delete_after=10)
             else:
-                await ctx.send('You do not have any notifications set.')
+                embed = discord.Embed(title='You do not have any notifications set.',
+                                      color=discord.Color.blue())
+                await ctx.send(embed=embed, delete_after=3)
 
         elif eid in data:
             if aid not in data[eid]['member_notify']:
@@ -580,7 +584,7 @@ class Events:
                             channel = self.client.get_channel(channel)
                             await channel.send(
                                 '{0}: **{1}** is starting in less than 1 hour!'.format(user.mention,
-                                                                                       value['event'][:50]))
+                                                                                       value['event'][:200]))
                         value['notify'] = False
                         value['member_notify'] = {}
                     await dump_json('events', data_events)
