@@ -38,38 +38,6 @@ async def on_ready():
 
 
 @client.event
-async def on_guild_join(guild):
-    data_guild = await load_json('guilds')
-    data_users = await load_json('users')
-
-    gid = str(guild.id)
-    if gid not in data_guild:
-        data_guild[gid] = {
-            'guild_name': guild.name,
-            'thumb_url': '',
-            'prefix': '!',
-            'auto_role': None,
-            'mod_roles': [],
-            'spam': None
-        }
-    await dump_json('guilds', data_guild)
-
-    for member in guild.members:
-        mid = str(member.id)
-        if mid not in data_users:
-            data_users[mid] = {
-                'username': member.name,
-                'guild': {},
-            }
-        if 'hp' not in data_users[mid]:
-            data_users[mid].update({'hp': 100})
-        if gid not in data_users[mid]['guild']:
-            data_users[mid]['guild'].update({gid: {guild.name: member.nick}})
-
-    await dump_json('users', data_guild)
-
-
-@client.event
 async def on_resumed():
     now = datetime.datetime.now()
     message = '[{0}] Artemis is back online.'.format(now)

@@ -74,7 +74,7 @@ class Emotions:
         await dump_json('status', data)
 
     @commands.command()
-    async def status(self, ctx):
+    async def artemis(self, ctx):
         data = await load_json('status')
         level = data["status"]["level"]
 

@@ -157,7 +157,7 @@ class Events:
         count = 0
         for key, value in sorted_events.items():
             if keyword in value['event'].lower() and value['guild_id'] == int(gid):
-                event = value['event'][:50]
+                event = value['event'][:200]
                 dt = await self.make_datetime(value['time'])
                 dt_long, dt_short = await self.make_string(dt)
                 eta = await self.eta(dt)
@@ -412,27 +412,33 @@ class Events:
                     if aid in value['member_notify']:
                         notifications.append('**{}**: *{}*'.format(event, value['event']))
             if len(notifications) > 0:
-                await ctx.send('Events you have notifications set for:\n'
-                               '{}'.format('\n'.join(notifications)))
+                embed = discord.Embed(title='Events you have notifications set for:',
+                                      description='\n'.join(notifications),
+                                      color=discord.Color.blue())
+                await ctx.send(embed=embed, delete_after=10)
             else:
-                await ctx.send('You do not have any notifications set.')
+                embed = discord.Embed(title='You do not have any notifications set.',
+                                      color=discord.Color.blue())
+                await ctx.send(embed=embed, delete_after=3)
 
         elif eid in data:
             if aid not in data[eid]['member_notify']:
                 data[eid]['notify'] = True
                 data[eid]['member_notify'].update({aid: cid})
-                await ctx.send('Set to notify **{author}** when *{event}* is 1 hour away from '
-                               'starting!'.format(author=author.name, event=data[eid]['event']))
+                msg = 'Set to notify **{author}** when ' \
+                      '*{event}* is 1 hour away from starting!'.format(author=author.name, event=data[eid]['event'])
+                embed = discord.Embed(title=msg, color=discord.Color.dark_purple())
+                await ctx.send(embed=embed, delete_after=5)
                 await dump_json('events', data)
                 return
             # if user already exists in notification, remove the user
             if str(author.id) in data[eid]['member_notify']:
                 data[eid]['member_notify'].pop(aid, None)
-                await ctx.send('Removing **{author}\'s** notification for *{event}*.'.format(
+                msg = 'Removing **{author}\'s** notification for *{event}*.'.format(
                         author=author.name,
-                        event=data[eid]['event']
-                    )
-                )
+                        event=data[eid]['event'])
+                embed = discord.Embed(title=msg, color=discord.Color.dark_purple())
+                await ctx.send(embed=embed, delete_after=5)
                 if len(data[eid]['member_notify']) < 1:
                     data[eid]['notify'] = False
                 await dump_json('events', data)
@@ -578,7 +584,7 @@ class Events:
                             channel = self.client.get_channel(channel)
                             await channel.send(
                                 '{0}: **{1}** is starting in less than 1 hour!'.format(user.mention,
-                                                                                       value['event'][:50]))
+                                                                                       value['event'][:200]))
                         value['notify'] = False
                         value['member_notify'] = {}
                     await dump_json('events', data_events)

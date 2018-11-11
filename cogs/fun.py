@@ -16,6 +16,40 @@ class Fun:
         self.client = client
 
     @commands.command()
+    async def playing(self, ctx, *args):
+        game_match = ' '.join(args)
+        if game_match == 'all':
+            games_currently_being_played = [member.game.name for member in ctx.guild.members
+                                            if member.game is not None
+                                            and member.id != self.client.user.id]
+            if len(games_currently_being_played) < 1:
+                embed = discord.Embed(title='No one is playing anything!')
+                await ctx.send(embed=embed)
+            else:
+                embed = discord.Embed(title='Games currently being played'.format(game_match),
+                                      description='\n'.join(game for game in games_currently_being_played))
+                await ctx.send(embed=embed)
+        else:
+            members_playing_game = []
+            pattern = re.compile(r'' + re.escape(game_match.lower()))
+            for member in ctx.guild.members:
+                if member.game is not None:
+                    matches = pattern.findall(member.game.name.lower())
+                    for match in matches:
+                        x = '{} - {}'.format(member.name, member.game.name)
+                        if x in members_playing_game:
+                            pass
+                        else:
+                            members_playing_game.append(x)
+            if len(members_playing_game) < 1:
+                embed = discord.Embed(title='No members are playing "{}"'.format(game_match))
+                await ctx.send(embed=embed)
+            else:
+                embed = discord.Embed(title='Members currently playing "{}"'.format(game_match),
+                                      description='\n'.join(member for member in members_playing_game))
+                await ctx.send(embed=embed)
+
+    @commands.command()
     async def ping(self, ctx):
         await ctx.send(':ping_pong: Pong')
 
@@ -87,41 +121,33 @@ class Fun:
             reddit_search = 'https://reddit.com/' + msg
             await channel.send(reddit_search)
         if msg == '(╯°□°）╯︵ ┻━┻' or msg == '(∩⩺ロ⩹)⊃━☆ﾟ.* ︵ ┻━┻':
-            # roll = random.randint(1, 100)
-            # for member in message.channel.guild.members:
-            #     mid = str(member.id)
-            #     if member.name == 'Jorer':
-            #         data = await load_json('users')
-            #         await message.channel.send('Jorer took {} HP of damage!'.format(roll))
-            #         data[mid]['hp'] -= roll
-            #         await dump_json('users', data)
             table_fix = ['┬─┬ ノ( ゜-゜ノ)', '┬─┬ ノ( ⩺ロ⩹ノ)']
             await channel.send(random.choice(table_fix))
 
     @commands.command(aliases=['health'])
-    @commands.cooldown(rate=1, per=15, type=BucketType.user)
+    @commands.cooldown(rate=1, per=3, type=BucketType.user)
     async def hp(self, ctx, *, target: str):
         embed = discord.Embed()
         data = await load_json('users')
+        pattern = re.compile(r'' + re.escape(target.lower()))
         for member in ctx.guild.members:
-            mid = str(member.id)
-            if target.lower() == self.client.user.name.lower() or target == self.client.user.mention:
-                embed.add_field(name='Artemis',
-                                value='{} has {}/1000 HP'.format(
-                                    self.client.user.name,
-                                    data[str(self.client.user.id)]['hp']))
-                await ctx.send(embed=embed)
-                return
-            if member.nick is not None:
-                if member.mention == target or member.name.lower() == target.lower() or member.nick.lower() == target.lower():
-                    embed.add_field(name=member.nick,
-                                    value='{}/100 HP'.format(data[mid]['hp']))
-                    await ctx.send(embed=embed)
-            else:
-                if member.mention == target or member.name.lower() == target.lower():
-                    embed.add_field(name=member.name,
-                                    value='{}/100 HP'.format(data[mid]['hp']))
-                    await ctx.send(embed=embed)
+            member_name = await self.member_name(member)
+            matches = pattern.finditer(member_name.lower())
+            for match in matches:
+                mid = str(member.id)
+                embed.add_field(name=member_name,
+                                value='{}/{} HP'.format(data[mid]['hp'], data[mid]['max hp']))
+                embed.set_thumbnail(url=member.avatar_url)
+
+        await ctx.send(embed=embed)
+
+    @staticmethod
+    async def member_name(member):
+        # grab author nick
+        member_name = member.nick
+        if member_name is None:
+            member_name = member.name
+        return member_name
 
     @commands.command()
     async def rps(self, ctx, choice: str):
