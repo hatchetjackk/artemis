@@ -16,6 +16,40 @@ class Fun:
         self.client = client
 
     @commands.command()
+    async def playing(self, ctx, *args):
+        game_match = ' '.join(args)
+        if game_match == 'all':
+            games_currently_being_played = [member.game.name for member in ctx.guild.members
+                                            if member.game is not None
+                                            and member.id != self.client.user.id]
+            if len(games_currently_being_played) < 1:
+                embed = discord.Embed(title='No one is playing anything!')
+                await ctx.send(embed=embed)
+            else:
+                embed = discord.Embed(title='Games currently being played'.format(game_match),
+                                      description='\n'.join(game for game in games_currently_being_played))
+                await ctx.send(embed=embed)
+        else:
+            members_playing_game = []
+            pattern = re.compile(r'' + re.escape(game_match.lower()))
+            for member in ctx.guild.members:
+                if member.game is not None:
+                    matches = pattern.findall(member.game.name.lower())
+                    for match in matches:
+                        x = '{} - {}'.format(member.name, member.game.name)
+                        if x in members_playing_game:
+                            pass
+                        else:
+                            members_playing_game.append(x)
+            if len(members_playing_game) < 1:
+                embed = discord.Embed(title='No members are playing "{}"'.format(game_match))
+                await ctx.send(embed=embed)
+            else:
+                embed = discord.Embed(title='Members currently playing "{}"'.format(game_match),
+                                      description='\n'.join(member for member in members_playing_game))
+                await ctx.send(embed=embed)
+
+    @commands.command()
     async def ping(self, ctx):
         await ctx.send(':ping_pong: Pong')
 
@@ -102,7 +136,7 @@ class Fun:
             for match in matches:
                 mid = str(member.id)
                 embed.add_field(name=member_name,
-                                value='{}/100 HP'.format(data[mid]['hp']))
+                                value='{}/{} HP'.format(data[mid]['hp'], data[mid]['max hp']))
                 embed.set_thumbnail(url=member.avatar_url)
 
         await ctx.send(embed=embed)
