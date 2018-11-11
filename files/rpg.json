@@ -104,7 +104,6 @@
         "rolls": 8,
         "limit": 15,
         "modifier": 0,
-        "defense": 0,
         "description": "This sword is dirty, bloody, and warm to the touch. The blade singes the flesh.",
         "weight": 2,
         "buy": 10,
@@ -115,7 +114,6 @@
         "rolls": 1,
         "limit": 6,
         "modifier": 0,
-        "defense": 0,
         "description": "A dull, old sword likely passed down through the generations.",
         "weight": 2,
         "buy": 10,
@@ -126,7 +124,6 @@
         "rolls": 1,
         "limit": 10,
         "modifier": 0,
-        "defense": 0,
         "description": "A craftsman long sword. It has reach and strength thanks to ages old smithing techniques.",
         "weight": 3,
         "buy": 15,
@@ -137,7 +134,6 @@
         "rolls": 2,
         "limit": 6,
         "modifier": 0,
-        "defense": 0,
         "description": "A heavy two-handed sword. It can be difficult to wield, but a masterful swordsman shouldn't have a problem.",
         "weight": 6,
         "buy": 50,
@@ -148,7 +144,6 @@
         "rolls": 2,
         "limit": 6,
         "modifier": 4,
-        "defense": 0,
         "description": "A two-bladed scimitar from a foreign land. The extra blade inflicts more damage.",
         "weight": 6,
         "buy": 100,
@@ -159,7 +154,6 @@
         "rolls": 1,
         "limit": 6,
         "modifier": 0,
-        "defense": 0,
         "description": "A curved sword from a foreign land. Impressive and lightweight.",
         "weight": 3,
         "buy": 25,
@@ -170,7 +164,6 @@
         "rolls": 1,
         "limit": 8,
         "modifier": 0,
-        "defense": 0,
         "description": "A light sword more akin to a work of art than a killing weapon.",
         "weight": 2,
         "buy": 25,
@@ -183,7 +176,6 @@
         "rolls": 1,
         "limit": 6,
         "modifier": 0,
-        "defense": 0,
         "description": "A simple hatchet. The blade is chipped and dull.",
         "weight": 2,
         "buy": 5,
@@ -194,7 +186,6 @@
         "rolls": 1,
         "limit": 10,
         "modifier": 0,
-        "defense": 0,
         "description": "A double-edged axe designed more for war than for downing trees.",
         "weight": 4,
         "buy": 10,
@@ -205,7 +196,6 @@
         "rolls": 1,
         "limit": 12,
         "modifier": 0,
-        "defense": 0,
         "description": "A heavy two-handed axe. It can crush armor as much as it can chop flesh.",
         "weight": 6,
         "buy": 30,
@@ -218,7 +208,6 @@
         "rolls": 1,
         "limit": 6,
         "modifier": 0,
-        "defense": 0,
         "description": "A small crossbow designed to be fired single handedly. One might wonder what purpose this serves.",
         "weight": 5,
         "buy": 75,
@@ -229,7 +218,6 @@
         "rolls": 1,
         "limit": 8,
         "modifier": 0,
-        "defense": 0,
         "description": "A simple lightweight crossbow. The wood is a little cracked, but it does the job.",
         "weight": 5,
         "buy": 25,
@@ -240,7 +228,6 @@
         "rolls": 1,
         "limit": 10,
         "modifier": 0,
-        "defense": 0,
         "description": "A hefty crossbow designed to increase the bolt's velocity.",
         "weight": 5,
         "buy": 50,
@@ -253,7 +240,6 @@
         "rolls": 1,
         "limit": 4,
         "modifier": 0,
-        "defense": 0,
         "description": "A small dagger. This glorified knife has seen better days. Best for buttering bread.",
         "weight": 1,
         "buy": 2,
@@ -266,7 +252,6 @@
         "rolls": 1,
         "limit": 4,
         "modifier": 0,
-        "defense": 0,
         "description": "A knotted branch one might call a club. Its hefty, but uncomfortable to wield.",
         "weight": 2,
         "buy": 1,
@@ -277,7 +262,6 @@
         "rolls": 1,
         "limit": 8,
         "modifier": 0,
-        "defense": 0,
         "description": "A large branch cut and shaped into a bludgeoning device. Great for crushing things.",
         "weight": 10,
         "buy": 2,
@@ -288,7 +272,6 @@
         "rolls": 1,
         "limit": 8,
         "modifier": 0,
-        "defense": 0,
         "description": "A spiked iron ball attached to a handle by a chain. Seems dangerous to enemies and the wielder alike.",
         "weight": 2,
         "buy": 10,
@@ -299,7 +282,6 @@
         "rolls": 1,
         "limit": 6,
         "modifier": 0,
-        "defense": 0,
         "description": "A heavy iron sphere atop a wooden handle. Great for smashing armor, faces, hands, feet...",
         "weight": 4,
         "buy": 5,
@@ -310,7 +292,6 @@
         "rolls": 1,
         "limit": 8,
         "modifier": 0,
-        "defense": 0,
         "description": "The mace's edgy brother. Heavy, sharp, and bad ass.",
         "weight": 10,
         "buy": 15,
@@ -323,7 +304,6 @@
         "rolls": 1,
         "limit": 10,
         "modifier": 0,
-        "defense": 0,
         "description": "A long staff that ends in a slim blade.",
         "weight": 6,
         "buy": 20,
@@ -334,7 +314,6 @@
         "rolls": 1,
         "limit": 10,
         "modifier": 0,
-        "defense": 0,
         "description": "A long staff that ends in a hefty axe-like curve.",
         "weight": 6,
         "buy": 20,
@@ -345,7 +324,6 @@
         "rolls": 1,
         "limit": 12,
         "modifier": 0,
-        "defense": 0,
         "description": "A long pole-arm used primarily in jousting.",
         "weight": 6,
         "buy": 10,
@@ -356,7 +334,6 @@
         "rolls": 1,
         "limit": 10,
         "modifier": 0,
-        "defense": 0,
         "description": "A long shaft with an arrow-like tip. Great for piercing or slashing enemies at a distance.",
         "weight": 18,
         "buy": 5,
@@ -367,7 +344,6 @@
         "rolls": 1,
         "limit": 4,
         "modifier": 0,
-        "defense": 0,
         "description": "A farmer's tool not typically used for battle.",
         "weight": 2,
         "buy": 1,
@@ -380,9 +356,8 @@
         "rolls": 10,
         "limit": 20,
         "modifier": 0,
-        "defense": 0,
         "description": "The spirit of this hammer is said to be the devil himself.",
-        "weight": 2,
+        "weight": 10,
         "buy": 999999,
         "sell": 1
       },
@@ -391,7 +366,6 @@
         "rolls": 1,
         "limit": 4,
         "modifier": 0,
-        "defense": 0,
         "description": "A small workman's hammer. Used for nailing boards together or bashing in heads.",
         "weight": 2,
         "buy": 2,
@@ -402,7 +376,6 @@
         "rolls": 2,
         "limit": 6,
         "modifier": 0,
-        "defense": 0,
         "description": "A heavy two-handed hammer. People that use these to crush things flat.",
         "weight": 10,
         "buy": 10,
@@ -413,7 +386,6 @@
         "rolls": 1,
         "limit": 8,
         "modifier": 0,
-        "defense": 0,
         "description": "A lightweight but dangerous hammer used for denting armor.",
         "weight": 2,
         "buy": 15,
@@ -426,7 +398,6 @@
         "rolls": 1,
         "limit": 8,
         "modifier": 0,
-        "defense": 0,
         "description": "An artisan bow strung with high tensile string to deliver high speed projectiles.",
         "weight": 2,
         "buy": 50,
@@ -437,7 +408,6 @@
         "rolls": 1,
         "limit": 6,
         "modifier": 0,
-        "defense": 0,
         "description": "A typical hunting bow. Great for small and medium game.",
         "weight": 2,
         "buy": 25,
@@ -449,6 +419,102 @@
 
   },
   "armor": {
-
+    "light":{
+      "padded": {
+        "defense": 11,
+        "description": "Padded armor consisting of quilted layers of cloth and batting. It allows the user to move quickly but sacrifices protection.",
+        "weight": 8,
+        "buy": 5,
+        "sell": 2
+      },
+      "leather": {
+        "defense": 11,
+        "description": "The breastplate and shoulder protectors of this armor are made of leather that has been stiffened by being boiled in oil. The rest of the armor is made of softer and more flexible materials.",
+        "weight": 10,
+        "buy": 10,
+        "sell": 5
+      },
+      "studded leather": {
+        "defense": 12,
+        "description": "Made from tough but flexible leather, studded leather is reinforced with close-set rivets or spikes.",
+        "weight": 13,
+        "buy": 45,
+        "sell": 22
+      }
+    },
+    "medium": {
+      "hide": {
+        "defense": 12,
+        "description": "This crude armor consists of thick furs and pelts. It is commonly worn by barbarian tribes, evil humanoids, and other folk who lack access to the tools and materials needed to create better armor.",
+        "weight": 12,
+        "buy": 10,
+        "sell": 5
+      },
+      "chain shirt": {
+        "defense": 13,
+        "description": "Made of interlocking metal rings, a chain shirt is worn between layers of clothing or leather. This armor offers modest protection to the wearer's upper body and allows the sound of the rings rubbing against one another to be muffled by outer layers.",
+        "weight": 20,
+        "buy": 50,
+        "sell": 25
+      },
+      "scale mail": {
+        "defense": 14,
+        "description": "This armor consists of a coat and leggings (and perhaps a separate skirt) of leather covered with overlapping pieces of metal, much like the scales of a fish. The suit includes gauntlets.",
+        "weight": 45,
+        "buy": 50,
+        "sell": 25
+      },
+      "spiked armor": {
+        "defense": 14,
+        "description": "Spiked armor is a rare type of medium armor made by dwarves. It consists of a leather coat and leggings covered with spikes that are usually made of metal.",
+        "weight": 45,
+        "buy": 75,
+        "sell": 37
+      },
+      "breastplate": {
+        "defense": 14,
+        "description": "This armor consists of a fitted metal chest piece worn with supple leather. Although it leaves the legs and arms relatively unprotected, this armor provides good protection for the wearer's vital organs while leaving the wearer relatively unencumbered.",
+        "weight": 20,
+        "buy": 400,
+        "sell": 200
+      },
+      "half plate": {
+        "defense": 15,
+        "description": "Half plate consists of shaped metal plates that cover most of the wearer's body. It does not include leg protection beyond simple greaves that are attached with leather straps.",
+        "weight": 40,
+        "buy": 750,
+        "sell": 375
+      }
+    },
+    "heavy": {
+      "ring mail": {
+        "defense": 14,
+        "description": "This armor is leather armor with heavy rings sewn into it. The rings help reinforce the armor against blows from swords and axes. Ring mail is inferior to chain mail, and it's usually worn only by those who can't afford better armor.",
+        "weight": 40,
+        "buy": 30,
+        "sell": 15
+      },
+      "chain mail": {
+        "defense": 16,
+        "description": "Made of interlocking metal rings, chain mail includes a layer of quilted fabric worn underneath the mail to prevent chafing and to cushion the impact of blows. The suit includes gauntlets.",
+        "weight": 55,
+        "buy": 75,
+        "sell": 37
+      },
+      "splint": {
+        "defense": 17,
+        "description": "This armor is made of narrow vertical strips of metal riveted to a backing of leather that is worn over cloth padding. Flexible chain mail protects the joints.",
+        "weight": 60,
+        "buy": 75,
+        "sell": 37
+      },
+      "plate": {
+        "defense": 18,
+        "description": "Plate consists of shaped, interlocking metal plates to cover the entire body. A suit of plate includes gauntlets, heavy leather boots, a visored helmet, and thick layers of padding underneath the armor. Buckles and straps distribute the weight over the body.",
+        "weight": 65,
+        "buy": 1500,
+        "sell": 1250
+      }
+    }
   }
 }
