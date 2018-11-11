@@ -76,17 +76,26 @@ class RPG:
         users = await load_json('users')
         rpg = await load_json('rpg')
         race = users[str(target.id)]['race']
-        hp = users[str(target.id)]['hp']
-        weapon = users[str(target.id)]['equipped']['weapon']
+        current_hp = users[str(target.id)]['hp']
+        max_hp = users[str(target.id)]['max hp']
+        equipped_weapon = users[str(target.id)]['equipped']['weapon']
         damage = ''
         for key, value in rpg['weapons'].items():
-            if weapon in value:
-                damage = '[{}d{}]'.format(value[weapon]['rolls'], value[weapon]['limit'])
-        armor = users[str(target.id)]['equipped']['armor']
-        accessory = users[str(target.id)]['equipped']['acc.']
+            if equipped_weapon in value:
+                damage = '[{}d{}]'.format(value[equipped_weapon]['rolls'], value[equipped_weapon]['limit'])
+        equipped_armor = users[str(target.id)]['equipped']['armor']
+        equipped_accessory = users[str(target.id)]['equipped']['acc.']
         alignment = users[str(target.id)]['alignment']
         level = users[str(target.id)]['level']
         inventory_description = []
+        weapon_weight = 0
+        armor_weight = 0
+        for wep_type, wep in rpg['weapons'].items():
+            if equipped_weapon in wep:
+                weapon_weight = rpg['weapons'][wep_type][equipped_weapon]['weight']
+        for arm_type, arm in rpg['armor'].items():
+            if equipped_armor in arm:
+                armor_weight = rpg['armor'][arm_type][equipped_armor]['weight']
         for key, value in users[str(target.id)]['inventory'].items():
             for wep_type, wep in rpg['weapons'].items():
                 if key in wep:
@@ -97,6 +106,13 @@ class RPG:
                     weight = 'weight: {} lbs.'.format(rpg['weapons'][wep_type][key]['weight'])
                     inventory_description.append('‣ **{}** {}, {}\n'
                                                  '*{}*'.format(key, key_damage, weight, description))
+            for arm_type, arm in rpg['armor'].items():
+                if key in arm:
+                    description = rpg['armor'][arm_type][key]['description']
+                    defense = 'Defense: {}'.format(rpg['armor'][arm_type][key]['defense'])
+                    weight = 'Weight: {} lbs.'.format(rpg['armor'][arm_type][key]['weight'])
+                    inventory_description.append('‣ **{} armor** {}, {}\n'
+                                                 '*{}*'.format(key, defense, weight, description))
             if key in rpg['items']['potions']:
                 description = rpg['items']['potions'][key]['description']
                 amount = users[str(target.id)]['inventory'][key]
@@ -109,17 +125,19 @@ class RPG:
                 inventory_description.append('‣ {}'.format(item))
             if key == 'gold':
                 inventory_description.append('‣ {}: {}'.format(key, value))
-        status = Embed(title='{} ({}/100)'.format(target_name, hp),
+        equipped_weight = weapon_weight + armor_weight
+        status = Embed(title='{} ({}/{})'.format(target_name, current_hp, max_hp),
                        color=Color.dark_blue(),
                        description='*{} {}*\n'
                                    'Level: {}\n'
-                                   'Exp to Next: 0\n\n'
+                                   'Equipped weight: {} lbs\n\n'
                                    '**__Equipped__**\n'
                                    '**Weapon**: {} {}\n'
                                    '**Armor**: {}\n'
                                    '**Acc.**: {}\n\n'
                                    '**__Inventory__**\n'
-                                   '{}'.format(alignment, race, level, weapon, damage, armor, accessory,
+                                   '{}'.format(alignment, race, level, equipped_weight,
+                                               equipped_weapon, damage, equipped_armor, equipped_accessory,
                                                '\n'.join(value for value in inventory_description)))
         status.set_thumbnail(url=avatar)
         await ctx.send(embed=status)
@@ -137,8 +155,15 @@ class RPG:
                     limit = rpg['weapons'][wep_type][key]['limit']
                     key_damage = '({}d{})'.format(rolls, limit)
                     weight = 'weight: {} lbs.'.format(rpg['weapons'][wep_type][key]['weight'])
-                    inventory_description.append('‣ **{}** {}, {}\n'
+                    inventory_description.append('‣ [W] **{}** {}, {}\n'
                                                  '*{}*'.format(key, key_damage, weight, description))
+            for arm_type, arm in rpg['armor'].items():
+                if key in arm:
+                    description = rpg['armor'][arm_type][key]['description']
+                    defense = 'Defense: {}'.format(rpg['armor'][arm_type][key]['defense'])
+                    weight = 'Weight: {} lbs.'.format(rpg['armor'][arm_type][key]['weight'])
+                    inventory_description.append('‣ [A] **{} armor** {}, {}\n'
+                                                 '*{}*'.format(key, defense, weight, description))
             if key in rpg['items']['potions']:
                 description = rpg['items']['potions'][key]['description']
                 amount = users[str(ctx.author.id)]['inventory'][key]
@@ -148,7 +173,9 @@ class RPG:
                 else:
                     healing_effect = '({}d{}+{})'.format(effect[0], effect[1], effect[2])
                 item = '**{}** {}, amt: {} \n*{}*'.format(key, healing_effect, amount, description)
-                inventory_description.append('‣ {}'.format(item))
+                inventory_description.append('‣ [P] {}'.format(item))
+            if key == 'gold':
+                inventory_description.append('‣ {}: {}'.format(key, value))
         inventory = Embed(title='Your Inventory',
                           color=Color.dark_blue(),
                           description='\n'.join(value for value in inventory_description))
@@ -229,6 +256,11 @@ class RPG:
         if msg.content.lower() in weapons:
             await store_message.delete()
             await self.store_weapons(ctx)
+
+        weapons = ['armor', 'armour', 'arm']
+        if msg.content.lower() in weapons:
+            await store_message.delete()
+            await self.store_armor(ctx)
 
     async def store_potions(self, ctx):
         rpg_data = await load_json('rpg')
@@ -348,6 +380,80 @@ class RPG:
                             await store_message.delete()
                     else:
                         error = Embed(description='Purchase a weapon with `buy <item>`\n'
+                                                  'or enter `quit` to exit the shop')
+                        await ctx.send(embed=error, delete_after=3)
+            else:
+                error = Embed(description='Select a category or enter `quit` to exit.')
+                await ctx.send(embed=error, delete_after=3)
+
+    async def store_armor(self, ctx):
+        rpg_data = await load_json('rpg')
+        vowel = ['a', 'e', 'i', 'o', 'u']
+
+        def check(m):
+            return m.author == ctx.message.author and m.channel == ctx.channel
+
+        store = Embed(description='<:armor:509132689530552330> With the advance of feudalism came the growth of iron armor, until, at last, a fighting-man resembled an armadillo.',
+                      color=Color.blue())
+        store.set_footer(text='Choose an option or enter to `quit` to stop shopping.')
+        store.add_field(name='\n'.join([arm.upper() for arm in rpg_data['armor']]),
+                        value='\u200b')
+        store_message = await ctx.send(embed=store)
+
+        while True:
+            msg = await self.client.wait_for('message', check=check)
+
+            exit_shop = ['quit', 'stop', 'q']
+            if msg.content.lower() in exit_shop:
+                await store_message.delete()
+                return
+
+            elif msg.content.lower() in rpg_data['armor']:
+                selection = msg.content.lower()
+                await store_message.delete()
+                store = Embed(description='<:armor:509132689530552330> There is no armor against fate.',
+                              color=Color.blue())
+                store.set_footer(text='Purchase armor with `buy <item>`\n'
+                                      'or enter `quit` to exit the shop')
+                for key, value in rpg_data['armor'][selection].items():
+                    item_cost = value['buy']
+                    defense = rpg_data['armor'][selection][key]['defense']
+                    weight = rpg_data['armor'][selection][key]['weight']
+                    item_description = value['description']
+                    store.add_field(name='{}: {}GP'.format(key.upper(), item_cost),
+                                    value='Defense: {}, Weight: {} lbs\n{}'.format(defense, weight, item_description),
+                                    inline=False)
+                store_message = await ctx.send(embed=store)
+
+                while True:
+                    msg = await self.client.wait_for('message', check=check)
+
+                    exit_shop = ['quit', 'stop', 'q']
+                    if msg.content.lower() in exit_shop:
+                        await store_message.delete()
+                        return
+
+                    elif msg.content.startswith('buy'):
+                        item = msg.content[4:]
+                        cost = rpg_data['armor'][selection][item]['buy']
+                        user_data = await load_json('users')
+                        if user_data[str(ctx.author.id)]['inventory']['gold'] >= cost:
+                            user_data[str(ctx.author.id)]['inventory']['gold'] -= cost
+                            arm = rpg_data['armor'][selection][item]
+                            user_data[str(ctx.author.id)]['inventory'][item] = (
+                                'defense: {}'.format(arm['defense']),
+                                'weight: {}'.format(arm['weight']),
+                                arm['description'])
+                            await dump_json('users', user_data)
+                            purchase = Embed(description='You purchased {} armor for {}GP.'.format(item, cost))
+                            await ctx.send(embed=purchase, delete_after=3)
+                            await store_message.delete()
+                        else:
+                            purchase = Embed(description='You do not have enough gold to purchase {} armor.'.format(item))
+                            await ctx.send(embed=purchase, delete_after=3)
+                            await store_message.delete()
+                    else:
+                        error = Embed(description='Purchase armor with `buy <item>`\n'
                                                   'or enter `quit` to exit the shop')
                         await ctx.send(embed=error, delete_after=3)
             else:
