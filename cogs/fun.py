@@ -5,6 +5,7 @@ import urllib.request
 import urllib.parse
 import discord
 import requests
+import asyncio
 from discord.ext.commands import BucketType, CommandNotFound
 from artemis import load_json, dump_json
 from PyDictionary import PyDictionary
@@ -48,6 +49,16 @@ class Fun:
                 embed = discord.Embed(title='Members currently playing "{}"'.format(game_match),
                                       description='\n'.join(member for member in members_playing_game))
                 await ctx.send(embed=embed)
+
+    @commands.command()
+    async def sudo(self, ctx, *, cmd: str):
+        if 'rm -rf .' == cmd:
+            await ctx.send('Deletin--')
+            return
+        if 'make me a sandwhich' == cmd:
+            await ctx.send('Yeah, I\'ll get right on that...')
+            return
+        await ctx.send('Sudo go f*ck yourself.')
 
     @commands.command()
     async def ping(self, ctx):
