@@ -12,6 +12,8 @@ class Arena:
         self.client = client
         self.artemis_is_vulnerable = False
         self.raid_is_active = False
+        self.duel_is_active = False
+
         self.user_attack = Color.teal()
         self.enemy_attack = Color.dark_red()
         self.enemy_miss = Color.light_grey()
@@ -29,6 +31,7 @@ class Arena:
             await ctx.send('A raid is already active!')
             return
         self.raid_is_active = True
+
         client = self.client
         channel = ctx.channel
         fighters = []
@@ -44,31 +47,26 @@ class Arena:
             msg = await client.wait_for('message', check=check)
             if 'join' in msg.content:
                 author_name = await self.member_name(msg.author)
-                embed = Embed(
-                    title='{0} joined the fight!'.format(author_name),
-                    color=self.rpg_info)
-                await ctx.send(embed=embed)
+                embed_msg = '{0} joined the fight!'.format(author_name)
+                await self.send_embed(channel=channel, msg=embed_msg, color=self.rpg_info)
                 fighters.append(msg.author)
             if 'stop' in msg.content:
-                embed = Embed(
-                    title='The raid was stopped.',
-                    color=self.rpg_info)
-                await ctx.send(embed=embed)
+                embed_msg = 'The raid was stopped.'
+                await self.send_embed(channel=channel, msg=embed_msg, color=self.rpg_info)
                 self.raid_is_active = False
                 return
             if 'start' in msg.content:
                 if len(fighters) < 1:
-                    embed = Embed(description='You cannot start a raid without fighters!',
-                                  color=self.rpg_info)
-                    await ctx.send(embed=embed)
+                    embed_msg = 'You cannot start a raid without fighters!'
+                    await self.send_embed(channel=channel, msg=embed_msg, color=self.rpg_info)
                 else:
                     fighter_has_nick = [fighter.nick for fighter in fighters if fighter.nick is not None]
                     fighter_no_nick = [fighter.name for fighter in fighters if fighter.nick is None]
                     fighter_merge = fighter_has_nick + fighter_no_nick
-                    embed = Embed(title='The fight begins!',
-                                  description='Fighters: {}'.format(', '.join(fighter for fighter in fighter_merge)),
-                                  color=self.rpg_info)
-                    await ctx.send(embed=embed)
+                    embed_msg = '**The fight begins!**\nFighters: {}'.format(', '.join(
+                        fighter for fighter in fighter_merge)
+                    )
+                    await self.send_embed(channel=channel, msg=embed_msg, color=self.rpg_info)
                     break
         print('A raid has started!')
         self.artemis_is_vulnerable = True
@@ -84,30 +82,20 @@ class Arena:
                 artemis_attack = random.randint(1, 20)
                 crit = random.randint(1, 20)
                 if crit == 1:
-                    print('artemis miss')
-                    embed = Embed(title='Artemis laughs maniacally.',
-                                  color=self.enemy_miss)
-                    await ctx.send(embed=embed)
+                    embed_msg = 'Artemis laughs maniacally.'
+                    await self.send_embed(channel=channel, msg=embed_msg, color=self.enemy_miss)
                     continue
                 if crit == 2:
-                    print('artemis miss')
-                    embed = Embed(title='Artemis stares deeply into your soul.',
-                                  color=self.enemy_miss)
-                    await ctx.send(embed=embed)
+                    embed_msg = 'Artemis stares deeply into your soul.'
+                    await self.send_embed(channel=channel, msg=embed_msg, color=self.enemy_miss)
                     continue
                 if crit == 20:
-                    print('artemis crit')
                     artemis_attack *= 2
-                    embed = Embed(
-                        description='*Artemis draws energy from the surrounding area for a* **powered up** *attack!*',
-                        color=self.enemy_attack)
-                    await ctx.send(embed=embed)
+                    embed_msg = '*Artemis draws energy from the surrounding area for a* **powered up** *attack!*'
+                await self.send_embed(channel=channel, msg=embed_msg, color=self.enemy_attack)
                 if crit == 10:
-                    print('artemis heals')
-                    embed = Embed(
-                        description='*Artemis ate something* **strange** *and regained some health!*',
-                        color=self.use_item)
-                    await ctx.send(embed=embed)
+                    embed_msg = '*Artemis ate something* **strange** *and regained some health!*'
+                    await self.send_embed(channel=channel, msg=embed_msg, color=self.use_item)
                     data[str(client.user.id)]['hp'] += 50
                     await dump_json('users', data)
                     continue
@@ -164,6 +152,109 @@ class Arena:
         self.raid_is_active = False
         print('A raid has ended!')
 
+    @commands.command()
+    async def duel(self, ctx, *, target: str):
+        # fight another member one on one
+        if len(target) < 3:
+            await ctx.send('Please use at least 3 characters when choosing your target.')
+            return
+        fighters = [ctx.author]
+        author_name = await self.member_name(ctx.author)
+        pattern = re.compile(r'' + re.escape(target.lower()))
+        for member in ctx.guild.members:
+            member_name = await self.member_name(member)
+            matches = [match for match in pattern.finditer(member_name.lower())]
+            for match in matches:
+                def check(m):
+                    return m.author == member and m.channel == ctx.channel
+                bad_duels = [ctx.author, self.client.user]
+                if member in bad_duels:
+                    embed = Embed(description='You cannot duel {}.'.format(member_name),
+                                  color=self.error)
+                    await ctx.send(embed=embed)
+                    return
+
+                embed = Embed(description='{}, {} has challenged you to a duel! \n'
+                                          'To accept, enter `accept` or else enter `deny`.'.format(member.mention, author_name))
+                await ctx.send(embed=embed, delete_after=30)
+
+                msg = await self.client.wait_for('message', check=check, timeout=30)
+                if 'deny' in msg.content:
+                    target_name = await self.member_name(msg.author)
+                    embed = Embed(
+                        title='{} denied the fight!'.format(target_name),
+                        color=self.rpg_info)
+                    await ctx.send(embed=embed, delete_after=5)
+                    return
+
+                if 'accept' in msg.content:
+                    target_name = await self.member_name(msg.author)
+                    embed = Embed(
+                        title='{} accepted the fight!'.format(target_name),
+                        color=self.rpg_info)
+                    await ctx.send(embed=embed, delete_after=5)
+                    fighters.append(msg.author)
+        if len(fighters) > 1:
+            embed = Embed(description='The fight begins!\n'
+                                      'A fighter\'s speed is based on their equipped weight. Light fighters take action more often!')
+            await ctx.send(embed=embed, delete_after=5)
+        print(fighters)
+
+        rpg = await load_json('rpg')
+        turn_counter = 0
+        self.duel_is_active = True
+        while True:
+            print(1)
+            users = await load_json('users')
+            print(2)
+            all_players_alive = all(users[str(fighter.id)]['hp'] > 0 for fighter in fighters)
+            print(3)
+            if all_players_alive:
+                for fighter in fighters:
+                    print(4)
+
+                    def check(m):
+                        return m.author == fighter and m.channel == ctx.channel
+
+                    print(5)
+
+                    fighter_name = await self.member_name(fighter)
+                    equipped_weapon = users[str(fighter.id)]['equipped']['weapon']
+                    equipped_armor = users[str(fighter.id)]['equipped']['armor']
+                    weapon_weight = 0
+                    armor_weight = 0
+                    for wep_type, wep in rpg['weapons'].items():
+                        if equipped_weapon in wep:
+                            weapon_weight = rpg['weapons'][wep_type][equipped_weapon]['weight']
+                    for arm_type, arm in rpg['armor'].items():
+                        if equipped_armor in arm:
+                            armor_weight = rpg['armor'][arm_type][equipped_armor]['weight']
+                    equipped_weight = weapon_weight + armor_weight
+                    if equipped_weight == 0:
+                        equipped_weight = 1
+
+                    if equipped_weight % turn_counter == 0:
+                        fighter_turn = Embed(title='{}\'s turn!'.format(fighter_name))
+                        await ctx.send(embed=fighter_turn)
+                        while True:
+                            action = await self.client.wait_for('message', check=check, timeout=60)
+                            attacks = ['hit', 'kick', 'punch', 'jab', 'headbutt', 'slap', 'stomp', 'atk',
+                                       'shoot', 'poke', 'strike']
+                            if any(attacks) in action.content:
+                                break
+                            elif 'use' in action.content:
+                                break
+                            else:
+                                await ctx.send('Attacks and Items will use your turn')
+                turn_counter += 1
+            else:
+                await ctx.send('The fight is over!')
+                break
+
+    async def fight(self, ctx):
+        # fight a monster solo or with a party
+        pass
+
     @commands.command(aliases=['hit', 'kick', 'punch', 'jab', 'headbutt', 'slap', 'stomp', 'atk',
                                'shoot', 'poke', 'strike'])
     @commands.cooldown(rate=1, per=3, type=BucketType.user)
@@ -185,8 +276,6 @@ class Arena:
         rolls, limit, weapon = await self.get_member_weapon(author)
         user_attack, roll_results = await self.calculate_attack_power(dice=rolls, sides=limit)
         msg, user_attack_with_critical = await self.critical_check(user_attack, author_name)
-        # if user_attack_with_critical == 0:
-        #     return
 
         # if target is artemis
         embed = await self.is_target_artemis(guild, target, user_attack_with_critical)
@@ -195,7 +284,7 @@ class Arena:
             return
 
         # if target is a member
-        embed = await self.is_target_member(guild, target, user_attack_with_critical, msg)
+        embed = await self.is_target_member(ctx, author, guild, target, user_attack_with_critical, msg)
         if embed is not None:
             await ctx.send(embed=embed)
 
@@ -206,12 +295,6 @@ class Arena:
             await self.item_is_potion(ctx, item, target)
 
         if item in rpg['items']['bombs']:
-            pass
-
-    @commands.command()
-    async def cast(self, ctx, spell: str, target: str):
-        rpg = await load_json('rpg')
-        if spell in rpg['spells']:
             pass
 
     async def item_is_potion(self, ctx, item, target):
@@ -233,7 +316,7 @@ class Arena:
                                           color=self.error)
                             await ctx.send(embed=embed)
                         elif data[target_id]['hp'] <= 0:
-                            data[target_id]['hp'] = 100
+                            data[target_id]['hp'] = data[target_id]['max hp']
                             data[str(author.id)]['inventory'][item] -= 1
                             if data[str(author.id)]['inventory'][item] == 0:
                                 data[str(author.id)]['inventory'].pop(item, None)
@@ -267,8 +350,8 @@ class Arena:
                         rolls, limit, modifier = rpg['items']['potions'][item]['effect']
                         hp_gained = sum([random.randint(1, limit) for roll in range(rolls)]) + modifier
                         data[mid]['hp'] += hp_gained
-                        if data[mid]['hp'] > 100:
-                            data[mid]['hp'] = 100
+                        if data[mid]['hp'] > data[mid]['max hp']:
+                            data[mid]['hp'] = data[mid]['max hp']
                         data[str(author.id)]['inventory'][item] -= 1
                         if data[str(author.id)]['inventory'][item] == 0:
                             data[str(author.id)]['inventory'].pop(item, None)
@@ -323,13 +406,22 @@ class Arena:
                     await dump_json('users', data)
                 return None
 
-    async def is_target_member(self, guild, target, roll, msg):
+    async def is_target_member(self, ctx, author, guild, target, roll, msg):
+        if not self.duel_is_active:
+            embed = Embed(description='You cannot attack another person outside of a duel.',
+                          color=self.error)
+            await ctx.send(embed=embed)
+            return
         data = await load_json('users')
         pattern = re.compile(r'' + re.escape(target.lower()))
         for member in guild.members:
             member_name = await self.member_name(member)
             if member.mention == target:
                 mid = str(member.id)
+                if roll == 0:
+                    embed = Embed(description=msg,
+                                  color=self.user_attack)
+                    return embed
                 if data[mid]['hp'] <= 0:
                     data[mid]['hp'] -= roll
                     damage = '{} took {} points of damage!'.format(member_name, roll)
@@ -338,6 +430,7 @@ class Arena:
                                   color=self.user_attack)
                     await dump_json('users', data)
                     return embed
+
                 data[mid]['hp'] -= roll
                 await dump_json('users', data)
                 if data[mid]['hp'] <= 0:
@@ -345,18 +438,26 @@ class Arena:
                     unconscious = '{} has lost consciousness! :dizzy: '.format(member_name)
                     embed = Embed(description='{}\n{}'.format(damage, unconscious),
                                   color=self.user_attack)
+                    exp = data[mid]['level'] * 10
+                    await self.character_level(ctx, author, exp)
                     await dump_json('users', data)
                     return embed
                 else:
                     damage = '{} took {} points of damage!'.format(member_name, roll)
-                    hp_left = '{} has {}/100 HP left!'.format(member_name, data[mid]['hp'])
+                    hp_left = '{} has {}/{} HP left!'.format(member_name, data[mid]['hp'], data[mid]['max hp'])
                     embed = Embed(description='{}\n{}\n{}'.format(msg, damage, hp_left),
                                   color=self.user_attack)
+                    exp = data[mid]['level'] * 5
+                    await self.character_level(ctx, author, exp)
                     await dump_json('users', data)
                     return embed
             matches = pattern.finditer(member_name.lower())
             for match in matches:
                 mid = str(member.id)
+                if roll == 0:
+                    embed = Embed(description=msg,
+                                  color=self.user_attack)
+                    return embed
                 if data[mid]['hp'] <= 0:
                     data[mid]['hp'] -= roll
                     damage = '{} took {} points of damage!'.format(member_name, roll)
@@ -372,14 +473,16 @@ class Arena:
                     unconscious = '{} has lost consciousness! :dizzy: '.format(member_name)
                     embed = Embed(description='{}\n{}'.format(damage, unconscious),
                                   color=self.user_attack)
-                    await dump_json('users', data)
+                    exp = data[mid]['level'] * 10
+                    await self.character_level(ctx, author, exp)
                     return embed
                 else:
                     damage = '{} took {} points of damage!'.format(member_name, roll)
-                    hp_left = '{} has {}/100 HP left!'.format(member_name, data[mid]['hp'])
+                    hp_left = '{} has {}/{} HP left!'.format(member_name, data[mid]['hp'], data[mid]['max hp'])
                     embed = Embed(description='{}\n{}\n{}'.format(msg, damage, hp_left),
                                   color=self.user_attack)
-                    await dump_json('users', data)
+                    exp = data[mid]['level'] * 5
+                    await self.character_level(ctx, author, exp)
                     return embed
         return None
 
@@ -417,6 +520,32 @@ class Arena:
                 rolls = value[weapon]['rolls']
                 limit = value[weapon]['limit']
                 return rolls, limit, weapon
+
+    @staticmethod
+    async def character_level(ctx, member, exp_gain):
+        # give experience to a member after defeating a monster or member
+        data = await load_json('users')
+        data[str(member.id)]['exp'] = data[str(member.id)]['exp'] + int(exp_gain)
+        experience = int(data[str(member.id)]['exp'])
+        lvl_start = data[str(member.id)]['level']
+        lvl_end = int(experience ** (1/4))
+        await dump_json('users', data)
+
+        if lvl_start < lvl_end:
+            hp_gain = random.randint(5, 10) + 2
+            data[str(member.id)]['max hp'] += hp_gain
+            level_up = Embed(description=':arrow_up: {0} reached level {1}!\n'
+                                         '{0} gained {2} HP!'.format(member.name, lvl_end, hp_gain))
+            await ctx.send(embed=level_up)
+            data[str(member.id)]['level'] = lvl_end
+            await dump_json('users', data)
+
+    @staticmethod
+    async def send_embed(channel, msg, color):
+        embed = Embed(
+            description=msg,
+            color=color)
+        await channel.send(embed=embed)
 
     @attack.error
     async def on_message_error(self, ctx, error):
