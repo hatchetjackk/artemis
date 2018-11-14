@@ -10,6 +10,12 @@ class Mod:
     def __init__(self, client):
         self.client = client
 
+    @commands.command()
+    async def emoji(self, ctx):
+        emojis = ctx.guild.emojis
+        for value in emojis:
+            print(value)
+
     @commands.command(aliases=['spam'])
     @commands.has_any_role('mod', 'Moderators', 'moderator', 'moderators')
     async def botspam(self, ctx, *args):
