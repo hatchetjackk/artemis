@@ -226,8 +226,6 @@ class RPG:
         message = ctx.message
         channel = ctx.channel
         client = self.client
-        emojis = ctx.guild.emojis
-        print(emojis)
 
         def check(m):
             return m.author == message.author and m.channel == channel
