@@ -68,7 +68,7 @@ class RPG:
             for member in ctx.guild.members:
                 member_name = await self.member_name(member)
                 matches = pattern.finditer(member_name.lower())
-                for match in matches:
+                for _ in matches:
                     target_name = await self.member_name(member)
                     avatar = member.avatar_url
                     target = member
@@ -460,7 +460,7 @@ class RPG:
 
     @staticmethod
     async def calculate_health_potion(hp_regain):
-        rolls = [random.randint(1, hp_regain[1]) for rolls in range(hp_regain[0])]
+        rolls = [random.randint(1, hp_regain[1]) for _ in range(hp_regain[0])]
         return sum(rolls) + hp_regain[2]
 
     @staticmethod
