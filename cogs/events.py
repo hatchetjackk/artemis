@@ -363,10 +363,23 @@ class Events:
     @commands.command()
     @commands.cooldown(rate=1, per=30, type=BucketType.user)
     async def time(self, ctx):
+        times = {
+            1: ['pst', datetime.now(pytz.timezone('US/Alaska'))],
+            2: ['cst', datetime.now(pytz.timezone('US/Mountain'))],
+            3: ['est', datetime.now(pytz.timezone('US/Eastern'))],
+            4: ['utc', datetime.now(pytz.timezone('GMT'))],
+            5: ['bst', datetime.now(pytz.timezone('Europe/London'))],
+            6: ['cet', datetime.now(pytz.timezone('Europe/Brussels'))],
+            7: ['ist', datetime.now(pytz.timezone('Asia/Calcutta'))],
+            8: ['awst', datetime.now(pytz.timezone('Australia/Perth'))],
+            9: ['acst', datetime.now(pytz.timezone('Australia/Darwin'))],
+            10: ['aest', datetime.now(pytz.timezone('Australia/Brisbane'))],
+            11: ['aedt', datetime.now(pytz.timezone('Australia/Melbourne'))]
+        }
         embed = discord.Embed(
             title='Popular Timezones',
             color=discord.Color.blue())
-        sorted_zones = OrderedDict(sorted(self.tz_dict.items(), key=lambda x: x[0]))
+        sorted_zones = OrderedDict(sorted(times.items(), key=lambda x: x[0]))
         desc = []
         for key, value in sorted_zones.items():
             if int(key) < 4:
