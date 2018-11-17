@@ -164,7 +164,7 @@ class Arena:
         for member in ctx.guild.members:
             member_name = await self.member_name(member)
             matches = [match for match in pattern.finditer(member_name.lower())]
-            for match in matches:
+            for _ in matches:
                 def check(m):
                     return m.author == member and m.channel == ctx.channel
                 bad_duels = [ctx.author, self.client.user]
@@ -309,7 +309,7 @@ class Arena:
                 for member in guild.members:
                     member_name = await self.member_name(member)
                     matches = pattern.finditer(member_name.lower())
-                    for match in matches:
+                    for _ in matches:
                         target_id = str(member.id)
                         if target_id == str(client.user.id):
                             embed = Embed(title='{} cannot be revived this way.'.format(client.user.name),
@@ -339,7 +339,7 @@ class Arena:
             for member in guild.members:
                 member_name = await self.member_name(member)
                 matches = pattern.finditer(member_name.lower())
-                for match in matches:
+                for _ in matches:
                     mid = str(member.id)
                     if mid == str(client.user.id):
                         embed = Embed(title='{} cannot be healed this way.'.format(client.user.name),
@@ -348,7 +348,7 @@ class Arena:
                         return
                     elif data[mid]['hp'] > 0:
                         rolls, limit, modifier = rpg['items']['potions'][item]['effect']
-                        hp_gained = sum([random.randint(1, limit) for roll in range(rolls)]) + modifier
+                        hp_gained = sum([random.randint(1, limit) for _ in range(rolls)]) + modifier
                         data[mid]['hp'] += hp_gained
                         if data[mid]['hp'] > data[mid]['max hp']:
                             data[mid]['hp'] = data[mid]['max hp']
@@ -393,7 +393,7 @@ class Arena:
         for member in guild.members:
             member_name = await self.member_name(member)
             matches = pattern.finditer(member_name.lower())
-            for match in matches:
+            for _ in matches:
                 if member.id == self.client.user.id:
                     if self.artemis_is_vulnerable is False:
                         artemis_react = ['Artemis effortlessly evades the attack.',
@@ -452,7 +452,7 @@ class Arena:
                     await dump_json('users', data)
                     return embed
             matches = pattern.finditer(member_name.lower())
-            for match in matches:
+            for _ in matches:
                 mid = str(member.id)
                 if roll == 0:
                     embed = Embed(description=msg,
@@ -502,7 +502,7 @@ class Arena:
 
     @staticmethod
     async def calculate_attack_power(dice, sides):
-        rolls = [random.randint(1, sides) for roll in range(dice)]
+        rolls = [random.randint(1, sides) for _ in range(dice)]
         total = sum(rolls)
         return total, rolls
 

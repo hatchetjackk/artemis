@@ -5,7 +5,6 @@ import urllib.request
 import urllib.parse
 import discord
 import requests
-import asyncio
 from discord.ext.commands import BucketType, CommandNotFound
 from artemis import load_json, dump_json
 from PyDictionary import PyDictionary
@@ -36,7 +35,7 @@ class Fun:
             for member in ctx.guild.members:
                 if member.game is not None:
                     matches = pattern.findall(member.game.name.lower())
-                    for match in matches:
+                    for _ in matches:
                         x = '{} - {}'.format(member.name, member.game.name)
                         if x in members_playing_game:
                             pass
@@ -76,7 +75,7 @@ class Fun:
             print(e)
             await ctx.send('Please use the format "NdN" when rolling dice. Thanks!')
             return
-        rolls = [random.randint(1, limit) for value in range(rolls)]
+        rolls = [random.randint(1, limit) for _ in range(rolls)]
         result = ', '.join(str(roll) for roll in rolls)
         await ctx.send(result)
 
@@ -144,7 +143,7 @@ class Fun:
         for member in ctx.guild.members:
             member_name = await self.member_name(member)
             matches = pattern.finditer(member_name.lower())
-            for match in matches:
+            for _ in matches:
                 mid = str(member.id)
                 embed.add_field(name=member_name,
                                 value='{}/{} HP'.format(data[mid]['hp'], data[mid]['max hp']))
