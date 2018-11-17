@@ -54,6 +54,13 @@ class Help:
                               'and only reflects that which is updated on the site.\n'
                               '`cmdr hatchet jackk`',
                         inline=False)
+        embed.add_field(name='wanted',
+                        value='When you run into a bad hombre...\n'
+                              'Add CMDRs to or check against the wanted list.\n'
+                              '`wanted` to check the list\n'
+                              '`wanted add <cmdr name>, <reason for being wanted>`\n'
+                              '`wanted remove <cmdr name>`',
+                        inline=False)
 
         await ctx.author.send(embed=embed)
 
@@ -148,7 +155,7 @@ class Help:
                   '**Update existing events with**:\n'
                   '`event update event_id h:m day/mnth/year`\n'
                   '**Delete an event** Only event authors or mods can delete events\n'
-                  '`event delete event_id1 event_id2 ...',
+                  '`event delete event_id1 event_id2 ...`',
             inline=False
         )
         embed.add_field(
