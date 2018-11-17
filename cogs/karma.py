@@ -2,6 +2,7 @@ import discord
 import random
 import json
 import time
+from collections import OrderedDict
 from artemis import load_json, dump_json
 from discord.ext import commands
 
@@ -44,22 +45,37 @@ class Karma:
 
     @commands.command()
     async def leaderboard(self, ctx):
-        # todo order top 10 users from most to least karma
         guild = ctx.guild
-
+        data = await load_json('users')
+        leaderboard = {}
+        for user in data:
+            if str(guild.id) in data[user]['guild']:
+                if 'karma' not in data[user]:
+                    data[user]['karma'] = 0
+                    await dump_json('users', data)
+                points = data[user]['karma']
+                user = guild.get_member(int(user))
+                if user.nick is not None:
+                    leaderboard[user.nick] = points
+                else:
+                    leaderboard[user.name] = points
+        sorted_karma = OrderedDict(reversed(sorted(leaderboard.items(), key=lambda x: x[1])))
+        counter = 1
+        karma_leaderboard = []
+        for key, value in sorted_karma.items():
+            karma_leaderboard.append('{}: {} - {} points'.format(counter, key, value))
+            counter += 1
         embed = discord.Embed(
             title="Karma Leaderboard",
-            description="This is a work in progress",
-            color=discord.Color.blue()
+            color=discord.Color.blue(),
+            description='\n'.join(karma_leaderboard[:10])
         )
-        with open('files/users.json', 'r') as f:
-            users = json.load(f)
-            for user in users:
-                if str(guild.id) in users[user]['guild']:
-                    points = users[user]['karma']
-                    user = guild.get_member(user)
-                    embed.add_field(name=user.name, value=points, inline=False)
         await ctx.send(embed=embed)
+
+        print(karma_leaderboard)
+
+        # embed.add_field(name=user.name, value=points, inline=False)
+        # await ctx.send(embed=embed)
 
     async def on_message(self, message):
         """ Generate karma!
