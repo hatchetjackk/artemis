@@ -2,7 +2,7 @@ import requests
 import json
 import aiohttp
 from bs4 import BeautifulSoup
-from artemis import load_json
+from artemis import load_json, dump_json
 from discord import Embed, Color
 from math import sqrt
 from datetime import datetime
@@ -12,11 +12,95 @@ from discord.ext import commands
 class EliteDangerous:
     def __init__(self, client):
         self.client = client
+        self.wanted_blacklist = ['Knights of Karma']
 
     @staticmethod
     async def fetch(session, url):
         async with session.get(url) as response:
             return await response.text()
+
+    @commands.group()
+    async def wanted(self, ctx):
+        if ctx.invoked_subcommand is None:
+            data = await load_json('guilds')
+            if data[str(ctx.guild.id)]['guild_name'] in self.wanted_blacklist:
+                return
+            else:
+                embed = Embed(title='Wanted CMDRs',
+                              color=Color.orange())
+                for key, value in data[str(ctx.guild.id)]['wanted'].items():
+                    cmdr_name = key
+                    reason = value
+                    pilot_inara_url = await self.get_pilot_information(cmdr_name)
+                    fmt = (reason, pilot_inara_url)
+                    embed.add_field(name=cmdr_name.title(),
+                                    value='Reason: {}\n'
+                                          '{}'.format(*fmt),
+                                    inline=False)
+                await ctx.send(embed=embed)
+
+    @staticmethod
+    async def get_pilot_information(cmdr_name):
+        try:
+            data = await load_json('credentials')
+            inara_api = data['inara']
+            json_data = {
+                "header": {
+                    "appName": "Artemis_Bot",
+                    "appVersion": "0.7",
+                    "isDeveloped": True,
+                    "APIkey": inara_api,
+                    "commanderName": "Hatchet Jackk"
+                },
+                "events": [
+                    {
+                        "eventName": "getCommanderProfile",
+                        "eventTimestamp": str(datetime.utcnow().isoformat()),
+                        "eventData": {
+                            "searchName": cmdr_name
+                        }
+                    }
+                ]
+            }
+            json_string = json.dumps(json_data)
+            url = 'https://inara.cz/inapi/v1/'
+            r = requests.post(url, json_string)
+            pilot_data = list(r.json()['events'])[0]
+            pilot_page = pilot_data['eventData']['inaraURL']
+            if pilot_page is None:
+                return ''
+            return pilot_page
+        except Exception as e:
+            print(e)
+            return ''
+
+    @wanted.group()
+    async def add(self, ctx, *args):
+        args = ' '.join(args).split(',')
+        wanted_cmdr = args[0]
+        reason = args[1].strip()
+        data = await load_json('guilds')
+        if data[str(ctx.guild.id)]['guild_name'] == any(self.wanted_blacklist):
+            return
+        if 'wanted' not in data[str(ctx.guild.id)]:
+            data[str(ctx.guild.id)]['wanted'] = {}
+        data[str(ctx.guild.id)]['wanted'].update({wanted_cmdr.lower(): reason})
+        await dump_json('guilds', data)
+        embed = Embed(title='{} added to WANTED list'.format(wanted_cmdr.title()),
+                      color=Color.red())
+        await ctx.send(embed=embed)
+
+    @wanted.group()
+    async def remove(self, ctx, *, wanted_cmdr: str):
+        data = await load_json('guilds')
+        if data[str(ctx.guild.id)]['guild_name'] == any(self.wanted_blacklist):
+            return
+        if wanted_cmdr.lower() in data[str(ctx.guild.id)]['wanted']:
+            data[str(ctx.guild.id)]['wanted'].pop(wanted_cmdr)
+            await dump_json('guilds', data)
+            embed = Embed(title='{} removed from WANTED list'.format(wanted_cmdr.title()),
+                          color=Color.orange())
+            await ctx.send(embed=embed)
 
     @commands.command()
     async def faction(self, ctx, *args):
