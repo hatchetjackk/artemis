@@ -55,7 +55,7 @@ async def dump_json(f, data):
         json.dump(data, g, indent=2)
 
 if __name__ == '__main__':
-    for extension in [f.replace('.py', '') for f in os.listdir('cogs/') if f != '__init__' and f != '__pycache__']:
+    for extension in [f.replace('.py', '') for f in os.listdir('cogs/') if f != '__init__.py' and f != '__pycache__']:
         try:
             client.load_extension('cogs.' + extension)
         except Exception as error:
