@@ -109,14 +109,15 @@ class Karma:
                     thanked_members.append(member)
             else:
                 for word in msg:
-                    pattern = re.compile(r'' + re.escape(word))
-                    if member.nick is not None:
-                        matches = pattern.findall(member.nick.lower())
-                    else:
-                        matches = pattern.findall(member.name.lower())
-                    for _ in matches:
-                        if member not in thanked_members:
-                            thanked_members.append(member)
+                    if len(word) > 3:
+                        pattern = re.compile(r'' + re.escape(word))
+                        if member.nick is not None:
+                            matches = pattern.findall(member.nick.lower())
+                        else:
+                            matches = pattern.findall(member.name.lower())
+                        for _ in matches:
+                            if member not in thanked_members:
+                                thanked_members.append(member)
         for member in thanked_members:
             mid = str(member.id)
             # format member name
