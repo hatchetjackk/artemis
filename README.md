@@ -1,11 +1,27 @@
 # ARTEMIS
-Discord Bot written in Python
+Discord Bot written in Python\
+Artemis is a multi-function Discord Bot originally created from inspiration to 
+reward members with a point system for performing helpful tasks in my college's
+Discord server. From there it grew into an experiment to push my programming
+skills from fundamental to professional.\
+Artemis includes these capabilities:
+- Google and Youtube searches `!google dogs` `!youtube cat videos`
+- Word definitions `!define python`
+- Event generation and reminders `!event add 11:00 25/12 It's Christmas!`
+- Rich embed generation
+- Point system `thanks <user>`
+- An RPG system [*work in progress*]
+- Elite Dangerous functionality `!cmdr hatchet jackk` `!system qa'wakana`
+- Auto moderation
 
 ## Author
-Hatchet Jackk
+Rob Marshall (Hatchet Jackk)
 
 ### Special Thanks
-Lyxavier for design ideas, pictures, and beta testing
+Lyxavier for design ideas, pictures, and beta testing\
+Roudybeest for testing\
+Garud and Blood Drunk for inspiring me to make my own bot\
+Jorer for abusing Artemis to expose every possible problem that could exist
 
 # License
 Copyright 2018 
