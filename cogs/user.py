@@ -1,186 +1,102 @@
-import discord
-import random
-import urllib.request
-import urllib.parse
-import re
+from artemis import load_json, dump_json
 from discord.ext import commands
-from datetime import datetime, timedelta
 
 
 class User:
     def __init__(self, client):
         self.client = client
 
-    @commands.command()
-    async def afk(self):
-        # set status to away with a message to respond to users that mention the afk user
-        # return from afk when sending a message
-        pass
+    async def on_member_join(self, member):
+        await self.create_user(member)
 
-    @commands.command()
-    async def flip(self, ctx):
-        # return heads or tails
-        choice = ['Heads!', 'Tails!']
-        coin = random.choice(choice)
-        print('{0} flipped a coin.'.format(ctx.author.name))
-        await ctx.send(coin)
-
-    @commands.command()
-    async def image(self):
-        # pull the first image from a google search
-        pass
-
-    @commands.command()
-    async def rps(self, ctx, *args):
-        rps = ['rock', 'paper', 'scissors']
-        lose = {'rock': 'paper', 'paper': 'scissors', 'scissors': 'rock'}
-        win = {'paper': 'rock', 'rock': 'scissors', 'scissors': 'paper'}
-
-        # check for valid entry
-        if len(args) < 1:
-            await ctx.send('You didn\'t say what you picked!')
+    async def on_message(self, message):
+        if message.author.id == self.client.user.id:
             return
-        if len(args) > 1:
-            await ctx.send(
-                "It's Rock, Paper, Scissors not Rock, Paper, \"*Whateverthehellyouwant*.\" :joy:")
-            return
-        if args[0] not in rps:
-            await ctx.send('That\'s not a valid choice.')
-            return
-
-        bot_choice = random.choice(rps)
-        user_choice = args[0]
-        # check choice against bot
-        if bot_choice == user_choice:
-            await ctx.send('Artemis chose {0}! It\'s a tie!'.format(bot_choice))
-            print('{0} played rock, paper, scissors and tied with Artemis.'.format(ctx.author.name))
-        if user_choice == lose.get(bot_choice):
-            await ctx.send('Artemis chose {0}! You lost!'.format(bot_choice))
-            print('{0} played rock, paper, scissors and lost to Artemis.'.format(ctx.author.name))
-        if user_choice == win.get(bot_choice):
-            await ctx.send('Artemis chose {0}! You win!'.format(bot_choice))
-            print('{0} played rock, paper, scissors and beat Artemis!'.format(ctx.author.name))
-
-    @commands.command()
-    async def whois(self, ctx, *args):
-        try:
-            user = ctx.guild.get_member_named(' '.join(args))
-            for member in ctx.guild.members:
-                if member.mention in ' '.join(args):
-                    user = member
-            embed = discord.Embed(title=user.name, color=discord.Color.blue())
-            embed.set_thumbnail(url=user.avatar_url)
-            created = user.created_at.strftime('%H:%M UTC - %B %d, %Y')
-
-            # calculate lifetime as a user
-            lifetime = datetime.utcnow() - user.created_at
-            days = lifetime.days
-            years, days = divmod(days, 365)
-            hours, remainder = divmod(lifetime.seconds, 3600)
-            minutes, seconds = divmod(remainder, 60)
-            embed.add_field(name='User Since',
-                            value='{} \n'
-                                  'Lifetime: {} years, {} days, {} minutes, {} seconds'.format(created, years, days, hours, minutes, seconds),
-                            inline=False)
-
-            joined = user.joined_at.strftime('%H:%M UTC - %B %d, %Y')
-            lifetime = datetime.utcnow() - user.joined_at
-            days = lifetime.days
-            years, days = divmod(days, 365)
-            hours, remainder = divmod(lifetime.seconds, 3600)
-            minutes, seconds = divmod(remainder, 60)
-            embed.add_field(name='Joined',
-                            value='{} \n'
-                                  'Lifetime: {} years, {} days, {} minutes, {} seconds'.format(joined, years, days, hours, minutes, seconds),
-                            inline=False)
-
-            role_list = [role.name for role in user.roles if role.name != '@everyone']
-            embed.add_field(name='Roles',
-                            value=', '.join(role_list))
-            await ctx.send(embed=embed)
-        except AttributeError as e:
-            print(e)
-            await ctx.send('User not found. Double check your spelling.')
-
-    @commands.command(aliases=['yt'])
-    async def youtube(self, ctx, *args):
-        query_string = urllib.parse.urlencode({"search_query": ' '.join(args)})
-        html_content = urllib.request.urlopen("http://www.youtube.com/results?" + query_string)
-        search_results = re.findall(r'href=\"\/watch\?v=(.{11})', html_content.read().decode())
-
-        await ctx.send("http://www.youtube.com/watch?v=" + search_results[0])
-        print('{0} searched Youtube for "{1}".'.format(ctx.author.name, ' '.join(args)))
-
-    @commands.command()
-    async def card(self, ctx):
-        """ draw a random card from a deck """
-        card = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 'Ace', 'King', 'Queen', 'Jack']
-        style = ['Spades', 'Hearts', 'Clubs', 'Diamonds']
-
-        rcard = random.choice(card)
-        rstyle = random.choice(style)
-
-        fmt = 'You drew the {0} of {1}!'
-        if ctx.author.id == '193416878717140992':
-            card = ['Ace']
-            style = ['Hearts']
-            rcard = random.choice(card)
-            rstyle = random.choice(style)
-            if rcard == 'Ace':
-                if rstyle == 'Spades':
-                    await self.spades(ctx)
-                if rstyle == 'Diamonds':
-                    await self.diamonds(ctx)
-                if rstyle == 'Clubs':
-                    await self.clubs(ctx)
-                if rstyle == 'Hearts':
-                    await self.hearts(ctx)
-                return
-        await ctx.send(fmt.format(rcard, rstyle))
-        print('{0} drew the {1} of {2}.'.format(ctx.author.name, rcard, rstyle))
+        if not message.content.startswith('!'):
+            await self.update_users(message)
 
     @staticmethod
-    async def spades(ctx):
-        await ctx.send('***IT\'S THE ACE OF SPADES! THE ACE OF SPADES!!!***')
+    async def update_users(message):
+        try:
+            guild = message.guild
+            gid = str(guild.id)
+            data_users = await load_json('users')
 
-    async def diamonds(self, ctx):
-        """ Move user to the Sparkle, Sparkle role """
-        await ctx.send(':sparkles: *Sparkle, Sparkle! *:sparkles: ')
-        await discord.Member.add_roles(
-            self.client,
-            ctx.author,
-            discord.utils.get(
-                ctx.guild.roles,
-                name='Sparkle, Sparkle!')
-        )
+            for member in message.guild.members:
+                mid = str(member.id)
+                if mid not in data_users:
+                    data_users[mid] = {
+                        'username': member.name,
+                        'guild': {},
+                    }
+                if 'level' not in data_users[mid]:
+                    data_users[mid]['level'] = 1
+                # if 'exp' not in data_users[mid]:
+                #     data_users[mid]['exp'] = 0
+                if 'alignment' not in data_users[mid]:
+                    data_users[mid]['alignment'] = 'Unaligned'
+                if 'race' not in data_users[mid]:
+                    data_users[mid]['race'] = 'Human'
+                if 'description' not in data_users[mid]:
+                    data_users[mid]['description'] = None
+                if 'hp' not in data_users[mid]:
+                    data_users[mid]['hp'] = 10
+                    data_users[mid]['max hp'] = 10
+                if 'inventory' not in data_users[mid]:
+                    data_users[mid].update({'inventory': {
+                        'gold': 10,
+                        'healing': 5,
+                        'revive': 2
+                    }})
+                if 'equipped' not in data_users[mid]:
+                    data_users[mid].update({'equipped': {
+                        'weapon': None,
+                        'armor': None,
+                        'acc.': None}
+                    })
+                data_users[mid].update({'username': member.name})
+                data_users[mid]['guild'].update({gid: {guild.name: member.nick}})
+            await dump_json('users', data_users)
 
-    async def clubs(self, ctx):
-        """ send a channel invite to the user then kick them! """
-        await ctx.send('You\'ve activated my trap card!')
+        except Exception as e:
+            print(e)
+            raise
 
-        # send invite link before kick
-        link = await self.client.create_invite(destination=ctx.channel)
-        fmt = 'You activated my trap card!\n{0}'.format(link)
-        await ctx.author.send(fmt)
+    @staticmethod
+    async def create_user(member):
+        try:
+            guild = member.guild
+            gid = str(guild.id)
+            mid = str(member.id)
+            data_users = await load_json('users')
+            if mid not in data_users:
+                data_users[member.id] = {
+                    'username': member.name,
+                    'guild': {},
+                }
+            if gid not in data_users[str(member.id)]['guild']:
+                data_users[str(member.id)]['guild'].update({gid: guild.name})
+            if 'health' not in data_users[mid]:
+                data_users[mid]['health'].update({'hp': 100, 'mp': 100})
+            if 'inventory' not in data_users[mid]:
+                data_users[mid]['inventory'].update({})
+            if 'equipped' not in data_users[mid]:
+                data_users[mid]['equipped'].update({'weapon': None,
+                                                    'armor': None,
+                                                    'Acc.': None})
+            await dump_json('users', data_users)
+        except KeyError as e:
+            print('KeyError: {} when creating user. {}'.format(str(member.id), e))
 
-        # don't kick the owner
-        if ctx.author.id == '193416878717140992':
-            await ctx.send('I can\'t kick the owner!')
-            return
-        # kick!
-        await discord.Member.kick(self.client, member=ctx.author)
-
-    async def hearts(self, ctx):
-        # todo fix member call
-        await ctx.send(':sparkling_heart: :kissing_heart: :two_hearts: ')
-        await self.client.change_nickname(
-            ctx.author, '💖_{0}_💖'.format(
-                discord.utils.get(
-                    ctx.guild.members,
-                    name='testie')
-            )
-        )
-        # await discord.Client.change_nickname(self.client, ctx.author, nickname='💖 {0} 💖'.format(ctx.author.name))
+    @staticmethod
+    async def on_message_error(ctx, error):
+        if isinstance(error, commands.CommandOnCooldown):
+            msg = ':sob: You\'ve triggered a cool down. Please try again in {} sec.'.format(
+                int(error.retry_after))
+            await ctx.send(msg)
+        if isinstance(error, commands.CheckFailure):
+            msg = 'You do not have permission to run this command.'
+            await ctx.send(msg)
 
 
 def setup(client):

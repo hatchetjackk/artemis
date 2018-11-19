@@ -1,5 +1,8 @@
 import json
-from datetime import datetime
+import random
+import discord
+from discord.ext.commands import CommandNotFound
+from artemis import load_json, dump_json
 from discord.ext import commands
 
 
@@ -7,42 +10,48 @@ class Mod:
     def __init__(self, client):
         self.client = client
 
-    # owner command
     @commands.command()
-    async def log(self, ctx):
-        author = ctx.author
-        channel = ctx.channel
+    async def emoji(self, ctx):
+        emojis = ctx.guild.emojis
+        for value in emojis:
+            print(value)
 
-        if author.id == "193416878717140992":
-            counter = 0
-            tmp = await ctx.send("Calculating messages...")
-            async for log in self.client.logs_from(channel, limit=100):
-                if log.author == author:
-                    counter += 1
-            await self.client.edit_message(tmp, "You have {0} messages.".format(counter))
-        else:
-            await ctx.send("You do not have permission to do that.")
-            return
+    @commands.command(aliases=['spam'])
+    @commands.has_any_role('mod', 'Moderators', 'moderator', 'moderators')
+    async def botspam(self, ctx, *args):
+        try:
+            guild = ctx.guild
+            gid = str(guild.id)
 
-    @commands.command()
-    @commands.has_role('mod')
-    async def test(self, ctx):
-        author = ctx.author
+            data = await load_json('guilds')
+            if len(args) < 1 or len(args) > 1:
+                await ctx.send('Please use `spamchannel channel_name`.')
+            if args[0] not in [channel.name for channel in ctx.guild.channels]:
+                await ctx.send('{} is not a channel.'.format(args[0]))
+                return
+            spam = discord.utils.get(guild.channels, name=args[0])
+            data[gid]['spam'] = spam.id
+            await dump_json('guilds', data)
+            msg = '{0} changed the botspam channel. It is now {1.mention}'.format(ctx.message.author.name, spam)
+            await self.spam(ctx, msg)
+        except Exception as e:
+            print(e)
+            raise
+
+    async def spam(self, ctx, message):
         guild = ctx.guild
-        channels = [channel.name for channel in guild.channels]
-        roles = [role.name for role in guild.roles if role.name != '@everyone']
+        gid = str(guild.id)
 
-        await ctx.send('Printing test\n'
-                       'Author: {}\n'
-                       'Guild: {}\n'
-                       'Channels: {}\n'
-                       'Roles: {}\n'
-                       'Time: {}'.format(author.name,
-                                         guild,
-                                         channels,
-                                         roles,
-                                         datetime.utcnow())
-                       )
+        data = await load_json('guilds')
+        if gid in data:
+            if data[gid]['spam'] is not None:
+                embed = discord.Embed(color=discord.Color.blue())
+                embed.add_field(
+                    name='Alert',
+                    value=message
+                )
+                channel = self.client.get_channel(data[gid]['spam'])
+                await channel.send(embed=embed)
 
     # owner command
     @commands.command()
@@ -102,6 +111,14 @@ class Mod:
             json.dump(data, f, indent=2)
         await ctx.send('Changed guild prefix to {}'.format(prefix))
 
+    @staticmethod
+    async def on_command_error(ctx, error):
+        if isinstance(error, CommandNotFound):
+            with open('files/status.json') as f:
+                data = json.load(f)
+            msg = data['bot']['error_response']
+            await ctx.send(random.choice(msg))
+
     @prefix.error
     async def on_message_error(self, ctx, error):
         if isinstance(error, commands.CommandOnCooldown):
@@ -111,9 +128,6 @@ class Mod:
         if isinstance(error, commands.CheckFailure):
             msg = 'You do not have permission to run this command.'
             await ctx.send(msg)
-
-    # async def artemis(self, ctx):
-    #     # talk about the bot
 
 
 def setup(client):

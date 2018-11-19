@@ -1,6 +1,4 @@
-import typing
 import discord
-# import logging
 import json
 from discord.ext import commands
 
@@ -8,6 +6,7 @@ from discord.ext import commands
 class Automod:
     def __init__(self, client):
         self.client = client
+        self.auto_mod_blacklist = ['Knights of Karma', 'Aurora Corporation']
 
     @commands.group()
     @commands.has_any_role('Moderator', 'mod', 'admin', 'Admin')
@@ -18,6 +17,8 @@ class Automod:
     @modrole.group()
     async def add(self, ctx, role: str):
         guild = ctx.guild
+        if guild.name in self.auto_mod_blacklist:
+            return
         gid = str(guild.id)
         role = discord.utils.get(ctx.guild.roles, name=role)
         data = await self.load_guilds()
@@ -28,6 +29,8 @@ class Automod:
     @modrole.group()
     async def remove(self, ctx, role: str):
         guild = ctx.guild
+        if guild.name in self.auto_mod_blacklist:
+            return
         gid = str(guild.id)
         role = discord.utils.get(ctx.guild.roles, name=role)
         data = await self.load_guilds()
@@ -75,27 +78,27 @@ class Automod:
             print(e)
             raise
 
-    @commands.command(aliases=['spam'])
-    @commands.has_any_role('mod', 'Moderator')
-    async def botspam(self, ctx, *args):
-        try:
-            guild = ctx.guild
-            gid = str(guild.id)
-
-            data = await self.load_guilds()
-            if len(args) < 1 or len(args) > 1:
-                await ctx.send('Please use `spamchannel channel_name`.')
-            if args[0] not in [channel.name for channel in ctx.guild.channels]:
-                await ctx.send('{} is not a channel.'.format(args[0]))
-                return
-            spam = discord.utils.get(guild.channels, name=args[0])
-            data[gid]['spam'] = spam.id
-            await self.dump_guilds(data)
-            msg = '{0} changed the botspam channel. It is now {1.mention}'.format(ctx.message.author.name, spam)
-            await self.spam(ctx, msg)
-        except Exception as e:
-            print(e)
-            raise
+    # @commands.command(aliases=['spam'])
+    # @commands.has_any_role('mod', 'Moderator')
+    # async def botspam(self, ctx, *args):
+    #     try:
+    #         guild = ctx.guild
+    #         gid = str(guild.id)
+    #
+    #         data = await self.load_guilds()
+    #         if len(args) < 1 or len(args) > 1:
+    #             await ctx.send('Please use `spamchannel channel_name`.')
+    #         if args[0] not in [channel.name for channel in ctx.guild.channels]:
+    #             await ctx.send('{} is not a channel.'.format(args[0]))
+    #             return
+    #         spam = discord.utils.get(guild.channels, name=args[0])
+    #         data[gid]['spam'] = spam.id
+    #         await self.dump_guilds(data)
+    #         msg = '{0} changed the botspam channel. It is now {1.mention}'.format(ctx.message.author.name, spam)
+    #         await self.spam(ctx, msg)
+    #     except Exception as e:
+    #         print(e)
+    #         raise
 
     @commands.command()
     @commands.has_any_role('Moderator', 'mod')
@@ -161,8 +164,8 @@ class Automod:
                 await channel.send(embed=embed)
 
     async def on_message_edit(self, before, after):
-        # if 'http' in before.content:
-        #     return
+        if before.guild.name in self.auto_mod_blacklist:
+            return
         if before.author.bot:
             return
         try:
@@ -266,7 +269,7 @@ class Automod:
                 await channel.send(embed=embed)
 
     @autorole.error
-    @botspam.error
+    # @botspam.error
     @clear.error
     async def on_message_error(self, ctx, error):
         if isinstance(error, commands.CommandOnCooldown):

@@ -8,7 +8,7 @@ class RichEmbed:
 
     def __init__(self, client):
         self.client = client
-        self.client_color = 000000
+        self.client_color = Color.red()
         self.color_dict = {
             1: [Color.teal(), 'teal'],
             2: [Color.dark_teal(), 'dark_teal'],
@@ -32,7 +32,7 @@ class RichEmbed:
             20: [Color.darker_grey(), 'darker_grey']
         }
 
-    @commands.group()
+    @commands.group(aliases=['colours', 'color', 'colour'])
     async def colors(self, ctx):
         if ctx.invoked_subcommand is None:
             embed = Embed(colors=Color.blue())
@@ -58,20 +58,23 @@ class RichEmbed:
         if ctx.invoked_subcommand is None:
             await ctx.send('Invoke `richembed` with `get`, `pasta`, or `example`.')
 
-    @richembed.group()
+    @richembed.group(aliases=['wiz', 'w'])
     async def wizard(self, ctx):
         message = ctx.message
         channel = ctx.channel
 
-        footer_text = None
-        color = discord.Color.blue()
-
         def check(m):
             return m.author == message.author and m.channel == channel
 
-        tut_embed = await self.tut_embed('Pick a color for the embed (ie dark_blue):')
+        tut_embed = await self.tut_embed('Pick a color for the embed (ie dark_blue).\n'
+                                         'Use `colors` for a full list of presets.')
         await ctx.send(embed=tut_embed)
         msg = await self.client.wait_for('message', check=check)
+        await channel.purge(limit=2)
+
+        color = discord.Color.blue()
+        if len(msg.content) == 7:
+            color = int(msg.content)
         for key, value in self.color_dict.items():
             if msg.content == value[1]:
                 color = value[0]
@@ -80,11 +83,13 @@ class RichEmbed:
         await ctx.send(embed=tut_embed)
         msg = await self.client.wait_for('message', check=check)
         title = msg.content
+        await channel.purge(limit=2)
 
         tut_embed = await self.tut_embed('Set your description. To skip this enter "None": ')
         await ctx.send(embed=tut_embed)
         msg = await self.client.wait_for('message', check=check)
         description = msg.content
+        await channel.purge(limit=2)
 
         embed = discord.Embed(title=title, color=color)
         if description.lower() != 'none':
@@ -92,43 +97,48 @@ class RichEmbed:
 
         while True:
 
-            tut_embed = await self.tut_embed('Pick an option: field, footer, quit')
+            tut_embed = await self.tut_embed('Pick an option: \n> field \n> footer \n> quit')
             await ctx.send(embed=tut_embed)
             msg = await self.client.wait_for('message', check=check)
+            await channel.purge(limit=2)
 
-            if msg.content == 'quit':
+            quit_list = ['quit', 'q']
+            if msg.content in quit_list:
                 tut_embed = await self.tut_embed('Generating embed...')
-                await ctx.send(embed=tut_embed)
+                await ctx.send(embed=tut_embed, delete_after=2)
                 break
 
-            elif msg.content == 'field':
+            if msg.content == 'field':
                 tut_embed = await self.tut_embed('Set the field name')
                 await ctx.send(embed=tut_embed)
                 msg = await self.client.wait_for('message', check=check)
                 field_name = msg.content
+                await channel.purge(limit=2)
 
                 tut_embed = await self.tut_embed('Set the field value')
                 await ctx.send(embed=tut_embed)
                 msg = await self.client.wait_for('message', check=check)
                 field_value = msg.content
+                await channel.purge(limit=2)
 
+                yes_list = ['yes', 'y']
                 tut_embed = await self.tut_embed('Make inline? [yes/no] ')
                 await ctx.send(embed=tut_embed)
                 msg = await self.client.wait_for('message', check=check)
                 inline_format = False
-                if msg.content == 'yes':
+                if msg.content.lower() in yes_list:
                     inline_format = True
-
                 embed.add_field(name=field_name, value=field_value, inline=inline_format)
+                await channel.purge(limit=2)
 
-            elif msg.content == 'footer':
+            footer_list = ['footer', 'foot', 'f']
+            if msg.content in footer_list:
                 tut_embed = await self.tut_embed('Set the footer text:')
                 await ctx.send(embed=tut_embed)
                 msg = await self.client.wait_for('message', check=check)
-                footer_text = msg.content
+                embed.set_footer(text=msg.content)
+                await channel.purge(limit=2)
 
-        if footer_text is not None:
-            embed.set_footer(text=footer_text)
         await ctx.send(embed=embed)
 
     @richembed.group()
@@ -139,15 +149,19 @@ class RichEmbed:
 
     @richembed.group()
     async def pasta(self, ctx, *args):
-        msg = ' '.join(args)
-        # format for json
-        msg = msg.replace('True', 'true')
-        msg = msg.replace('False', 'false')
-        msg = msg.replace('None', 'null')
-        msg = msg.replace('\'', '"')
-        d = json.loads(msg)
-        embed = Embed.from_data(d)
-        await ctx.send(embed=embed)
+        try:
+            msg = ' '.join(args)
+            # format for json
+            msg = msg.replace('True', 'true')
+            msg = msg.replace('False', 'false')
+            msg = msg.replace('None', 'null')
+            msg = msg.replace('\'', '"')
+            d = json.loads(msg)
+            embed = Embed.from_data(d)
+            await ctx.send(embed=embed)
+        except Exception as e:
+            print(e)
+            raise
 
     @richembed.group()
     async def example(self, ctx):
@@ -181,19 +195,20 @@ class RichEmbed:
         )
         await ctx.send(embed=embed)
 
-    async def on_message(self, message):
-        channel = message.channel
-        embed = Embed(color=self.client_color)
-        # quick embeds!
-        if message.content.startswith('>'):
-            lines = message.content.split('\n')
-            line1 = lines[0]
-            title = line1[1:]
-            line2 = ' '.join(lines[1:])
-            value = line2[1:].split('\n')
-            embed.add_field(name=title, value=' '.join(value), inline=False)
-            # embed.set_author(name=message.author.name, icon_url=message.author.avatar_url)
-            await channel.send(embed=embed)
+    # async def on_message(self, message):
+    #     channel = message.channel
+    #
+    #     # quick embeds!
+    #     if message.content.startswith('>') and message.author.id != 148213829061443584:
+    #         try:
+    #             lines = [line[1:] for line in message.content.split('\n')]
+    #             embed = Embed(color=self.client_color, description='\n'.join(lines))
+    #             embed.set_footer(text='{}'.format(message.author.name))
+    #             await message.channel.purge(limit=1)
+    #             await channel.send(embed=embed)
+    #         except Exception as e:
+    #             print(e)
+    #             pass
 
     @staticmethod
     async def tut_embed(description):
@@ -203,8 +218,8 @@ class RichEmbed:
             color=discord.Color.blue())
         return tut_embed
 
-    @staticmethod
-    async def on_message_error(ctx, error):
+    @richembed.error
+    async def on_message_error(self, ctx, error):
         if isinstance(error, commands.CommandOnCooldown):
             msg = ':sob: You\'ve triggered a cool down. Please try again in {} sec.'.format(
                 int(error.retry_after))
@@ -212,6 +227,7 @@ class RichEmbed:
         if isinstance(error, commands.CheckFailure):
             msg = 'You do not have permission to run this command.'
             await ctx.send(msg)
+        print(error)
 
 
 def setup(client):
