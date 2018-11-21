@@ -1,4 +1,4 @@
-from artemis import load_json, dump_json
+from artemis import load_db
 from discord.ext import commands
 
 
@@ -17,76 +17,89 @@ class User:
 
     @staticmethod
     async def update_users(message):
+        # add: levels, exp, alignment, race, description, hp, char inventory, char equipped
+        conn = await load_db()
+        c = conn.cursor()
         try:
-            guild = message.guild
-            gid = str(guild.id)
-            data_users = await load_json('users')
-
-            for member in message.guild.members:
-                mid = str(member.id)
-                if mid not in data_users:
-                    data_users[mid] = {
-                        'username': member.name,
-                        'guild': {},
-                    }
-                if 'level' not in data_users[mid]:
-                    data_users[mid]['level'] = 1
-                # if 'exp' not in data_users[mid]:
-                #     data_users[mid]['exp'] = 0
-                if 'alignment' not in data_users[mid]:
-                    data_users[mid]['alignment'] = 'Unaligned'
-                if 'race' not in data_users[mid]:
-                    data_users[mid]['race'] = 'Human'
-                if 'description' not in data_users[mid]:
-                    data_users[mid]['description'] = None
-                if 'hp' not in data_users[mid]:
-                    data_users[mid]['hp'] = 10
-                    data_users[mid]['max hp'] = 10
-                if 'inventory' not in data_users[mid]:
-                    data_users[mid].update({'inventory': {
-                        'gold': 10,
-                        'healing': 5,
-                        'revive': 2
-                    }})
-                if 'equipped' not in data_users[mid]:
-                    data_users[mid].update({'equipped': {
-                        'weapon': None,
-                        'armor': None,
-                        'acc.': None}
-                    })
-                data_users[mid].update({'username': member.name})
-                data_users[mid]['guild'].update({gid: {guild.name: member.nick}})
-            await dump_json('users', data_users)
-
+            with conn:
+                c.execute(
+                    """CREATE TABLE IF NOT EXISTS members (
+                        id INTEGER, 
+                        member_name TEXT, 
+                        karma INTEGER,
+                        UNIQUE(id, member_name)
+                        )"""
+                )
+                c.execute(
+                    """CREATE TABLE IF NOT EXISTS guild_members (
+                        id INTEGER, 
+                        guild TEXT, 
+                        member_id INTEGER, 
+                        member_name TEXT, 
+                        member_nick TEXT, 
+                        UNIQUE(id, guild, member_id)
+                        )"""
+                )
+                c.execute(
+                    """CREATE TABLE IF NOT EXISTS guilds (
+                        id INTEGER UNIQUE, 
+                        guild TEXT, 
+                        mod_role TEXT,
+                        autorole TEXT 
+                        prefix TEXT, 
+                        spam INTEGER
+                        )"""
+                )
         except Exception as e:
-            print(e)
-            raise
+            # print(e)
+            pass
+
+        for member in message.guild.members:
+            try:
+                with conn:
+                    c.execute("INSERT INTO members VALUES (:id, :member_name, :karma)",
+                              {'id': member.id, 'member_name': member.name, 'karma': 0})
+            except Exception as e:
+                # print(e)
+                pass
+            try:
+                with conn:
+                    c.execute("INSERT INTO guild_members VALUES (:id, :guild, :member_id, :member_name, :member_nick)",
+                              {'id': message.guild.id, 'guild': message.guild.name, 'member_id': member.id,
+                               'member_name': member.name, 'member_nick': member.nick})
+            except Exception as e:
+                # print(e)
+                pass
+            try:
+                with conn:
+                    c.execute("INSERT INTO guilds VALUES (:id, :guild, :mod_role, :autorole, :prefix, :spam)",
+                              {'id': message.guild.id, 'guild': message.guild.name, 'mod_role': None,
+                               'autorole': None, 'prefix': '!', 'spam': None})
+            except Exception as e:
+                # print(e)
+                pass
 
     @staticmethod
     async def create_user(member):
-        try:
-            guild = member.guild
-            gid = str(guild.id)
-            mid = str(member.id)
-            data_users = await load_json('users')
-            if mid not in data_users:
-                data_users[member.id] = {
-                    'username': member.name,
-                    'guild': {},
-                }
-            if gid not in data_users[str(member.id)]['guild']:
-                data_users[str(member.id)]['guild'].update({gid: guild.name})
-            if 'health' not in data_users[mid]:
-                data_users[mid]['health'].update({'hp': 100, 'mp': 100})
-            if 'inventory' not in data_users[mid]:
-                data_users[mid]['inventory'].update({})
-            if 'equipped' not in data_users[mid]:
-                data_users[mid]['equipped'].update({'weapon': None,
-                                                    'armor': None,
-                                                    'Acc.': None})
-            await dump_json('users', data_users)
-        except KeyError as e:
-            print('KeyError: {} when creating user. {}'.format(str(member.id), e))
+        # add: levels, exp, alignment, race, description, hp, char inventory, char equipped
+        conn = await load_db()
+        c = conn.cursor()
+        with conn:
+            try:
+                with conn:
+                    c.execute("INSERT INTO members VALUES (:id, :member_name, :karma)",
+                              {'id': member.id, 'member_name': member.name, 'karma': 0})
+            except Exception as e:
+                print(e)
+                pass
+            try:
+                with conn:
+                    c.execute("INSERT INTO guilds VALUES (:id, :guild, :member_id, :member_name, :member_nick)",
+                              {'id': member.guild.id, 'guild': member.guild.name, 'member_id': member.id,
+                               'member_name': member.name, 'member_nick': member.nick})
+            except Exception as e:
+                print(e)
+                pass
 
     @staticmethod
     async def on_message_error(ctx, error):
