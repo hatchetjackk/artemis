@@ -80,3 +80,5 @@ files/moderation\.json
 status\.json
 
 files/guilds\.json
+
+files/transfer\.py
