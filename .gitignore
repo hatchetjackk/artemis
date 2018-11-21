@@ -82,3 +82,5 @@ status\.json
 files/guilds\.json
 
 files/transfer\.py
+
+files/artemis\.db
