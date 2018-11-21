@@ -3,6 +3,7 @@ import os
 import discord
 import json
 import datetime
+import sqlite3
 # import traceback
 import logging
 from discord.ext import commands
@@ -19,9 +20,12 @@ logging.info('Starting')
 
 
 async def prefix(bot, message):
-    data = await load_json('guilds')
-    gid = str(message.guild.id)
-    return data[gid]['prefix']
+    conn = await load_db()
+    c = conn.cursor()
+    with conn:
+        c.execute("SELECT prefix FROM guilds WHERE id = (?)", (message.guild.id,))
+        bot_prefix = c.fetchone()[0]
+    return bot_prefix
 
 client = commands.Bot(command_prefix=prefix)
 client.remove_command('help')
@@ -42,6 +46,11 @@ async def on_resumed():
     now = datetime.datetime.now()
     message = '[{0}] Artemis is back online.'.format(now)
     print(message)
+
+
+async def load_db():
+    conn = sqlite3.connect('files/artemis.db')
+    return conn
 
 
 async def load_json(f):
