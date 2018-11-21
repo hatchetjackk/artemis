@@ -12,7 +12,6 @@ from discord.ext.commands import BucketType, CommandNotFound
 from _datetime import datetime, timedelta
 
 
-
 class Events:
     def __init__(self, client):
         self.client = client
@@ -92,34 +91,52 @@ class Events:
 
         conn = await load_db()
         c = conn.cursor()
-        for event_id in event_list:
-            with conn:
-                c.execute("SELECT * FROM events WHERE id = (:id)", {'id': event_id})
-                event_id, title, dt, creator_id, guild_id = c.fetchone()
-                mod_roles = [x.lower() for x in self.moderators]
-                author_roles = [role.name.lower() for role in ctx.author.roles]
-                if any(value in mod_roles for value in author_roles):
-                    c.execute("DELETE FROM events WHERE id = (:id)", {'id': event_id})
-                    embed.add_field(
-                        name='Event Deleted',
-                        value='"{}" successfully deleted.'.format(title),
-                        inline=False
-                    )
-                elif ctx.author.id == creator_id:
-                    c.execute("DELETE FROM events WHERE id = (:id), creator_id = (:creator_id)",
-                              {'id': event_id, 'creator_id': ctx.author.id})
-                    embed.add_field(
-                        name='Event Deleted',
-                        value='"{}" successfully deleted.'.format(event_id),
-                        inline=False
-                    )
+
+        with conn:
+            for event_id in event_list:
+                c.execute("SELECT EXISTS(SELECT 1 FROM events WHERE id = (:id) AND guild_id = (:guild_id))",
+                          {'id': event_id, 'guild_id': ctx.guild.id})
+
+                # if event is in the database allow modifications or else warn the user that the event does not exist
+                if 1 in c.fetchone():
+                    c.execute("SELECT * FROM events WHERE id = (:id) AND guild_id = (:guild_id)",
+                              {'id': event_id, 'guild_id': ctx.guild.id})
+                    event_id, title, dt, creator_id, guild_id = c.fetchone()
+
+                    mod_roles = [x.lower() for x in self.moderators]
+                    author_roles = [role.name.lower() for role in ctx.author.roles]
+
+                    # check user roles
+                    if any(value in mod_roles for value in author_roles):
+                        c.execute("DELETE FROM events WHERE id = (:id) AND guild_id = (:guild_id)",
+                                  {'id': event_id, 'guild_id': ctx.guild.id})
+                        embed.add_field(
+                            name='Event Deleted',
+                            value='"{}" successfully deleted.'.format(title),
+                            inline=False
+                        )
+                    elif ctx.author.id == creator_id:
+                        c.execute(
+                            """DELETE FROM events WHERE id = (:id) 
+                            AND guild_id = (:guild_id) 
+                            AND creator_id = (:creator_id)""",
+                            {'id': event_id, 'guild_id': ctx.guild.id, 'creator_id': ctx.author.id}
+                        )
+                        embed.add_field(
+                            name='Event Deleted',
+                            value='"{}" successfully deleted.'.format(title),
+                            inline=False
+                        )
+                    else:
+                        msg = 'You cannot delete an event you did not create!'
+                        await ctx.send(msg)
                 else:
-                    msg = 'You cannot delete an event you did not create!'
-                    await ctx.send(msg)
-                    return
-                msg = 'An event was deleted by {0}.\n{1} [{2}]'.format(ctx.author.id, title, event_id)
-                await self.spam(ctx, msg)
-        await ctx.send(embed=embed)
+                    embed.add_field(
+                        name='{} Not Found'.format(event_id),
+                        value='\u200b',
+                        inline=False
+                    )
+            await ctx.send(embed=embed)
 
     @events.group(aliases=['f'])
     async def find(self, ctx, *, keyword: str):
