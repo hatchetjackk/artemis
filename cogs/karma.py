@@ -89,14 +89,11 @@ class Karma:
         if message.guild.name in self.karma_blacklist:
             return
         author = message.author
-        if author.id == self.client.user.id:
+        if message.author.id == self.client.user.id:
             return
 
         conn = await load_db()
         c = conn.cursor()
-
-        karma_responses = await load_json('status')
-        # data = await load_json('users')
 
         keywords = ['thanks', 'thank', 'gracias', 'kudos', 'thx', 'appreciate', 'cheers']
         msg = [word.lower() for word in message.content.split() if len(word) >= 3]
@@ -120,14 +117,10 @@ class Karma:
                             if member not in thanked_members:
                                 thanked_members.append(member)
         for member in thanked_members:
-            # mid = str(member.id)
-            # format member name
             member_name = member.name
             if member.nick is not None:
                 member_name = member.nick
             if len(karma_key) > 0:
-                print(1)
-                # check karma cool down
                 c.execute("SELECT * FROM members WHERE id = (:id)", {'id': message.author.id})
                 member_id, membername, points, last_karma_given = c.fetchone()
                 if last_karma_given is None:
@@ -141,24 +134,32 @@ class Karma:
                         return
                 # check if someone is trying to give artemis karma
                 if member.id == self.client.user.id:
-                    await message.channel.send(random.choice(karma_responses['karma_responses']['client_response']))
+                    c.execute("SELECT response FROM bot_responses WHERE message_type = 'client_karma'")
+                    client_karma = c.fetchall()
+                    msg = random.choice([resp[0] for resp in client_karma])
+                    await message.channel.send(msg)
                 # check if someone is trying to farm karma
                 elif member.id is author.id:
-                    msg = random.choice(karma_responses['karma_responses']['bad_response']).format(message.author.id)
+                    c.execute("SELECT response FROM bot_responses WHERE message_type = 'bad_karma'")
+                    bad_karma = c.fetchall()
+                    msg = random.choice([resp[0] for resp in bad_karma]).format(message.author.id)
                     await message.channel.send(msg)
                 # if karma is going to a user and not artemis or the author
                 else:
+                    c.execute("SELECT * FROM members WHERE id = (:id)", {'id': member.id})
+                    member_id, membername, points, last_karma_given = c.fetchone()
+                    last_karma_given = int(time.time())
+                    points += 1
                     with conn:
-                        c.execute("SELECT * FROM members WHERE id = (:id)", {'id': member.id})
-                        member_id, membername, points, last_karma_given = c.fetchone()
-                        last_karma_given = int(time.time())
-                        points += 1
-                        c.execute("UPDATE members SET karma = (:karma), last_karma_given = (:last_karma_given) WHERE id = (:id)",
-                                  {'karma': points, 'last_karma_given': last_karma_given, 'id': member.id})
-                        msg = random.choice(karma_responses['karma_responses']['good_response']).format(member_name)
-                        await message.channel.send(msg)
-                        print("{0} received a karma point from {1}".format(member_name, message.author.name))
-                        return
+                        c.execute("UPDATE members SET karma = (:karma) WHERE id = (:id)",
+                                  {'karma': points, 'id': member.id})
+                        c.execute("UPDATE members SET last_karma_given = (:last_karma_given) WHERE id = (:id)",
+                                  {'last_karma_given': last_karma_given, 'id': message.author.id})
+                    c.execute("SELECT response FROM bot_responses WHERE message_type = 'good_karma'")
+                    good_responses = c.fetchall()
+                    msg = random.choice([resp[0] for resp in good_responses]).format(member_name)
+                    await message.channel.send(msg)
+                    print("{0} received a karma point from {1}".format(member_name, message.author.name))
 
 
 def setup(client):
