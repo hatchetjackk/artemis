@@ -1,4 +1,3 @@
-import json
 import discord
 from discord import Color, Embed
 from discord.ext import commands
@@ -53,7 +52,7 @@ class RichEmbed:
             embed.add_field(name=value[1], value=color_num)
             await ctx.author.send(embed=embed)
 
-    @commands.group()
+    @commands.group(aliases=['re'])
     async def richembed(self, ctx):
         if ctx.invoked_subcommand is None:
             await ctx.send('Invoke `richembed` with `get`, `pasta`, or `example`.')
@@ -145,11 +144,14 @@ class RichEmbed:
     async def get(self, ctx, *args):
         msg = await ctx.get_message(id=args[0])
         e_msg = msg.embeds[0].to_dict()
-        await ctx.send(e_msg)
+        if 'thumbnail' not in e_msg:
+            e_msg.update({'thumbnail': {'url': ''}})
+        await ctx.send('!richembed paste {}'.format(e_msg))
 
-    @richembed.group()
+    @richembed.group(aliases=['paste'])
     async def pasta(self, ctx, *args):
         try:
+            import json
             msg = ' '.join(args)
             # format for json
             msg = msg.replace('True', 'true')
