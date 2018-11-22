@@ -19,8 +19,7 @@ class Mod:
     @commands.command(aliases=['spam'])
     # @commands.has_any_role('mod', 'Moderators', 'moderator', 'moderators')
     async def botspam(self, ctx, *, channel: str):
-        conn = await load_db()
-        c = conn.cursor()
+        conn, c = await load_db()
         channel = discord.utils.get(ctx.guild.channels, name=channel)
         with conn:
             c.execute("UPDATE guilds SET spam = (?) WHERE id = (?)", (channel.id, ctx.guild.id))
@@ -28,28 +27,22 @@ class Mod:
         await self.spam(ctx, msg)
 
     async def spam(self, ctx, message):
-        conn = await load_db()
-        c = conn.cursor()
-        with conn:
-            c.execute("SELECT spam FROM guilds WHERE id = (?)", (ctx.guild.id,))
-            spam = c.fetchone()[0]
-            if spam is not None:
-                embed = discord.Embed(color=discord.Color.blue())
-                embed.add_field(
-                    name='Alert',
-                    value=message
-                )
-                channel = self.client.get_channel(spam)
-                await channel.send(embed=embed)
+        conn, c = await load_db()
+        c.execute("SELECT spam FROM guilds WHERE id = (?)", (ctx.guild.id,))
+        spam = c.fetchone()[0]
+        if spam is not None:
+            embed = discord.Embed(color=discord.Color.blue())
+            embed.add_field(
+                name='Alert',
+                value=message
+            )
+            channel = self.client.get_channel(spam)
+            await channel.send(embed=embed)
 
     @commands.command()
     # @commands.is_owner()
     async def prefix(self, ctx, prefix: str):
-        # change the prefix for the guild
-        print(True)
-        conn = await load_db()
-        print(True)
-        c = conn.cursor()
+        conn, c = await load_db()
         with conn:
             c.execute("UPDATE guilds SET prefix = (?) WHERE id = (?)", (prefix, ctx.guild.id))
         await ctx.send('Changed guild prefix to {}'.format(prefix))
