@@ -24,17 +24,21 @@ class EliteDangerous:
         if ctx.guild.name in self.wanted_blacklist:
             return
         if ctx.invoked_subcommand is None:
-            conn = await load_db()
-            c = conn.cursor()
+            conn, c = await load_db()
             embed = Embed(title='Wanted CMDRs', color=Color.orange())
             c.execute("SELECT * FROM ed_wanted WHERE guild_id = (:guild_id)", {'guild_id': ctx.guild.id})
             wanted_commanders = c.fetchall()
-            for cmdr in wanted_commanders:
-                cmdr_name, reason, inara_page, guild_id, member_id = cmdr
-                fmt = (reason, inara_page)
-                embed.add_field(name=cmdr_name.title(),
-                                value='Reason: {}\n{}'.format(*fmt),
+            if len(wanted_commanders) < 1:
+                embed.add_field(name='No CMDRs on the WANTED list.',
+                                value='Nothing to see here.',
                                 inline=False)
+            else:
+                for cmdr in wanted_commanders:
+                    cmdr_name, reason, inara_page, guild_id, member_id = cmdr
+                    fmt = (reason, inara_page)
+                    embed.add_field(name=cmdr_name.title(),
+                                    value='Reason: {}\n{}'.format(*fmt),
+                                    inline=False)
             await ctx.send(embed=embed)
 
     @staticmethod

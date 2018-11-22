@@ -24,8 +24,7 @@ class Automod:
         if ctx.guild.name in self.auto_mod_blacklist:
             return
         role = discord.utils.get(ctx.guild.roles, name=role)
-        conn = await load_db()
-        c = conn.cursor()
+        conn, c = await load_db()
         with conn:
             c.execute("UPDATE guilds SET mod_role = (?) WHERE id = (?)", (role.name, ctx.guild.id))
         await ctx.send('{} added to the moderator list.'.format(role))
@@ -34,8 +33,7 @@ class Automod:
     async def remove(self, ctx):
         if ctx.guild.name in self.auto_mod_blacklist:
             return
-        conn = await load_db()
-        c = conn.cursor()
+        conn, c = await load_db()
         with conn:
             c.execute("UPDATE guilds SET mod_role = (?) WHERE id = (?)", (None, ctx.guild.id))
         await ctx.send('The modrole was removed.')
@@ -49,8 +47,7 @@ class Automod:
     @autorole.group(aliases=['add'])
     async def set(self, ctx, *, role: str):
         role = discord.utils.get(ctx.guild.roles, name=role)
-        conn = await load_db()
-        c = conn.cursor()
+        conn, c = await load_db()
         with conn:
             c.execute("UPDATE guilds SET autorole = (?) WHERE id = (?)", (role.id, ctx.guild.id))
         msg = '{0} set {1}\'s autorole to *{2}*.'.format(ctx.author.name, ctx.guild.name, role.name)
@@ -58,8 +55,7 @@ class Automod:
 
     @autorole.group()
     async def remove(self, ctx):
-        conn = await load_db()
-        c = conn.cursor()
+        conn, c = await load_db()
         with conn:
             c.execute("UPDATE guilds SET autorole = (?) WHERE id = (?)", (None, ctx.guild.id))
         msg = '{0} cleared {1}\'s autorole.'.format(ctx.author.name, ctx.guild.name)
@@ -98,8 +94,7 @@ class Automod:
     @staticmethod
     async def on_member_join(member):
         # when a member joins, give them an autorole if it exists
-        conn = await load_db()
-        c = conn.cursor()
+        conn, c = await load_db()
         with conn:
             c.execute("SELECT autorole FROM guilds WHERE id = (?)", (member.guild.id,))
             role = member.guild.get_role(c.fetchone()[0])
@@ -129,8 +124,7 @@ class Automod:
 
     @staticmethod
     async def on_member_remove(member):
-        conn = await load_db()
-        c = conn.cursor()
+        conn, c = await load_db()
         with conn:
             c.execute("SELECT spam FROM guilds WHERE id = (?)", (member.guild.id,))
             spam = c.fetchone()[0]
@@ -187,8 +181,7 @@ class Automod:
               '**Channel**: {0.channel.mention}\n' \
               '**Content**: {0.content}'
 
-        conn = await load_db()
-        c = conn.cursor()
+        conn, c = await load_db()
         with conn:
             c.execute("SELECT spam FROM guilds WHERE id = (?)", (message.guild.id,))
             spam = c.fetchone()[0]
@@ -205,8 +198,7 @@ class Automod:
 
     @staticmethod
     async def spam(ctx, message):
-        conn = await load_db()
-        c = conn.cursor()
+        conn, c = await load_db()
         with conn:
             c.execute("SELECT spam FROM guilds WHERE id = (?)", (ctx.guild.id,))
             spam = c.fetchone()[0]

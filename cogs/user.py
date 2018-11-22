@@ -1,3 +1,4 @@
+import sqlite3
 from artemis import load_db
 from discord.ext import commands
 
@@ -19,63 +20,59 @@ class User:
     async def update_users(message):
         # add: levels, exp, alignment, race, description, hp, char inventory, char equipped
         conn, c = await load_db()
-        # try:
-        #     with conn:
-        #         c.execute(
-        #             """CREATE TABLE IF NOT EXISTS members (
-        #                 id INTEGER,
-        #                 member_name TEXT,
-        #                 karma INTEGER,
-        #                 UNIQUE(id, member_name)
-        #                 )"""
-        #         )
-        #         c.execute(
-        #             """CREATE TABLE IF NOT EXISTS guild_members (
-        #                 id INTEGER,
-        #                 guild TEXT,
-        #                 member_id INTEGER,
-        #                 member_name TEXT,
-        #                 member_nick TEXT,
-        #                 UNIQUE(id, guild, member_id)
-        #                 )"""
-        #         )
-        #         c.execute(
-        #             """CREATE TABLE IF NOT EXISTS guilds (
-        #                 id INTEGER UNIQUE,
-        #                 guild TEXT,
-        #                 mod_role TEXT,
-        #                 autorole TEXT
-        #                 prefix TEXT,
-        #                 spam INTEGER
-        #                 )"""
-        #         )
-        # except Exception as e:
-        #     # print(e)
-        #     pass
+        try:
+            with conn:
+                c.execute(
+                    """CREATE TABLE IF NOT EXISTS members (
+                        id INTEGER,
+                        member_name TEXT,
+                        karma INTEGER,
+                        UNIQUE(id, member_name)
+                        )"""
+                )
+                c.execute(
+                    """CREATE TABLE IF NOT EXISTS guild_members (
+                        id INTEGER,
+                        guild TEXT,
+                        member_id INTEGER,
+                        member_name TEXT,
+                        member_nick TEXT,
+                        UNIQUE(id, guild, member_id)
+                        )"""
+                )
+                c.execute(
+                    """CREATE TABLE IF NOT EXISTS guilds (
+                        id INTEGER UNIQUE,
+                        guild TEXT,
+                        mod_role TEXT,
+                        autorole TEXT
+                        prefix TEXT,
+                        spam INTEGER
+                        )"""
+                )
+        except sqlite3.DatabaseError:
+            pass
 
         for member in message.guild.members:
             try:
                 with conn:
                     c.execute("INSERT INTO members VALUES (:id, :member_name, :karma)",
                               {'id': member.id, 'member_name': member.name, 'karma': 0})
-            except Exception as e:
-                # print(e)
+            except sqlite3.DatabaseError:
                 pass
             try:
                 with conn:
                     c.execute("INSERT INTO guild_members VALUES (:id, :guild, :member_id, :member_name, :member_nick)",
                               {'id': message.guild.id, 'guild': message.guild.name, 'member_id': member.id,
                                'member_name': member.name, 'member_nick': member.nick})
-            except Exception as e:
-                # print(e)
+            except sqlite3.DatabaseError:
                 pass
             try:
                 with conn:
                     c.execute("INSERT INTO guilds VALUES (:id, :guild, :mod_role, :autorole, :prefix, :spam)",
                               {'id': message.guild.id, 'guild': message.guild.name, 'mod_role': None,
                                'autorole': None, 'prefix': '!', 'spam': None})
-            except Exception as e:
-                # print(e)
+            except sqlite3.DatabaseError:
                 pass
 
     @staticmethod

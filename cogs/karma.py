@@ -25,8 +25,7 @@ class Karma:
         if ctx.guild.name in self.karma_blacklist:
             return
         member_check = ' '.join(args)
-        conn = await load_db()
-        c = conn.cursor()
+        conn, c = await load_db()
         with conn:
             if member_check == '':
                 c.execute("SELECT karma FROM members WHERE id = (:id)", {'id': ctx.author.id})

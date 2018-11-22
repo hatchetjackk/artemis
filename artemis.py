@@ -4,21 +4,15 @@ import discord
 import json
 import datetime
 import sqlite3
-# import traceback
 import logging
 from discord.ext import commands
 
-
-with open('files/credentials.json', 'r') as f:
-    credentials = json.load(f)
-
-token = credentials['token']
-default_prefix = '!'
 
 logging.basicConfig(filename='files/artemis.log', format='%(asctime)s %(message)s', level=logging.INFO)
 logging.info('Starting')
 
 
+# noinspection PyUnusedLocal
 async def prefix(bot, message):
     conn, c = await load_db()
     c.execute("SELECT prefix FROM guilds WHERE id = (?)", (message.guild.id,))
@@ -52,14 +46,14 @@ async def load_db():
     return conn, curs
 
 
-async def load_json(f):
-    with open('files/{}.json'.format(f)) as g:
+async def load_json(load_file):
+    with open('files/{}.json'.format(load_file)) as g:
         data = json.load(g)
     return data
 
 
-async def dump_json(f, data):
-    with open('files/{}.json'.format(f), 'w') as g:
+async def dump_json(dump_file, data):
+    with open('files/{}.json'.format(dump_file), 'w') as g:
         json.dump(data, g, indent=2)
 
 if __name__ == '__main__':
@@ -68,4 +62,6 @@ if __name__ == '__main__':
             client.load_extension('cogs.' + extension)
         except Exception as error:
             print('{0} cannot be loaded [{1}]'.format(extension, error))
-    client.run(token)
+    with open('files/credentials.json', 'r') as f:
+        credentials = json.load(f)
+    client.run(credentials['token'])
