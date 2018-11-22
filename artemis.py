@@ -9,8 +9,8 @@ import logging
 from discord.ext import commands
 
 
-with open('files/credentials.json', 'r') as c:
-    credentials = json.load(c)
+with open('files/credentials.json', 'r') as f:
+    credentials = json.load(f)
 
 token = credentials['token']
 default_prefix = '!'
@@ -20,11 +20,9 @@ logging.info('Starting')
 
 
 async def prefix(bot, message):
-    conn = await load_db()
-    c = conn.cursor()
-    with conn:
-        c.execute("SELECT prefix FROM guilds WHERE id = (?)", (message.guild.id,))
-        bot_prefix = c.fetchone()[0]
+    conn, c = await load_db()
+    c.execute("SELECT prefix FROM guilds WHERE id = (?)", (message.guild.id,))
+    bot_prefix = c.fetchone()[0]
     return bot_prefix
 
 client = commands.Bot(command_prefix=prefix)
@@ -50,7 +48,8 @@ async def on_resumed():
 
 async def load_db():
     conn = sqlite3.connect('files/artemis.db')
-    return conn
+    curs = conn.cursor()
+    return conn, curs
 
 
 async def load_json(f):
