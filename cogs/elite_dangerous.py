@@ -1,8 +1,8 @@
 import requests
-import json
 import aiohttp
+import json
 from bs4 import BeautifulSoup
-from artemis import load_json, dump_json
+from artemis import load_db
 from discord import Embed, Color
 from math import sqrt
 from datetime import datetime
@@ -21,27 +21,26 @@ class EliteDangerous:
 
     @commands.group()
     async def wanted(self, ctx):
+        if ctx.guild.name in self.wanted_blacklist:
+            return
         if ctx.invoked_subcommand is None:
-            data = await load_json('guilds')
-            if data[str(ctx.guild.id)]['guild_name'] in self.wanted_blacklist:
-                return
-            else:
-                embed = Embed(title='Wanted CMDRs',
-                              color=Color.orange())
-                for key, value in data[str(ctx.guild.id)]['wanted'].items():
-                    cmdr_name = key
-                    reason = value
-                    pilot_inara_url = await self.get_pilot_information(cmdr_name)
-                    fmt = (reason, pilot_inara_url)
-                    embed.add_field(name=cmdr_name.title(),
-                                    value='Reason: {}\n'
-                                          '{}'.format(*fmt),
-                                    inline=False)
-                await ctx.send(embed=embed)
+            conn = await load_db()
+            c = conn.cursor()
+            embed = Embed(title='Wanted CMDRs', color=Color.orange())
+            c.execute("SELECT * FROM ed_wanted WHERE guild_id = (:guild_id)", {'guild_id': ctx.guild.id})
+            wanted_commanders = c.fetchall()
+            for cmdr in wanted_commanders:
+                cmdr_name, reason, inara_page, guild_id, member_id = cmdr
+                fmt = (reason, inara_page)
+                embed.add_field(name=cmdr_name.title(),
+                                value='Reason: {}\n{}'.format(*fmt),
+                                inline=False)
+            await ctx.send(embed=embed)
 
     @staticmethod
     async def get_pilot_information(cmdr_name):
         try:
+            from artemis import load_json
             data = await load_json('credentials')
             inara_api = data['inara']
             json_data = {
@@ -68,39 +67,40 @@ class EliteDangerous:
             pilot_data = list(r.json()['events'])[0]
             pilot_page = pilot_data['eventData']['inaraURL']
             if pilot_page is None:
-                return ''
+                return None
             return pilot_page
         except Exception as e:
-            print(e)
-            return ''
+            print('Get pilot information error', e)
+            return None
 
     @wanted.group()
     async def add(self, ctx, *args):
-        args = ' '.join(args).split(',')
-        wanted_cmdr = args[0]
-        reason = args[1].strip()
-        data = await load_json('guilds')
-        if data[str(ctx.guild.id)]['guild_name'] == any(self.wanted_blacklist):
+        if ctx.guild.name == any(self.wanted_blacklist):
             return
-        if 'wanted' not in data[str(ctx.guild.id)]:
-            data[str(ctx.guild.id)]['wanted'] = {}
-        data[str(ctx.guild.id)]['wanted'].update({wanted_cmdr.lower(): reason})
-        await dump_json('guilds', data)
+        wanted_cmdr, reason = (value.strip() for value in ' '.join(args).split(','))
+        inara_page = await self.get_pilot_information(wanted_cmdr)
+        conn = await load_db()
+        c = conn.cursor()
+        with conn:
+            c.execute("INSERT INTO ed_wanted VALUES(:cmdr_name, :reason, :inara_page, :guild_id, :member_id)",
+                      {'cmdr_name': wanted_cmdr.lower(), 'reason': reason, 'inara_page': inara_page,
+                       'guild_id': ctx.guild.id, 'member_id': ctx.author.id})
         embed = Embed(title='{} added to WANTED list'.format(wanted_cmdr.title()),
                       color=Color.red())
         await ctx.send(embed=embed)
 
     @wanted.group()
     async def remove(self, ctx, *, wanted_cmdr: str):
-        data = await load_json('guilds')
-        if data[str(ctx.guild.id)]['guild_name'] == any(self.wanted_blacklist):
+        if ctx.guild.name == any(self.wanted_blacklist):
             return
-        if wanted_cmdr.lower() in data[str(ctx.guild.id)]['wanted']:
-            data[str(ctx.guild.id)]['wanted'].pop(wanted_cmdr)
-            await dump_json('guilds', data)
-            embed = Embed(title='{} removed from WANTED list'.format(wanted_cmdr.title()),
-                          color=Color.orange())
-            await ctx.send(embed=embed)
+        conn = await load_db()
+        c = conn.cursor()
+        with conn:
+            c.execute("DELETE FROM ed_wanted WHERE cmdr_name = (:cmdr_name) AND guild_id = (:guild_id)",
+                      {'cmdr_name': wanted_cmdr.lower(), 'guild_id': ctx.guild.id})
+        embed = Embed(title='{} removed from WANTED list'.format(wanted_cmdr.title()),
+                      color=Color.orange())
+        await ctx.send(embed=embed)
 
     @commands.command()
     async def faction(self, ctx, *args):
@@ -155,11 +155,11 @@ class EliteDangerous:
                                     value='\n'.join(fmt),
                                     inline=False)
 
-            thumbs = {'Independent': 'https://i.imgur.com/7AQzQaj.png',
-                      'Alliance': 'https://i.imgur.com/f6XTw0J.png',
-                      'Empire': 'https://i.imgur.com/Eoo0qDN.png',
-                      'Federation': 'https://i.imgur.com/DlChea1.png',
-                      'Pilots Federation': 'https://i.imgur.com/n6R5DRm.png',
+            thumbs = {'Independent': 'https://i.imgur.com/r4d7tPt.png',
+                      'Alliance': 'https://i.imgur.com/OWf0P6u.png',
+                      'Empire': 'https://i.imgur.com/KTmp5MF.png',
+                      'Federation': 'https://i.imgur.com/3oT7gr0.png',
+                      'Pilots Federation': 'https://i.imgur.com/tshl8xE.png',
                       'Guardian': 'https://edassets.org/static/img/power-ethos/Covert.png'}
             embed.set_thumbnail(url=thumbs[allegiance])
             embed.set_footer(text='Last Updated: {}'.format(last_update))
@@ -187,19 +187,20 @@ class EliteDangerous:
                         outfitting = station['haveOutfitting']
                         distance_from_star = round(station['distanceToArrival'])
                         station_type = station['type']
-                        thumbs = {'Outpost': 'https://edassets.org/static/img/stations/Outpost.png',
-                                  'Orbis Starport': 'https://edassets.org/static/img/stations/Orbis_sm.png',
-                                  'Coriolis Starport': 'https://edassets.org/static/img/stations/Coriolis_sm.png',
-                                  'Planetary Outpost': 'https://edassets.org/static/img/settlements/surface_port_pm.png',
-                                  'Planetary Settlement': 'https://edassets.org/static/img/settlements/settlement_pm.png',
-                                  'Ocellus Starport': 'https://edassets.org/static/img/stations/Ocellus.png',
-                                  'Mega ship': 'https://edassets.org/static/img/stations/Mega-Ship_Icon.png'}
-                        fmt = (station_type, controlling_faction, government,
+                        thumbs = {'Outpost': 'https://i.imgur.com/BRZu7co.png',
+                                  'Orbis Starport': 'https://i.imgur.com/cBTdMoJ.png',
+                                  'Coriolis Starport': 'https://i.imgur.com/4PYsZs9.png',
+                                  'Planetary Outpost': 'https://i.imgur.com/xTderZC.png',
+                                  'Planetary Settlement': 'https://i.imgur.com/xTderZC.png',
+                                  'Ocellus Starport': 'https://i.imgur.com/xTderZC.png',
+                                  'Mega ship': 'https://i.imgur.com/HZXRqFG.png'}
+                        faction_abbr = ''.join([word[0] for word in controlling_faction.split(' ')])
+                        fmt = (station_type, controlling_faction, faction_abbr, government,
                                allegiance, economy, market, shipyard, outfitting)
                         embed = Embed(title='{}, {}'.format(name, system),
                                       color=Color.orange(),
                                       description='Station Type: {}\n'
-                                                  'Controlling Faction: {}\n'
+                                                  'Controlling Faction: {} ({})\n'
                                                   'Government: {}\n'
                                                   'Allegiance: {}\n'
                                                   'Economy: {}\n'
@@ -220,9 +221,6 @@ class EliteDangerous:
                     f = await self.fetch(session, url)
                     system_data = json.loads(f)
                     system_name = system_data['name']
-                    coordinates = (system_data['coords']['x'],
-                                   system_data['coords']['y'],
-                                   system_data['coords']['z'])
                     system_information = ''
                     allegiance = 'Independent'
                     if len(system_data['information']) > 0:
@@ -233,53 +231,50 @@ class EliteDangerous:
                             faction_state = None
                         else:
                             faction_state = system_data['information']['factionState']
+                        faction_abbr = ''.join([word[0] for word in faction.split(' ')])
                         primary_start_scoopable = system_data['primaryStar']['isScoopable']
-                        fmt = (faction, government, faction_state, allegiance, primary_start_scoopable)
-                        system_information = '**Faction**: {}\n' \
+                        fmt = (faction, faction_abbr, government, faction_state, allegiance, primary_start_scoopable)
+                        system_information = '**Faction**: {} ({})\n' \
                                              '**Government**: {}\n' \
                                              '**State**: {}\n' \
                                              '**Allegiance**: {}\n' \
                                              '**Primary Star Scoopable**: {}'.format(*fmt)
-
+                    embed = Embed(title=system_name,
+                                  color=Color.orange(),
+                                  description=system_information)
                     url = 'https://www.edsm.net/api-system-v1/stations?sysname={}'.format(system)
                     f = await self.fetch(session, url)
                     stations_data = json.loads(f)
-                    s, o, m, all_logo = '', '', '', ''
-                    stations = []
                     for station in stations_data['stations']:
                         station_name = station['name']
                         controlling_faction = station['controllingFaction']['name']
                         faction_abbreviation = ''.join([word[0] for word in controlling_faction.split(' ')])
+                        options = []
                         if station['haveShipyard']:
-                            s = 's'
+                            options.append('shipyard')
                         if station['haveMarket']:
-                            m = 'm'
+                            options.append('market')
                         if station['haveOutfitting']:
-                            o = 'o'
+                            options.append('outfitting')
                         allegiances = {'Alliance': '<:alliancew:511914466498183178>',
                                        'Federation': '<:federationw:511911861026029579>',
                                        'Empire': '<:empirew:511914466418360331',
                                        'Independent': '<:independentw:511915084612632586>',
                                        'Pilots Federation': '<:pilots_federationw:511916795641331732>'}
+                        all_logo = ''
                         if station['allegiance'] in allegiances:
                             all_logo = allegiances[station['allegiance']]
-
-                        fmt = (all_logo, station_name, ''.join(s+m+o), faction_abbreviation)
-                        stations.append('{}{} [*{}*] -- *{}*'.format(*fmt))
-
-                    stations_information = ''
-                    if len(stations) > 0:
-                        stations_information = '**Stations**: \n{}'.format('\n'.join(stations))
-                    embed = Embed(title=system_name,
-                                  color=Color.orange(),
-                                  description='{}\n\n{}'.format(system_information, stations_information))
-                    embed.set_footer(text='x: {}, y: {}, z: {}'.format(*coordinates))
-                    thumbs = {'Independent': 'https://i.imgur.com/7AQzQaj.png',
-                              'Alliance': 'https://i.imgur.com/f6XTw0J.png',
-                              'Empire': 'https://i.imgur.com/Eoo0qDN.png',
-                              'Federation': 'https://i.imgur.com/DlChea1.png',
-                              'Pilots Federation': 'https://i.imgur.com/n6R5DRm.png',
+                        fmt = (all_logo, station_name, controlling_faction, faction_abbreviation)
+                        embed.add_field(name='{} {} ◆ {} ({})'.format(*fmt),
+                                        value='⏵ Services: {}'.format(', '.join(options)),
+                                        inline=False)
+                    thumbs = {'Independent': 'https://i.imgur.com/r4d7tPt.png',
+                              'Alliance': 'https://i.imgur.com/OWf0P6u.png',
+                              'Empire': 'https://i.imgur.com/KTmp5MF.png',
+                              'Federation': 'https://i.imgur.com/3oT7gr0.png',
+                              'Pilots Federation': 'https://i.imgur.com/tshl8xE.png',
                               'Guardian': 'https://edassets.org/static/img/power-ethos/Covert.png'}
+                    embed.set_footer(text='Use system {}, <station name> for more details'.format(system_name))
                     embed.set_thumbnail(url=thumbs[allegiance])
                     await ctx.send(embed=embed)
                 except Exception as e:
@@ -323,6 +318,7 @@ class EliteDangerous:
     @commands.command(aliases=['cmdr', 'CMDR'])
     async def pilot(self, ctx, *args):
         try:
+            from artemis import load_json
             user_input = ' '.join(args).split(',')
             pilot_name = user_input[0].strip()
             data = await load_json('credentials')
