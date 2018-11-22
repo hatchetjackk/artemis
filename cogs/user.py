@@ -18,41 +18,40 @@ class User:
     @staticmethod
     async def update_users(message):
         # add: levels, exp, alignment, race, description, hp, char inventory, char equipped
-        conn = await load_db()
-        c = conn.cursor()
-        try:
-            with conn:
-                c.execute(
-                    """CREATE TABLE IF NOT EXISTS members (
-                        id INTEGER, 
-                        member_name TEXT, 
-                        karma INTEGER,
-                        UNIQUE(id, member_name)
-                        )"""
-                )
-                c.execute(
-                    """CREATE TABLE IF NOT EXISTS guild_members (
-                        id INTEGER, 
-                        guild TEXT, 
-                        member_id INTEGER, 
-                        member_name TEXT, 
-                        member_nick TEXT, 
-                        UNIQUE(id, guild, member_id)
-                        )"""
-                )
-                c.execute(
-                    """CREATE TABLE IF NOT EXISTS guilds (
-                        id INTEGER UNIQUE, 
-                        guild TEXT, 
-                        mod_role TEXT,
-                        autorole TEXT 
-                        prefix TEXT, 
-                        spam INTEGER
-                        )"""
-                )
-        except Exception as e:
-            # print(e)
-            pass
+        conn, c = await load_db()
+        # try:
+        #     with conn:
+        #         c.execute(
+        #             """CREATE TABLE IF NOT EXISTS members (
+        #                 id INTEGER,
+        #                 member_name TEXT,
+        #                 karma INTEGER,
+        #                 UNIQUE(id, member_name)
+        #                 )"""
+        #         )
+        #         c.execute(
+        #             """CREATE TABLE IF NOT EXISTS guild_members (
+        #                 id INTEGER,
+        #                 guild TEXT,
+        #                 member_id INTEGER,
+        #                 member_name TEXT,
+        #                 member_nick TEXT,
+        #                 UNIQUE(id, guild, member_id)
+        #                 )"""
+        #         )
+        #         c.execute(
+        #             """CREATE TABLE IF NOT EXISTS guilds (
+        #                 id INTEGER UNIQUE,
+        #                 guild TEXT,
+        #                 mod_role TEXT,
+        #                 autorole TEXT
+        #                 prefix TEXT,
+        #                 spam INTEGER
+        #                 )"""
+        #         )
+        # except Exception as e:
+        #     # print(e)
+        #     pass
 
         for member in message.guild.members:
             try:
@@ -82,24 +81,22 @@ class User:
     @staticmethod
     async def create_user(member):
         # add: levels, exp, alignment, race, description, hp, char inventory, char equipped
-        conn = await load_db()
-        c = conn.cursor()
-        with conn:
-            try:
-                with conn:
-                    c.execute("INSERT INTO members VALUES (:id, :member_name, :karma)",
-                              {'id': member.id, 'member_name': member.name, 'karma': 0})
-            except Exception as e:
-                print(e)
-                pass
-            try:
-                with conn:
-                    c.execute("INSERT INTO guilds VALUES (:id, :guild, :member_id, :member_name, :member_nick)",
-                              {'id': member.guild.id, 'guild': member.guild.name, 'member_id': member.id,
-                               'member_name': member.name, 'member_nick': member.nick})
-            except Exception as e:
-                print(e)
-                pass
+        conn, c = await load_db()
+        try:
+            with conn:
+                c.execute("INSERT INTO members VALUES (:id, :member_name, :karma)",
+                          {'id': member.id, 'member_name': member.name, 'karma': 0})
+        except Exception as e:
+            print(e)
+            pass
+        try:
+            with conn:
+                c.execute("INSERT INTO guilds VALUES (:id, :guild, :member_id, :member_name, :member_nick)",
+                          {'id': member.guild.id, 'guild': member.guild.name, 'member_id': member.id,
+                           'member_name': member.name, 'member_nick': member.nick})
+        except Exception as e:
+            print(e)
+            pass
 
     @staticmethod
     async def on_message_error(ctx, error):
