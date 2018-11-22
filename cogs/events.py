@@ -54,9 +54,8 @@ class Events:
                     diamond = ':small_orange_diamond:'
                     if counter % 2 == 0:
                         diamond = ':small_blue_diamond:'
-                    event_id = values[0]
-                    title = values[1]
-                    dt = await self.make_datetime(values[2])
+                    event_id, title, dt, creator_id, guild_id = values
+                    dt = await self.make_datetime(dt)
                     dt_long, dt_short = await self.make_string(dt)
                     eta = await self.eta(dt)
                     fmt = (dt_short, eta, event_id)
@@ -152,19 +151,18 @@ class Events:
                 await ctx.send('Sorry, no events with that keyword were found.')
                 return
         for value in events:
-            event = value[1]
-            dt = await self.make_datetime(value[2])
+            event_id, title, dt, creator_id, guild_id = value
+            dt = await self.make_datetime(dt)
             dt_long, dt_short = await self.make_string(dt)
             eta = await self.eta(dt)
             fmt = (value[0], dt_short, eta)
-            embed.add_field(name=event,
+            embed.add_field(name=title,
                             value='**Event ID**: {0}\n**Time**: {1}\n**ETA**: {2}'.format(*fmt),
                             inline=False)
         await ctx.send(embed=embed)
 
     @events.group(aliases=['t'])
     async def timer(self, ctx, hours: int, minutes: int, *, event: str):
-        await ctx.send('This command is not functioning at the moment.')
         conn = await load_db()
         c = conn.cursor()
 
@@ -184,7 +182,8 @@ class Events:
                                'guild_id': ctx.guild.id})
                 embed = await self.embed_handler(ctx, dt, event, event_id, update=False)
                 await ctx.send(embed=embed)
-                msg = 'An event was created by {0}.\n{1} [{2}]\n{3}'.format(ctx.message.author, event, event_id, dt_long)
+                fmt = (ctx.message.author, event, event_id, dt_long)
+                msg = 'An event was created by {0}.\n{1} [{2}]\n{3}'.format(*fmt)
                 await self.spam(ctx, msg)
 
     @events.group(aliases=['add', 'a'])
@@ -261,13 +260,7 @@ class Events:
                 dt_long, dt_short = await self.make_string(dt)
                 c.execute("UPDATE events SET datetime = (:datetime) WHERE id = (:id)",
                           {'datetime': dt_long, 'id': event_id})
-            embed = await self.embed_handler(
-                ctx,
-                dt,
-                title,
-                event_id,
-                update=True
-            )
+            embed = await self.embed_handler(ctx, dt, title, event_id, update=True)
             await ctx.send(embed=embed)
         except Exception as e:
             await ctx.send('Please use the format `update event_id h:m day/mnth`.')
@@ -402,8 +395,7 @@ class Events:
                                       description='\n'.join(notifications),
                                       color=discord.Color.blue())
             else:
-                embed = discord.Embed(title='You do not have any notifications set.',
-                                      color=discord.Color.blue())
+                embed = discord.Embed(title='You do not have any notifications set.', color=discord.Color.blue())
             await ctx.send(embed=embed, delete_after=20)
         else:
             event_exists = await self.check_if_event_exists(eid)
@@ -588,12 +580,7 @@ class Events:
             c.execute("SELECT * FROM event_notify")
             events = c.fetchall()
             for event in events:
-                event_id = event[0]
-                member_id = event[1]
-                guild_id = event[2]
-                channel_id = event[3]
-                dt = event[4]
-                title = event[5]
+                event_id, member_id, guild_id, channel_id, dt, title = event
                 dt = await Events.make_datetime(dt)
                 eta = await Events.eta(dt)
                 days, hours, minutes = eta.split()
@@ -616,8 +603,7 @@ class Events:
         guild_id, guild_name, mod_role, autorole, prefix, spam, thumbnail = c.fetchone()
         if spam is not None:
             embed = discord.Embed(color=discord.Color.blue())
-            embed.add_field(name='Alert',
-                            value=message)
+            embed.add_field(name='Alert', value=message)
             channel = self.client.get_channel(spam)
             await channel.send(embed=embed)
 
@@ -626,8 +612,7 @@ class Events:
         conn = await load_db()
         c = conn.cursor()
         with conn:
-            c.execute("SELECT EXISTS(SELECT 1 FROM events WHERE id = (:id))",
-                      {'id': event_id})
+            c.execute("SELECT EXISTS(SELECT 1 FROM events WHERE id = (:id))", {'id': event_id})
             if 1 in c.fetchone():
                 return True
             else:
@@ -642,19 +627,6 @@ class Events:
         if thumb is not None:
             thumb_url = thumb
         return thumb_url
-
-    # @staticmethod
-    # async def create_user(member):
-    #     with open('files/users.json', 'r') as f:
-    #         data_users = json.load(f)
-    #     if member.id not in data_users:
-    #         data_users[member.id] = {
-    #             'username': member.name,
-    #             'guild': [],
-    #             'karma': 0,
-    #         }
-    #     with open('files/users.json', 'w') as f:
-    #         json.dump(data_users, f, indent=2)
 
     @events.error
     # @mytime.error
