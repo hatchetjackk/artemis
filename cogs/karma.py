@@ -92,9 +92,7 @@ class Karma:
         if message.author.id == self.client.user.id:
             return
 
-        conn = await load_db()
-        c = conn.cursor()
-
+        conn, c = await load_db()
         keywords = ['thanks', 'thank', 'gracias', 'kudos', 'thx', 'appreciate', 'cheers']
         msg = [word.lower() for word in message.content.split() if len(word) >= 3]
         karma_key = [item for item in keywords if item in msg]
