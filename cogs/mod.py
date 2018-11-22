@@ -22,7 +22,8 @@ class Mod:
         conn, c = await load_db()
         channel = discord.utils.get(ctx.guild.channels, name=channel)
         with conn:
-            c.execute("UPDATE guilds SET spam = (?) WHERE id = (?)", (channel.id, ctx.guild.id))
+            c.execute("UPDATE guilds SET spam = (:spam) WHERE id = (:id)",
+                      {'spam': channel.id, 'id': ctx.guild.id})
         msg = '{0} changed the botspam channel. It is now {1.mention}'.format(ctx.author.name, channel)
         await self.spam(ctx, msg)
 
@@ -32,10 +33,7 @@ class Mod:
         spam = c.fetchone()[0]
         if spam is not None:
             embed = discord.Embed(color=discord.Color.blue())
-            embed.add_field(
-                name='Alert',
-                value=message
-            )
+            embed.add_field(name='Alert', value=message)
             channel = self.client.get_channel(spam)
             await channel.send(embed=embed)
 
