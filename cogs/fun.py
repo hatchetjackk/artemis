@@ -6,7 +6,6 @@ import urllib.parse
 import discord
 import requests
 from discord.ext.commands import BucketType, CommandNotFound
-from artemis import load_json, dump_json
 from PyDictionary import PyDictionary
 from discord.ext import commands
 
@@ -16,8 +15,7 @@ class Fun:
         self.client = client
 
     @commands.command()
-    async def playing(self, ctx, *args):
-        game_match = ' '.join(args)
+    async def playing(self, ctx, *, game_match='all'):
         if game_match == 'all':
             games_currently_being_played = [member.game.name for member in ctx.guild.members
                                             if member.game is not None
@@ -27,7 +25,7 @@ class Fun:
                 await ctx.send(embed=embed)
             else:
                 embed = discord.Embed(title='Games currently being played'.format(game_match),
-                                      description='\n'.join(game for game in games_currently_being_played))
+                                      description='\n'.join(games_currently_being_played))
                 await ctx.send(embed=embed)
         else:
             members_playing_game = []
@@ -36,17 +34,17 @@ class Fun:
                 if member.game is not None:
                     matches = pattern.findall(member.game.name.lower())
                     for _ in matches:
-                        x = '{} - {}'.format(member.name, member.game.name)
-                        if x in members_playing_game:
+                        game = '{} - {}'.format(member.name, member.game.name)
+                        if game in members_playing_game:
                             pass
                         else:
-                            members_playing_game.append(x)
+                            members_playing_game.append(game)
             if len(members_playing_game) < 1:
                 embed = discord.Embed(title='No members are playing "{}"'.format(game_match))
                 await ctx.send(embed=embed)
             else:
                 embed = discord.Embed(title='Members currently playing "{}"'.format(game_match),
-                                      description='\n'.join(member for member in members_playing_game))
+                                      description='\n'.join(members_playing_game))
                 await ctx.send(embed=embed)
 
     @commands.command()
@@ -125,31 +123,29 @@ class Fun:
 
     @staticmethod
     async def on_message(message):
-        channel = message.channel
-        msg = message.content
-        if msg.startswith('r/'):
-            reddit_search = 'https://reddit.com/' + msg
-            await channel.send(reddit_search)
-        if msg == '(╯°□°）╯︵ ┻━┻' or msg == '(∩⩺ロ⩹)⊃━☆ﾟ.* ︵ ┻━┻':
+        if message.content.startswith('r/'):
+            reddit_search = 'https://reddit.com/' + message.content
+            await message.channel.send(reddit_search)
+        if message.content == '(╯°□°）╯︵ ┻━┻' or message.content == '(∩⩺ロ⩹)⊃━☆ﾟ.* ︵ ┻━┻':
             table_fix = ['┬─┬ ノ( ゜-゜ノ)', '┬─┬ ノ( ⩺ロ⩹ノ)']
-            await channel.send(random.choice(table_fix))
+            await message.channel.send(random.choice(table_fix))
 
-    @commands.command(aliases=['health'])
-    @commands.cooldown(rate=1, per=3, type=BucketType.user)
-    async def hp(self, ctx, *, target: str):
-        embed = discord.Embed()
-        data = await load_json('users')
-        pattern = re.compile(r'' + re.escape(target.lower()))
-        for member in ctx.guild.members:
-            member_name = await self.member_name(member)
-            matches = pattern.finditer(member_name.lower())
-            for _ in matches:
-                mid = str(member.id)
-                embed.add_field(name=member_name,
-                                value='{}/{} HP'.format(data[mid]['hp'], data[mid]['max hp']))
-                embed.set_thumbnail(url=member.avatar_url)
-
-        await ctx.send(embed=embed)
+    # @commands.command(aliases=['health'])
+    # @commands.cooldown(rate=1, per=3, type=BucketType.user)
+    # async def hp(self, ctx, *, target: str):
+    #     embed = discord.Embed()
+    #     data = await load_json('users')
+    #     pattern = re.compile(r'' + re.escape(target.lower()))
+    #     for member in ctx.guild.members:
+    #         member_name = await self.member_name(member)
+    #         matches = pattern.finditer(member_name.lower())
+    #         for _ in matches:
+    #             mid = str(member.id)
+    #             embed.add_field(name=member_name,
+    #                             value='{}/{} HP'.format(data[mid]['hp'], data[mid]['max hp']))
+    #             embed.set_thumbnail(url=member.avatar_url)
+    #
+    #     await ctx.send(embed=embed)
 
     @staticmethod
     async def member_name(member):
@@ -176,11 +172,7 @@ class Fun:
             print('{0} played rock, paper, scissors and tied with Artemis.'.format(ctx.author.name))
         if choice == lose.get(bot_choice):
             await ctx.send('Artemis chose {0}! You lost!'.format(bot_choice))
-            data = await load_json('users')
-            data[str(ctx.author.id)]['hp'] -= 1
-            await ctx.send('{} took 1 HP of damage...'.format(ctx.author.name))
             print('{0} played rock, paper, scissors and lost to Artemis.'.format(ctx.author.name))
-            await dump_json('users', data)
         if choice == win.get(bot_choice):
             await ctx.send('Artemis chose {0}! You win!'.format(bot_choice))
             print('{0} played rock, paper, scissors and beat Artemis!'.format(ctx.author.name))
@@ -191,7 +183,6 @@ class Fun:
         query_string = urllib.parse.urlencode({"search_query": ' '.join(args)})
         html_content = urllib.request.urlopen("http://www.youtube.com/results?" + query_string)
         search_results = re.findall(r'href=\"\/watch\?v=(.{11})', html_content.read().decode())
-
         await ctx.send("http://www.youtube.com/watch?v=" + search_results[0])
         print('{0} searched Youtube for "{1}".'.format(ctx.author.name, ' '.join(args)))
 
@@ -210,7 +201,7 @@ class Fun:
 
     @rps.error
     @youtube.error
-    @hp.error
+    # @hp.error
     async def on_message_error(self, ctx, error):
         if isinstance(error, commands.CommandOnCooldown):
             msg = 'You\'ve triggered a cool down. Please try again in {} sec.'.format(

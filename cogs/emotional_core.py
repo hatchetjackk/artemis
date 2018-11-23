@@ -1,7 +1,7 @@
 import asyncio
 import random
 import discord
-from artemis import load_json, dump_json
+from artemis import load_db
 from itertools import cycle
 from discord.ext import commands
 
@@ -11,96 +11,94 @@ class Emotions:
         self.client = client
 
     async def on_message(self, message):
-        channel = message.channel
         msg = [word.lower() for word in message.content.split()]
         content = message.content.lower()
-        data = await load_json('status')
-        good_keys = data['status_changing_words']['good']
-        bad_keys = data['status_changing_words']['bad']
-        good_bot = data['bot']['good']
-        bad_bot = data['bot']['bad']
+        conn, c = await load_db()
+
+        c.execute("SELECT * FROM bot_responses WHERE message_type = 'status_changing_word_good'")
+        good_keys = [value[1] for value in c.fetchall()]
+        c.execute("SELECT * FROM bot_responses WHERE message_type = 'status_changing_word_negative'")
+        bad_keys = [value[1] for value in c.fetchall()]
+
+        c.execute("SELECT * FROM bot_responses WHERE message_type = 'bot_responder_good'")
+        good_bot = [value[1] for value in c.fetchall()]
+        c.execute("SELECT * FROM bot_responses WHERE message_type = 'bot_responder_bad'")
+        bad_bot = [value[1] for value in c.fetchall()]
+
         good_morning = ['good morning', 'morning guys', 'morning, guys', 'morning artie',
                         'good morning, artie', 'good morning, Artemis',
                         'good morning, Artie', 'morning artemis', 'good morning, arty',
                         'good morning arty']
-        morning_response = ['Good morning!', 'Mornin!',
-                            'Good morning, {}!'.format(message.author.name)]
-        trigger = False
+
         for word in msg:
             if word in good_keys:
-                trigger = True
                 await self.emotional_level(1)
             if word in bad_keys:
-                trigger = True
                 await self.emotional_level(-1)
         for value in good_morning:
             if value in content and message.author.id != self.client.user.id:
-                # trigger = True
-                await channel.send(random.choice(morning_response))
+                morning_response = ['Good morning!', 'Mornin!', 'Good morning, {}!'.format(message.author.name)]
+                await message.channel.send(random.choice(morning_response))
                 return
         for value in good_bot:
             if value in content:
-                trigger = True
-
-                def check(m):
-                    return m.author == message.author and m.channel == channel
-
-                neg_responses = ['not u', 'jk', 'just kidding', 'not you', 'nevermind', 'nvm']
-                await channel.send(random.choice(data['bot']['good_response']))
-                msg = await self.client.wait_for('message', check=check)
-                if msg.content in neg_responses:
-                    await channel.send(random.choice(data['bot']['bad_response']))
-                    bad = -1
-                    await self.emotional_level(bad)
+                c.execute("SELECT * FROM bot_responses WHERE message_type = 'bot_responder_good_response'")
+                good_response = [value[1] for value in c.fetchall()]
+                await message.channel.send(random.choice(good_response))
         for value in bad_bot:
             if value in content:
-                trigger = True
-                await channel.send(random.choice(data['bot']['bad_response']))
-        # if ('artemis' in content or 'artie' in content) and trigger is False:
-        #     random_response = ['Hm?', 'Yes?', 'Someone call me?', 'You rang?',
-        #                        'Did you need something?']
-        #     if random.randint(0, 100) % 10 == 0:
-        #         await channel.send(random.choice(random_response))
+                c.execute("SELECT * FROM bot_responses WHERE message_type = 'bot_responder_bad_response'")
+                bad_response = [value[1] for value in c.fetchall()]
+                await message.channel.send(random.choice(bad_response))
 
     @staticmethod
     async def emotional_level(value):
-        data = await load_json('status')
-        if value < 0 and data["status"]["level"] == 0:
+        conn, c = await load_db()
+        c.execute("SELECT * FROM bot_status")
+        level = c.fetchone()[0]
+        if value < 0 and level == 0:
             return
-        if value > 0 and data["status"]["level"] == 50:
+        if value > 0 and level == 50:
             return
-        data["status"]["level"] += value
-        print('Artemis emotional level change: {0}'.format(data["status"]["level"]))
-        await dump_json('status', data)
+        with conn:
+            level += value
+            c.execute("UPDATE bot_status SET level = (:level)", {'level': level})
+        print('Artemis emotional level change: {0}'.format(level))
 
     @commands.command()
     async def artemis(self, ctx):
-        data = await load_json('status')
-        level = data["status"]["level"]
-
+        conn, c = await load_db()
+        c.execute("SELECT level FROM bot_status")
+        level = c.fetchone()[0]
         if level >= 40:
-            await ctx.channel.send(random.choice(data["responses"]["great"]))
+            c.execute("SELECT response FROM bot_responses WHERE message_type = 'great'")
+            await ctx.channel.send(random.choice([value[0] for value in c.fetchall()]))
             mood = "Great"
         elif level >= 30:
-            await ctx.channel.send(random.choice(data["responses"]["good"]))
+            c.execute("SELECT response FROM bot_responses WHERE message_type = 'good'")
+            await ctx.channel.send(random.choice([value[0] for value in c.fetchall()]))
             mood = "Good"
         elif level >= 20:
-            await ctx.channel.send(random.choice(data["responses"]["ok"]))
+            c.execute("SELECT response FROM bot_responses WHERE message_type = 'ok'")
+            await ctx.channel.send(random.choice([value[0] for value in c.fetchall()]))
             mood = 'OK'
         elif level >= 10:
-            await ctx.channel.send(random.choice(data["responses"]["bad"]))
+            c.execute("SELECT response FROM bot_responses WHERE message_type = 'bad'")
+            await ctx.channel.send(random.choice([value[0] for value in c.fetchall()]))
             mood = 'Bad'
         else:
-            await ctx.channel.send(random.choice(data["responses"]["terrible"]))
+            c.execute("SELECT response FROM bot_responses WHERE message_type = 'terrible'")
+            await ctx.channel.send(random.choice([value[0] for value in c.fetchall()]))
             mood = 'Terrible'
         print('Mood: {0:<5} Level: {1}/50'.format(mood, level))
         return mood
 
     async def change_status(self):
         await self.client.wait_until_ready()
-        data = await load_json('status')
-        status_response = data['bot']['status_response']
-        msg = cycle(status_response)
+        conn, c = await load_db()
+        c.execute("SELECT response FROM bot_responses WHERE message_type = 'bot_status_messages'")
+        status_responses = [value[0] for value in c.fetchall()]
+        msg = cycle(status_responses)
         while not self.client.is_closed():
             current_status = next(msg)
             await self.client.change_presence(game=discord.Game(name=current_status))
