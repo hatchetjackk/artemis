@@ -1,6 +1,5 @@
 import discord
 from artemis import load_db
-from discord.ext.commands import CommandNotFound
 from discord.ext import commands
 
 
@@ -46,14 +45,6 @@ class Mod:
         with conn:
             c.execute("UPDATE guilds SET prefix = (:prefix) WHERE id = (:id)", {'prefix': prefix, 'id': ctx.guild.id})
         await ctx.send('Changed guild prefix to `{}`'.format(prefix))
-
-    @staticmethod
-    async def on_command_error(ctx, error):
-        if isinstance(error, CommandNotFound):
-            conn, c = await load_db()
-            c.execute("SELECT response FROM bot_responses WHERE message_type = 'error_response'")
-            error_response = [value[0] for value in c.fetchall()]
-            await ctx.send(error_response)
 
     @prefix.error
     @botspam.error
