@@ -15,10 +15,9 @@ logging.info('Starting')
 # noinspection PyUnusedLocal
 async def prefix(bot, message):
     conn, c = await load_db()
-    c.execute("SELECT prefix FROM guilds WHERE id = (?)", (message.guild.id,))
+    c.execute("SELECT prefix FROM guilds WHERE id = (:id)", {'id': message.guild.id})
     bot_prefix = c.fetchone()[0]
     return bot_prefix
-
 client = commands.Bot(command_prefix=prefix)
 client.remove_command('help')
 

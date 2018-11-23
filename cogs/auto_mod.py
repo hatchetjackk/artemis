@@ -61,28 +61,6 @@ class Automod:
         msg = '{0} cleared {1}\'s autorole.'.format(ctx.author.name, ctx.guild.name)
         await self.spam(ctx, msg)
 
-    # @commands.command(aliases=['spam'])
-    # @commands.has_any_role('mod', 'Moderator')
-    # async def botspam(self, ctx, *args):
-    #     try:
-    #         guild = ctx.guild
-    #         gid = str(guild.id)
-    #
-    #         data = await self.load_guilds()
-    #         if len(args) < 1 or len(args) > 1:
-    #             await ctx.send('Please use `spamchannel channel_name`.')
-    #         if args[0] not in [channel.name for channel in ctx.guild.channels]:
-    #             await ctx.send('{} is not a channel.'.format(args[0]))
-    #             return
-    #         spam = discord.utils.get(guild.channels, name=args[0])
-    #         data[gid]['spam'] = spam.id
-    #         await self.dump_guilds(data)
-    #         msg = '{0} changed the botspam channel. It is now {1.mention}'.format(ctx.message.author.name, spam)
-    #         await self.spam(ctx, msg)
-    #     except Exception as e:
-    #         print(e)
-    #         raise
-
     @commands.command()
     @commands.has_any_role('Moderator', 'mod')
     async def clear(self, ctx, amount: int):
@@ -107,16 +85,8 @@ class Automod:
                 msg2 = '{0} was assigned the autorole {1}'.format(member.name, role)
                 embed = discord.Embed(color=discord.Color.blue())
                 embed.set_thumbnail(url=member.avatar_url)
-                embed.add_field(
-                    name='Alert',
-                    value=msg1,
-                    inline=False
-                )
-                embed.add_field(
-                    name='Alert',
-                    value=msg2,
-                    inline=False
-                )
+                embed.add_field(name='Alert', value=msg1, inline=False)
+                embed.add_field(name='Alert', value=msg2, inline=False)
                 channel = member.guild.get_channel(spam)
                 await channel.send(embed=embed)
         channel = discord.utils.get(member.guild.channels, name='general')
@@ -131,11 +101,7 @@ class Automod:
             if spam is not None:
                 msg = '{0.name} has left {1}.'.format(member, member.guild)
                 embed = discord.Embed(color=discord.Color.blue())
-                embed.add_field(
-                    name='Alert',
-                    value=msg,
-                    inline=False
-                )
+                embed.add_field(name='Alert', value=msg, inline=False)
                 channel = member.guild.get_channel(spam)
                 await channel.send(embed=embed)
 
@@ -145,22 +111,12 @@ class Automod:
         if before.author.bot:
             return
         try:
-            embed = discord.Embed(
-                title='{0} edited a message'.format(after.author.name),
-                description='in channel {0.mention}.'.format(after.channel),
-                color=discord.Color.blue()
-            )
+            embed = discord.Embed(title='{0} edited a message'.format(after.author.name),
+                                  description='in channel {0.mention}.'.format(after.channel),
+                                  color=discord.Color.blue())
             embed.set_thumbnail(url=after.author.avatar_url)
-            embed.add_field(
-                name='Before',
-                value=before.content,
-                inline=False
-            )
-            embed.add_field(
-                name='After',
-                value=after.content,
-                inline=False
-            )
+            embed.add_field(name='Before', value=before.content, inline=False)
+            embed.add_field(name='After', value=after.content, inline=False)
 
             conn = await load_db()
             c = conn.cursor()
@@ -187,10 +143,7 @@ class Automod:
             spam = c.fetchone()[0]
             if spam is not None:
                 embed = discord.Embed(color=discord.Color.blue())
-                embed.add_field(
-                    name='Alert',
-                    value=msg.format(message)
-                )
+                embed.add_field(name='Alert', value=msg.format(message))
                 channel = message.guild.get_channel(spam)
                 if channel is None:
                     return
@@ -204,10 +157,7 @@ class Automod:
             spam = c.fetchone()[0]
             if spam is not None:
                 embed = discord.Embed(color=discord.Color.blue())
-                embed.add_field(
-                    name='Alert',
-                    value=message
-                )
+                embed.add_field(name='Alert', value=message)
                 channel = ctx.guild.get_channel(spam)
                 await channel.send(embed=embed)
 

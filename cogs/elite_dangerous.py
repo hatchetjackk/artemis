@@ -44,8 +44,8 @@ class EliteDangerous:
     @staticmethod
     async def get_pilot_information(cmdr_name):
         try:
-            from artemis import load_json
-            data = await load_json('credentials')
+            with open('files/credentials.json') as f:
+                data = json.load(f)
             inara_api = data['inara']
             json_data = {
                 "header": {
@@ -107,8 +107,7 @@ class EliteDangerous:
         await ctx.send(embed=embed)
 
     @commands.command()
-    async def faction(self, ctx, *args):
-        faction = ' '.join(args)
+    async def faction(self, ctx, *, faction: str):
         async with aiohttp.ClientSession() as session:
             url = 'http://elitebgs.kodeblox.com/api/eddb/v3/factions?name={}'.format(faction)
             f = await self.fetch(session, url)
@@ -270,7 +269,7 @@ class EliteDangerous:
                             all_logo = allegiances[station['allegiance']]
                         fmt = (all_logo, station_name, controlling_faction, faction_abbreviation)
                         embed.add_field(name='{} {} ◆ {} ({})'.format(*fmt),
-                                        value='⏵ Services: {}'.format(', '.join(options)),
+                                        value='→ Services: {}'.format(', '.join(options)),
                                         inline=False)
                     thumbs = {'Independent': 'https://i.imgur.com/r4d7tPt.png',
                               'Alliance': 'https://i.imgur.com/OWf0P6u.png',
@@ -320,19 +319,16 @@ class EliteDangerous:
             await ctx.send(embed=embed)
 
     @commands.command(aliases=['cmdr', 'CMDR'])
-    async def pilot(self, ctx, *args):
+    async def pilot(self, ctx, *, pilot_name: str):
         try:
-            from artemis import load_json
-            user_input = ' '.join(args).split(',')
-            pilot_name = user_input[0].strip()
-            data = await load_json('credentials')
-            inara_api = data['inara']
+            with open('files/credentials.json') as f:
+                data = json.load(f)
             json_data = {
                 "header": {
                     "appName": "Artemis_Bot",
                     "appVersion": "0.7",
                     "isDeveloped": True,
-                    "APIkey": inara_api,
+                    "APIkey": data['inara'],
                     "commanderName": "Hatchet Jackk"
                 },
                 "events": [

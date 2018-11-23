@@ -11,7 +11,7 @@ import discord
 import random
 import time
 from collections import OrderedDict
-from artemis import load_json, dump_json, load_db
+from artemis import load_db
 from discord.ext import commands
 
 
@@ -21,74 +21,65 @@ class Karma:
         self.karma_blacklist = ['Knights of Karma']
 
     @commands.command()
-    async def karma(self, ctx, *args):
+    async def karma(self, ctx, *, member_check=None):
         if ctx.guild.name in self.karma_blacklist:
             return
-        member_check = ' '.join(args)
         conn, c = await load_db()
-        with conn:
-            if member_check == '':
-                c.execute("SELECT karma FROM members WHERE id = (:id)", {'id': ctx.author.id})
-                points = c.fetchone()[0]
-                await ctx.send('You have {0} karma.'.format(points))
-            else:
-                if len(member_check) < 3:
-                    await ctx.send('Please search using 3 or more characters.')
-                    return
-                target_member = ''
-                for member in ctx.guild.members:
-                    member_name = member.name.lower()
-                    if member.nick is not None:
-                        member_name = member.nick.lower()
-                    if member.mention in member_check:
-                        target_member = member
-                    else:
-                        pattern = re.compile(r'' + re.escape(member_check))
-                        matches = pattern.findall(member_name)
-                        for _ in matches:
-                            target_member = member
-                c.execute("SELECT karma FROM members WHERE id = (:id)", {'id': target_member.id})
-                points = c.fetchone()[0]
-                target_member_name = target_member.name
-                if target_member.nick is not None:
-                    target_member_name = target_member.nick
-                msg = '{0} has {1} karma.'.format(target_member_name, points)
-                await ctx.send(msg)
+        if member_check is None:
+            c.execute("SELECT id, karma FROM members WHERE id = (:id)", {'id': ctx.author.id})
+            member_id, karma = c.fetchone()
+            await ctx.send('You have {0} karma.'.format(karma))
+        else:
+            if len(member_check) < 3:
+                await ctx.send('Please search using 3 or more characters.')
+                return
+            target_member = ''
+            for member_object in ctx.guild.members:
+                member_name = member_object.name.lower()
+                if member_object.nick is not None:
+                    member_name = member_object.nick.lower()
+                if member_object.mention in member_check:
+                    target_member = member_object
+                else:
+                    pattern = re.compile(r'' + re.escape(member_check))
+                    matches = pattern.findall(member_name)
+                    for _ in matches:
+                        target_member = member_object
+            c.execute("SELECT id, karma FROM members WHERE id = (:id)", {'id': target_member.id})
+            member_id, karma = c.fetchone()
+            target_member_name = target_member.name
+            if target_member.nick is not None:
+                target_member_name = target_member.nick
+            msg = '{0} has {1} karma.'.format(target_member_name, karma)
+            await ctx.send(msg)
 
     @commands.command()
     async def leaderboard(self, ctx):
-        guild = ctx.guild
-        data = await load_json('users')
+        conn, c = await load_db()
         leaderboard = {}
-        for user in data:
-            if str(guild.id) in data[user]['guild']:
-                if 'karma' not in data[user]:
-                    data[user]['karma'] = 0
-                    await dump_json('users', data)
-                points = data[user]['karma']
-                user = guild.get_member(int(user))
-                if user.nick is not None:
-                    leaderboard[user.nick] = points
-                else:
-                    leaderboard[user.name] = points
+        c.execute("SELECT * FROM guild_members WHERE id = (:id)", {'id': ctx.guild.id})
+        guild_members = c.fetchall()
+        for member in guild_members:
+            guild_id, guild, member_id, member_name, member_nick = member
+            c.execute("SELECT member_name, karma FROM members WHERE id = (:id)", {'id': member_id})
+            member_name, karma = c.fetchone()
+            member_identity = member_nick
+            if member_identity is None:
+                member_identity = member_name
+            leaderboard[member_identity] = karma
         sorted_karma = OrderedDict(reversed(sorted(leaderboard.items(), key=lambda x: x[1])))
         counter = 1
         karma_leaderboard = []
         for key, value in sorted_karma.items():
             karma_leaderboard.append('{}: {} - {} karma'.format(counter, key, value))
             counter += 1
-        embed = discord.Embed(
-            title="Karma Leaderboard",
-            color=discord.Color.blue(),
-            description='\n'.join(karma_leaderboard[:10])
-        )
+        embed = discord.Embed(title="Karma Leaderboard",
+                              color=discord.Color.blue(),
+                              description='\n'.join(karma_leaderboard[:10]))
         await ctx.send(embed=embed)
 
     async def on_message(self, message):
-        if message.guild.name in self.karma_blacklist:
-            return
-        author = message.author
-        if message.author.id == self.client.user.id:
+        if message.guild.name in self.karma_blacklist or message.author.id == self.client.user.id:
             return
 
         conn, c = await load_db()
@@ -136,7 +127,7 @@ class Karma:
                     msg = random.choice([resp[0] for resp in client_karma])
                     await message.channel.send(msg)
                 # check if someone is trying to farm karma
-                elif member.id is author.id:
+                elif member.id is message.author.id:
                     c.execute("SELECT response FROM bot_responses WHERE message_type = 'bad_karma'")
                     bad_karma = c.fetchall()
                     msg = random.choice([resp[0] for resp in bad_karma]).format(message.author.id)

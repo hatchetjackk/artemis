@@ -1,5 +1,3 @@
-import json
-import random
 import discord
 from artemis import load_db
 from discord.ext.commands import CommandNotFound
@@ -13,6 +11,7 @@ class Mod:
     @commands.command()
     async def emoji(self, ctx):
         emojis = ctx.guild.emojis
+        print("Guild Emoji List:")
         for value in emojis:
             print(value)
 
@@ -22,15 +21,15 @@ class Mod:
         conn, c = await load_db()
         channel = discord.utils.get(ctx.guild.channels, name=channel)
         with conn:
-            c.execute("UPDATE guilds SET spam = (:spam) WHERE id = (:id)",
-                      {'spam': channel.id, 'id': ctx.guild.id})
+            c.execute("UPDATE guilds SET spam = (:spam) WHERE id = (:id)", {'spam': channel.id, 'id': ctx.guild.id})
         msg = '{0} changed the botspam channel. It is now {1.mention}'.format(ctx.author.name, channel)
+        await ctx.send(msg, delete_after=10)
         await self.spam(ctx, msg)
 
     async def spam(self, ctx, message):
         conn, c = await load_db()
-        c.execute("SELECT spam FROM guilds WHERE id = (?)", (ctx.guild.id,))
-        spam = c.fetchone()[0]
+        c.execute("SELECT guild, spam FROM guilds WHERE id = (:id)", {'id': ctx.guild.id})
+        guild, spam = c.fetchone()
         if spam is not None:
             embed = discord.Embed(color=discord.Color.blue())
             embed.add_field(name='Alert', value=message)
@@ -38,29 +37,35 @@ class Mod:
             await channel.send(embed=embed)
 
     @commands.command()
-    # @commands.is_owner()
+    @commands.is_owner()
     async def prefix(self, ctx, prefix: str):
+        if len(prefix) > 1:
+            await ctx.send('Please use single character prefixes only.')
+            return
         conn, c = await load_db()
         with conn:
-            c.execute("UPDATE guilds SET prefix = (?) WHERE id = (?)", (prefix, ctx.guild.id))
-        await ctx.send('Changed guild prefix to {}'.format(prefix))
+            c.execute("UPDATE guilds SET prefix = (:prefix) WHERE id = (:id)", {'prefix': prefix, 'id': ctx.guild.id})
+        await ctx.send('Changed guild prefix to `{}`'.format(prefix))
 
     @staticmethod
     async def on_command_error(ctx, error):
         if isinstance(error, CommandNotFound):
-            with open('files/status.json') as f:
-                data = json.load(f)
-            msg = data['bot']['error_response']
-            await ctx.send(random.choice(msg))
+            conn, c = await load_db()
+            c.execute("SELECT response FROM bot_responses WHERE message_type = 'error_response'")
+            error_response = [value[0] for value in c.fetchall()]
+            await ctx.send(error_response)
 
     @prefix.error
+    @botspam.error
     async def on_message_error(self, ctx, error):
         if isinstance(error, commands.CommandOnCooldown):
-            msg = ':sob: You\'ve triggered a cool down. Please try again in {} sec.'.format(
-                int(error.retry_after))
+            msg = 'You\'ve triggered a cool down. Please try again in {} sec.'.format(int(error.retry_after))
             await ctx.send(msg)
         if isinstance(error, commands.CheckFailure):
             msg = 'You do not have permission to run this command.'
+            await ctx.send(msg)
+        if isinstance(error, commands.MissingRequiredArgument):
+            msg = 'A critical argument is missing from the command.'
             await ctx.send(msg)
 
 
