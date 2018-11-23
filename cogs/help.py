@@ -164,16 +164,18 @@ class Help:
                   '`time`',
             inline=False
         )
-        embed.add_field(
-            name='mytime',
-            value='Show an event in a specified timezone.\n'
-                  '`mytime event_id timezone`',
-            inline=False
-        )
+        # embed.add_field(
+        #     name='mytime',
+        #     value='Show an event in a specified timezone.\n'
+        #           '`mytime event_id timezone`',
+        #     inline=False
+        # )
         embed.add_field(
             name='notify',
-            value='Tell Artemis to notify you when an event is less than one hour from beginning.\n'
-                  '`notify event_id`',
+            value='Tell Artemis to notify you when an event is happening.\n'
+                  '`notify event_id <optional channel_name> <optional time_in_minutes>`\n'
+                  'Example: `!notify 0000 general 20` will notify the user in the #general channel 20 minutes\n'
+                  'before the event starts!',
             inline=False
         )
         await ctx.author.send(embed=embed)
