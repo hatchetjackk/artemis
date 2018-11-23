@@ -65,34 +65,6 @@ class Emotions:
             c.execute("UPDATE bot_status SET level = (:level)", {'level': level})
         print('Artemis emotional level change: {0}'.format(level))
 
-    @commands.command()
-    async def artemis(self, ctx):
-        conn, c = await load_db()
-        c.execute("SELECT level FROM bot_status")
-        level = c.fetchone()[0]
-        if level >= 40:
-            c.execute("SELECT response FROM bot_responses WHERE message_type = 'great'")
-            await ctx.channel.send(random.choice([value[0] for value in c.fetchall()]))
-            mood = "Great"
-        elif level >= 30:
-            c.execute("SELECT response FROM bot_responses WHERE message_type = 'good'")
-            await ctx.channel.send(random.choice([value[0] for value in c.fetchall()]))
-            mood = "Good"
-        elif level >= 20:
-            c.execute("SELECT response FROM bot_responses WHERE message_type = 'ok'")
-            await ctx.channel.send(random.choice([value[0] for value in c.fetchall()]))
-            mood = 'OK'
-        elif level >= 10:
-            c.execute("SELECT response FROM bot_responses WHERE message_type = 'bad'")
-            await ctx.channel.send(random.choice([value[0] for value in c.fetchall()]))
-            mood = 'Bad'
-        else:
-            c.execute("SELECT response FROM bot_responses WHERE message_type = 'terrible'")
-            await ctx.channel.send(random.choice([value[0] for value in c.fetchall()]))
-            mood = 'Terrible'
-        print('Mood: {0:<5} Level: {1}/50'.format(mood, level))
-        return mood
-
     async def change_status(self):
         await self.client.wait_until_ready()
         conn, c = await load_db()
