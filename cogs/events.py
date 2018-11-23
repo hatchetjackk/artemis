@@ -371,7 +371,7 @@ class Events:
                                       color=discord.Color.blue())
             else:
                 embed = discord.Embed(title='You do not have any notifications set.', color=discord.Color.blue())
-            await ctx.send(embed=embed, delete_after=20)
+            await ctx.send(embed=embed)
             return
 
         # if no channel is passed
@@ -395,7 +395,7 @@ class Events:
         if not event_exists:
             msg = 'Event ID {} not found.'.format(eid)
             embed = discord.Embed(title=msg, color=discord.Color.dark_purple())
-            await ctx.send(embed=embed, delete_after=5)
+            await ctx.send(embed=embed)
             return
         else:
             c.execute("SELECT * FROM events WHERE id = (:id) AND guild_id = (:guild_id)",
@@ -424,14 +424,19 @@ class Events:
             else:
                 with conn:
                     c.execute("""INSERT INTO event_notify 
-                        VALUES(:event_id, :member_id, :guild_id, :channel_id, :datetime, :title, :timer)""",
-                              {'event_id': event_id, 'member_id': ctx.author.id, 'guild_id': guild_id,
-                               'channel_id': cid, 'datetime': dt, 'title': title, 'timer': timer})
+                                VALUES(:event_id, :member_id, :guild_id, :channel_id, :datetime, :title, :timer)""",
+                              {'event_id': event_id,
+                               'member_id': ctx.author.id,
+                               'guild_id': guild_id,
+                               'channel_id': cid,
+                               'datetime': dt,
+                               'title': title,
+                               'timer': timer})
                     fmt = (ctx.author.name, channel, title, timer)
                     msg = 'OK! I\'ll notify {0} in {1.mention} when "__{2}__" is {3} minutes away from ' \
                           'starting!'.format(*fmt)
             embed = discord.Embed(title='Notification Update', color=discord.Color.dark_purple(), description=msg)
-            await ctx.send(embed=embed, delete_after=10)
+            await ctx.send(embed=embed)
             return
 
     async def remove_event(self, ctx, eid):
@@ -566,22 +571,27 @@ class Events:
         await self.client.wait_until_ready()
         while not self.client.is_closed():
             conn, c = await load_db()
-            await asyncio.sleep(60 * 2)
+            await asyncio.sleep(60)
 
             c.execute("SELECT * FROM event_notify")
             events = c.fetchall()
             for event in events:
-                event_id, member_id, guild_id, channel_id, dt, title = event
+                event_id, member_id, guild_id, channel_id, dt, title, timer = event
+                print(event_id, member_id, guild_id, channel_id, dt, title, timer)
                 dt = await Events.make_datetime(dt)
                 eta = await Events.eta(dt)
                 days, hours, minutes = eta.split()
                 days = int(days.strip('d'))
                 hours = int(hours.strip('h'))
                 minutes = int(minutes.strip('m'))
-                if days < 1 and hours < 1 and minutes > 0:
+                total_hours_in_minutes = hours * 60
+                total_minutes_in_days = days * 24 * 60
+                total_time_left = total_hours_in_minutes + total_minutes_in_days + minutes
+                if total_time_left < timer:
                     user = await self.client.get_user_info(user_id=member_id)
                     channel = self.client.get_channel(channel_id)
-                    await channel.send('{0}: **{1}** is starting in less than 1 hour!'.format(user.mention, title))
+                    msg = '{0}: **{1}** is starting in less than {2} minutes!'.format(user.mention, title, timer)
+                    await channel.send(msg)
                     with conn:
                         c.execute("DELETE FROM event_notify WHERE event_id = (:event_id) AND guild_id = (:guild_id)",
                                   {'event_id': event_id, 'guild_id': guild_id})
