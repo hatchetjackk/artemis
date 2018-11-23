@@ -13,54 +13,6 @@ class Automod:
         for role in ctx.guild.roles:
             await ctx.send(role)
 
-    @commands.group()
-    # @commands.has_any_role('Moderator', 'mod', 'admin', 'Admin')
-    async def modrole(self, ctx):
-        if ctx.invoked_subcommand is None:
-            await ctx.send('Invoke `modrole` with `add` or `remove`.')
-
-    @modrole.group()
-    async def set(self, ctx, *, role: str):
-        if ctx.guild.name in self.auto_mod_blacklist:
-            return
-        role = discord.utils.get(ctx.guild.roles, name=role)
-        conn, c = await load_db()
-        with conn:
-            c.execute("UPDATE guilds SET mod_role = (?) WHERE id = (?)", (role.name, ctx.guild.id))
-        await ctx.send('{} added to the moderator list.'.format(role))
-
-    @modrole.group()
-    async def remove(self, ctx):
-        if ctx.guild.name in self.auto_mod_blacklist:
-            return
-        conn, c = await load_db()
-        with conn:
-            c.execute("UPDATE guilds SET mod_role = (?) WHERE id = (?)", (None, ctx.guild.id))
-        await ctx.send('The modrole was removed.')
-
-    @commands.group()
-    # @commands.has_any_role('Moderator', 'mod')
-    async def autorole(self, ctx):
-        if ctx.invoked_subcommand is None:
-            await ctx.send('Invoke `autorole` with `add` or `remove`.')
-
-    @autorole.group(aliases=['add'])
-    async def set(self, ctx, *, role: str):
-        role = discord.utils.get(ctx.guild.roles, name=role)
-        conn, c = await load_db()
-        with conn:
-            c.execute("UPDATE guilds SET autorole = (?) WHERE id = (?)", (role.id, ctx.guild.id))
-        msg = '{0} set {1}\'s autorole to *{2}*.'.format(ctx.author.name, ctx.guild.name, role.name)
-        await self.spam(ctx, msg)
-
-    @autorole.group()
-    async def remove(self, ctx):
-        conn, c = await load_db()
-        with conn:
-            c.execute("UPDATE guilds SET autorole = (?) WHERE id = (?)", (None, ctx.guild.id))
-        msg = '{0} cleared {1}\'s autorole.'.format(ctx.author.name, ctx.guild.name)
-        await self.spam(ctx, msg)
-
     @commands.command()
     @commands.has_any_role('Moderator', 'mod')
     async def clear(self, ctx, amount: int):
@@ -121,7 +73,7 @@ class Automod:
             conn = await load_db()
             c = conn.cursor()
             with conn:
-                c.execute("SELECT spam FROM guilds WHERE id = (?)", (before.guild.id,))
+                c.execute("SELECT spam FROM guilds WHERE id = (:id)", {'id': before.guild.id})
                 if c.fetchone()[0] is None:
                     return
                 spam = before.guild.get_channel(c.fetchone()[0])
@@ -161,7 +113,7 @@ class Automod:
                 channel = ctx.guild.get_channel(spam)
                 await channel.send(embed=embed)
 
-    @autorole.error
+    # @autorole.error
     # @botspam.error
     @clear.error
     async def on_message_error(self, ctx, error):
