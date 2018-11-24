@@ -1,7 +1,6 @@
 import random
 import pytz
 from artemis import load_db
-# from artemis import load_json, dump_json
 from datetime import datetime
 
 

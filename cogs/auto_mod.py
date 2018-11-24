@@ -58,7 +58,7 @@ class Automod:
                 await channel.send(embed=embed)
 
     async def on_message_edit(self, before, after):
-        if before.guild.name in self.auto_mod_blacklist:
+        if before.guild in self.auto_mod_blacklist:
             return
         if before.author.bot:
             return
