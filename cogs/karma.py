@@ -79,7 +79,7 @@ class Karma:
         await ctx.send(embed=embed)
 
     async def on_message(self, message):
-        if message.guild.name in self.karma_blacklist or message.author.id == self.client.user.id:
+        if message.guild in self.karma_blacklist or message.author.id == self.client.user.id:
             return
 
         conn, c = await load_db()
