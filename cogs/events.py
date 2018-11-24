@@ -409,6 +409,7 @@ class Events:
                         AND member_id = (:member_id)
                         AND guild_id = (:guild_id))""",
                       {'event_id': event_id, 'member_id': ctx.author.id, 'guild_id': ctx.guild.id})
+            # if notification exists, check if there are any differences
             if 1 in c.fetchone():
                 c.execute("""SELECT EXISTS(SELECT 1 
                             FROM event_notify 
@@ -416,6 +417,7 @@ class Events:
                             AND channel_id = (:channel_id) 
                             AND timer = (:timer))""",
                           {'event_id': event_id, 'channel_id': cid, 'timer': timer})
+                # if there are no differences, ignore the command,else update the changes
                 if 1 in c.fetchone():
                     msg = 'This notification already exists.'
                 else:
@@ -424,9 +426,12 @@ class Events:
                                     SET channel_id = (:channel_id), timer = (:timer) 
                                     WHERE event_id = (:event_id)""",
                                   {'channel_id': cid, 'timer': timer, 'event_id': event_id})
-                        fmt = (ctx.author.name, channel, title, timer)
-                        msg = 'OK! I\'ll notify {0} in {1.mention} when "__{2}__" is {3} minutes away from ' \
-                              'starting!'.format(*fmt)
+                        fmt = (title.title(), channel, timer)
+                        msg = 'OK! Your notification has been updated.\n' \
+                              '**Event**: "{}"\n' \
+                              '**Channel**: {.mention}\n' \
+                              '**Alert**: {} minutes from start time.'.format(*fmt)
+            # if notification does't exists, create it
             else:
                 with conn:
                     c.execute("""INSERT INTO event_notify 
@@ -438,9 +443,11 @@ class Events:
                                'datetime': dt,
                                'title': title,
                                'timer': timer})
-                    fmt = (ctx.author.name, channel, title, timer)
-                    msg = 'OK! I\'ll notify {0} in {1.mention} when "__{2}__" is {3} minutes away from ' \
-                          'starting!'.format(*fmt)
+                    fmt = (title.title(), channel, timer)
+                    msg = 'OK! Your notification is set.\n' \
+                          '**Event**: "{}"\n' \
+                          '**Channel**: {.mention}\n' \
+                          '**Alert**: {} minutes from start time.'.format(*fmt)
             embed = discord.Embed(title='Notification Update', color=discord.Color.dark_purple(), description=msg)
             await ctx.send(embed=embed)
             return
