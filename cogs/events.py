@@ -398,11 +398,17 @@ class Events:
             await ctx.send(embed=embed)
             return
         else:
+            # check if event exists
             c.execute("SELECT * FROM events WHERE id = (:id) AND guild_id = (:guild_id)",
                       {'id': eid, 'guild_id': ctx.guild.id})
             event_id, title, dt, creator_id, guild_id = c.fetchone()
-            c.execute("SELECT EXISTS(SELECT 1 FROM event_notify WHERE event_id = (:event_id))",
-                      {'event_id': event_id})
+            # check if notification exists
+            c.execute("""SELECT EXISTS(SELECT 1 
+                        FROM event_notify 
+                        WHERE event_id = (:event_id) 
+                        AND member_id = (:member_id)
+                        AND guild_id = (:guild_id))""",
+                      {'event_id': event_id, 'member_id': ctx.author.id, 'guild_id': ctx.guild.id})
             if 1 in c.fetchone():
                 c.execute("""SELECT EXISTS(SELECT 1 
                             FROM event_notify 
@@ -577,7 +583,6 @@ class Events:
             events = c.fetchall()
             for event in events:
                 event_id, member_id, guild_id, channel_id, dt, title, timer = event
-                print(event_id, member_id, guild_id, channel_id, dt, title, timer)
                 dt = await Events.make_datetime(dt)
                 eta = await Events.eta(dt)
                 days, hours, minutes = eta.split()
