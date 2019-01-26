@@ -26,8 +26,9 @@ class Automod:
         # when a member joins, give them an autorole if it exists
         conn, c = await load_db()
         with conn:
-            c.execute("SELECT autorole FROM guilds WHERE id = (?)", (member.guild.id,))
-            role = member.guild.get_role(c.fetchone()[0])
+            c.execute("SELECT autorole FROM guilds WHERE id = (:id)", {'id': member.guild.id})
+            autorole = c.fetchone()[0]
+            role = discord.utils.get(member.guild.roles, id=autorole)
             if role is not None:
                 await member.add_roles(role)
             c.execute("SELECT spam FROM guilds WHERE id = (?)", (member.guild.id,))
@@ -58,7 +59,7 @@ class Automod:
                 await channel.send(embed=embed)
 
     async def on_message_edit(self, before, after):
-        if before.guild.name in self.auto_mod_blacklist:
+        if before.guild in self.auto_mod_blacklist:
             return
         if before.author.bot:
             return

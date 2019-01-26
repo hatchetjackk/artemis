@@ -79,6 +79,8 @@ class Karma:
         await ctx.send(embed=embed)
 
     async def on_message(self, message):
+        if message.content.startswith('!'):
+            return
         if message.guild.name in self.karma_blacklist:
             return
         if message.author.id == self.client.user.id:

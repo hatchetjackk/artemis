@@ -27,6 +27,7 @@ class User:
                         id INTEGER,
                         member_name TEXT,
                         karma INTEGER,
+                        last_karma_given INTEGER
                         UNIQUE(id, member_name)
                         )"""
                 )
@@ -47,7 +48,8 @@ class User:
                         mod_role TEXT,
                         autorole TEXT
                         prefix TEXT,
-                        spam INTEGER
+                        spam INTEGER,
+                        thumbnail TEXT
                         )"""
                 )
         except sqlite3.DatabaseError:
@@ -56,8 +58,8 @@ class User:
         for member in message.guild.members:
             try:
                 with conn:
-                    c.execute("INSERT INTO members VALUES (:id, :member_name, :karma)",
-                              {'id': member.id, 'member_name': member.name, 'karma': 0})
+                    c.execute("INSERT INTO members VALUES (:id, :member_name, :karma, :last_karma_given)",
+                              {'id': member.id, 'member_name': member.name, 'karma': 0, 'last_karma_given': None})
             except sqlite3.DatabaseError:
                 pass
             try:
@@ -69,9 +71,9 @@ class User:
                 pass
             try:
                 with conn:
-                    c.execute("INSERT INTO guilds VALUES (:id, :guild, :mod_role, :autorole, :prefix, :spam)",
+                    c.execute("INSERT INTO guilds VALUES (:id, :guild, :mod_role, :autorole, :prefix, :spam, :thumbnail)",
                               {'id': message.guild.id, 'guild': message.guild.name, 'mod_role': None,
-                               'autorole': None, 'prefix': '!', 'spam': None})
+                               'autorole': None, 'prefix': '!', 'spam': None, 'thumbnail': None})
             except sqlite3.DatabaseError:
                 pass
 

@@ -64,16 +64,14 @@ class RichEmbed:
 
         def check(m):
             return m.author == message.author and m.channel == channel
-
-        tut_embed = await self.tut_embed('Pick a color for the embed (ie dark_blue).\n'
-                                         'Use `colors` for a full list of presets.')
+        tut_embed = await self.tut_embed('Pick a color for the embed (ie dark_blue)')
         await ctx.send(embed=tut_embed)
         msg = await self.client.wait_for('message', check=check)
         await channel.purge(limit=2)
 
         color = discord.Color.blue()
         if len(msg.content) == 7:
-            color = int(msg.content)
+            color = msg.content
         for key, value in self.color_dict.items():
             if msg.content == value[1]:
                 color = value[0]
@@ -146,7 +144,7 @@ class RichEmbed:
         e_msg = msg.embeds[0].to_dict()
         if 'thumbnail' not in e_msg:
             e_msg.update({'thumbnail': {'url': ''}})
-        await ctx.send('!richembed paste {}'.format(e_msg))
+        await ctx.send('```!richembed paste {}```'.format(e_msg))
 
     @richembed.group(aliases=['paste'])
     async def pasta(self, ctx, *args):

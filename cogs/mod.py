@@ -9,6 +9,15 @@ class Mod:
         self.mod_blacklist = []
 
     @commands.command()
+    async def test(self, ctx):
+        conn, c = await load_db()
+        c.execute("SELECT autorole FROM guilds WHERE id = (:id)", {'id': ctx.guild.id})
+        autorole = c.fetchone()[0]
+        role = discord.utils.get(ctx.guild.roles, id=autorole)
+        print(role)
+        print(ctx.member.guild.get_role)
+
+    @commands.command()
     async def emoji(self, ctx):
         emojis = ctx.guild.emojis
         print("Guild Emoji List:")

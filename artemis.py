@@ -67,8 +67,7 @@ async def dump_json(dump_file, data):
         json.dump(data, g, indent=2)
 
 if __name__ == '__main__':
-    blacklist = ['__init__.py', '__pycache__', 'arena.py', 'rpg.py']
-    for extension in [f.replace('.py', '') for f in os.listdir('cogs/') if f not in blacklist]:
+    for extension in [f.replace('.py', '') for f in os.listdir('cogs/') if not f.startswith('_')]:
         try:
             client.load_extension('cogs.' + extension)
         except Exception as error:

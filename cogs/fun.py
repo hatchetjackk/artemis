@@ -1,4 +1,3 @@
-import os
 import random
 import re
 import urllib.request
@@ -6,7 +5,7 @@ import urllib.parse
 import discord
 import requests
 from discord.ext.commands import BucketType, CommandNotFound
-from PyDictionary import PyDictionary
+# from PyDictionary import PyDictionary
 from discord.ext import commands
 
 
@@ -48,22 +47,8 @@ class Fun:
                 await ctx.send(embed=embed)
 
     @commands.command()
-    async def sudo(self, ctx, *, cmd: str):
-        if 'rm -rf .' == cmd:
-            await ctx.send('Deletin--')
-            return
-        if 'make me a sandwhich' == cmd:
-            await ctx.send('Yeah, I\'ll get right on that...')
-            return
-        await ctx.send('Sudo go f*ck yourself.')
-
-    @commands.command()
     async def ping(self, ctx):
         await ctx.send(':ping_pong: Pong')
-
-    @commands.command()
-    async def lennie(self, ctx):
-        await ctx.send('( ͡° ͜ʖ ͡°)')
 
     @commands.command()
     async def roll(self, ctx, dice: str):
@@ -89,37 +74,25 @@ class Fun:
         msg = random.choice(responses).format(ctx.message)
         await ctx.send(msg)
 
-    @commands.command()
-    async def define(self, ctx, word: str):
-        dictionary = PyDictionary()
-        results = dictionary.meaning(word)
-        embed = discord.Embed(title=word.upper(), color=discord.Color.blue())
-        for key, definition in results.items():
-            definitions = []
-            num = 1
-            for value in definition:
-                definitions.append(str(num) + ') ' + value)
-                num += 1
-            all_def = '\n'.join(definitions)
-            embed.add_field(name=key, value=all_def)
-        await ctx.send(embed=embed)
+    # @commands.command()
+    # async def define(self, ctx, word: str):
+    #     dictionary = PyDictionary()
+    #     results = dictionary.meaning(word)
+    #     embed = discord.Embed(title=word.upper(), color=discord.Color.blue())
+    #     for key, definition in results.items():
+    #         definitions = []
+    #         num = 1
+    #         for value in definition:
+    #             definitions.append(str(num) + ') ' + value)
+    #             num += 1
+    #         all_def = '\n'.join(definitions)
+    #         embed.add_field(name=key, value=all_def)
+    #     await ctx.send(embed=embed)
 
     @commands.command(aliases=['g'])
     async def google(self, ctx, *, search: str):
         r = requests.get('http://www.google.com/search?q="{}"&btnI'.format(search))
         await ctx.send(r.url)
-
-    @commands.group()
-    async def rochembed(self, ctx):
-        if ctx.invoked_subcommand is None:
-            pass
-
-    @rochembed.group()
-    async def qizard(self, ctx):
-        directory = 'pictures/'
-        pictures = [file for file in os.listdir('pictures/')]
-        pic = directory + random.choice(pictures)
-        await ctx.send(file=discord.File(pic))
 
     @staticmethod
     async def on_message(message):
@@ -129,23 +102,6 @@ class Fun:
         if message.content == '(╯°□°）╯︵ ┻━┻' or message.content == '(∩⩺ロ⩹)⊃━☆ﾟ.* ︵ ┻━┻':
             table_fix = ['┬─┬ ノ( ゜-゜ノ)', '┬─┬ ノ( ⩺ロ⩹ノ)']
             await message.channel.send(random.choice(table_fix))
-
-    # @commands.command(aliases=['health'])
-    # @commands.cooldown(rate=1, per=3, type=BucketType.user)
-    # async def hp(self, ctx, *, target: str):
-    #     embed = discord.Embed()
-    #     data = await load_json('users')
-    #     pattern = re.compile(r'' + re.escape(target.lower()))
-    #     for member in ctx.guild.members:
-    #         member_name = await self.member_name(member)
-    #         matches = pattern.finditer(member_name.lower())
-    #         for _ in matches:
-    #             mid = str(member.id)
-    #             embed.add_field(name=member_name,
-    #                             value='{}/{} HP'.format(data[mid]['hp'], data[mid]['max hp']))
-    #             embed.set_thumbnail(url=member.avatar_url)
-    #
-    #     await ctx.send(embed=embed)
 
     @staticmethod
     async def member_name(member):
@@ -201,7 +157,6 @@ class Fun:
 
     @rps.error
     @youtube.error
-    # @hp.error
     async def on_message_error(self, ctx, error):
         if isinstance(error, commands.CommandOnCooldown):
             msg = 'You\'ve triggered a cool down. Please try again in {} sec.'.format(
