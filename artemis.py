@@ -66,6 +66,7 @@ async def dump_json(dump_file, data):
     with open('files/{}.json'.format(dump_file), 'w') as g:
         json.dump(data, g, indent=2)
 
+
 if __name__ == '__main__':
     for extension in [f.replace('.py', '') for f in os.listdir('cogs/') if not f.startswith('_')]:
         try:

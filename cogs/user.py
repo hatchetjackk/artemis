@@ -18,7 +18,6 @@ class User:
 
     @staticmethod
     async def update_users(message):
-        # add: levels, exp, alignment, race, description, hp, char inventory, char equipped
         conn, c = await load_db()
         try:
             with conn:
@@ -79,7 +78,6 @@ class User:
 
     @staticmethod
     async def create_user(member):
-        # add: levels, exp, alignment, race, description, hp, char inventory, char equipped
         conn, c = await load_db()
         try:
             with conn:
