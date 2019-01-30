@@ -1,4 +1,5 @@
 import discord
+import json
 from artemis import load_db
 from discord.ext import commands
 
@@ -7,6 +8,10 @@ class Mod:
     def __init__(self, client):
         self.client = client
         self.mod_blacklist = []
+
+    @commands.command()
+    async def stop(self, ctx):
+        exit()
 
     @commands.command()
     async def test(self, ctx):
