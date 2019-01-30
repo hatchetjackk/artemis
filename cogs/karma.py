@@ -53,7 +53,7 @@ class Karma:
             msg = '{0} has {1} karma.'.format(target_member_name, karma)
             await ctx.send(msg)
 
-    @commands.command()
+    @commands.command(alias=['leaderboards'])
     async def leaderboard(self, ctx):
         conn, c = await load_db()
         leaderboard = {}
