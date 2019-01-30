@@ -354,7 +354,11 @@ class EliteDangerous:
             else:
                 wing_name = 'No Wing'
                 wing_role = 'No Role'
-            preferred_role = pilot_data['eventData']['preferredGameRole']
+            try:
+                preferred_role = pilot_data['eventData']['preferredGameRole']
+            except Exception:
+                print('An error occurred when retrieving preferred role for {}.'.format(pilot_name))
+                preferred_role = None
             pilot_page = pilot_data['eventData']['inaraURL']
 
             # get pilot data by scraping pilot_page
@@ -422,7 +426,7 @@ class EliteDangerous:
 
         except Exception as e:
             await ctx.send('Pilot not found.')
-            print(e)
+            print('An error occurred when retrieving pilot data for {}: {}'.format(pilot_name, e))
             raise
 
 
