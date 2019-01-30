@@ -97,30 +97,35 @@ class Karma:
             if member.mention in msg:
                 if member not in thanked_members:
                     thanked_members.append(member)
-            else:
-                word_blacklist = ['man', 'guy']
-                for word in msg:
-                    if len(word) >= 3 and word not in word_blacklist:
-                        pattern = re.compile(r'' + re.escape(word))
-                        if member.nick is not None:
-                            matches = pattern.findall(member.nick.lower())
-                        else:
-                            matches = pattern.findall(member.name.lower())
-                        for _ in matches:
-                            if member not in thanked_members:
-                                thanked_members.append(member)
+            # else:
+            #     word_blacklist = ['man', 'guy']
+            #     for word in msg:
+            #         if len(word) >= 3 and word not in word_blacklist:
+            #             pattern = re.compile(r'' + re.escape(word))
+            #             if member.nick is not None:
+            #                 matches = pattern.findall(member.nick.lower())
+            #             else:
+            #                 matches = pattern.findall(member.name.lower())
+            #             for _ in matches:
+            #                 if member not in thanked_members:
+            #                     thanked_members.append(member)
         # check last karma timer
-        c.execute("SELECT * FROM members WHERE id = (:id)", {'id': message.author.id})
-        member_id, membername, points, last_karma_given = c.fetchone()
-        if last_karma_given is None:
+        try:
+            c.execute("SELECT * FROM members WHERE id = (:id)", {'id': message.author.id})
+            member_id, membername, points, last_karma_given = c.fetchone()
+
+            if last_karma_given is None:
+                pass
+            else:
+                remaining_time = int(time.time() - last_karma_given)
+                time_limit = 60 * 3
+                if remaining_time < time_limit and len(thanked_members) > 0:
+                    msg = 'You must wait {0} seconds to give karma again.'.format(time_limit - remaining_time)
+                    await message.channel.send(msg)
+                    return
+        except TypeError as e:
+            print(e)
             pass
-        else:
-            remaining_time = int(time.time() - last_karma_given)
-            time_limit = 60 * 3
-            if remaining_time < time_limit and len(thanked_members) > 0:
-                msg = 'You must wait {0} seconds to give karma again.'.format(time_limit - remaining_time)
-                await message.channel.send(msg)
-                return
 
         for member in thanked_members:
             member_name = member.name
