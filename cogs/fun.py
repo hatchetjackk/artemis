@@ -99,9 +99,6 @@ class Fun:
         if message.content.startswith('r/'):
             reddit_search = 'https://reddit.com/' + message.content
             await message.channel.send(reddit_search)
-        if message.content == '(╯°□°）╯︵ ┻━┻' or message.content == '(∩⩺ロ⩹)⊃━☆ﾟ.* ︵ ┻━┻':
-            table_fix = ['┬─┬ ノ( ゜-゜ノ)', '┬─┬ ノ( ⩺ロ⩹ノ)']
-            await message.channel.send(random.choice(table_fix))
 
     @staticmethod
     async def member_name(member):
