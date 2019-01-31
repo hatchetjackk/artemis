@@ -215,7 +215,7 @@ class Chat:
         with conn:
             level += value
             c.execute("UPDATE bot_status SET level = (:level)", {'level': level})
-        print('Artemis emotional level change: {0}'.format(level))
+        # print('Artemis emotional level change: {0}'.format(level))
 
     async def change_status(self):
         await self.client.wait_until_ready()
