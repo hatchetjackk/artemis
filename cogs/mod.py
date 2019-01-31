@@ -1,4 +1,6 @@
 import discord
+import os
+import sys
 from artemis import load_db
 from discord.ext import commands
 
@@ -11,7 +13,19 @@ class Mod:
     @commands.command()
     @commands.is_owner()
     async def stop(self, ctx):
-        exit()
+        await ctx.send('Artemis shutting down.')
+        print('Artemis is shutting down.')
+        try:
+            exit()
+        except Exception as e:
+            pass
+
+    @commands.command()
+    @commands.is_owner()
+    async def reboot(self, ctx):
+        await ctx.send("Restarting Artemis.")
+        python = sys.executable
+        os.execl(python, python, *sys.argv)
 
     @commands.command()
     async def test(self, ctx):
