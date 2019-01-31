@@ -80,6 +80,8 @@ class Karma:
         print('Leaderboard displayed by {} in {}.'.format(ctx.message.author, ctx.guild.name))
 
     async def on_message(self, message):
+        if message.author.id == self.client.user.id:
+            return
         if message.content.startswith('!'):
             return
         try:
@@ -87,9 +89,7 @@ class Karma:
                 return
         except Exception as e:
             print('An issue occurred when detecting a guild name in a message: {}'.format(e))
-            return
-        if message.author.id == self.client.user.id:
-            return
+            raise
 
         conn, c = await load_db()
         keywords = ['thanks', 'thank', 'gracias', 'kudos', 'thx', 'appreciate', 'cheers']
