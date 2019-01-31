@@ -53,7 +53,7 @@ class Karma:
             msg = '{0} has {1} karma.'.format(target_member_name, karma)
             await ctx.send(msg)
 
-    @commands.command(alias=['leaderboards'])
+    @commands.command(aliases=['leaderboards'])
     async def leaderboard(self, ctx):
         conn, c = await load_db()
         leaderboard = {}
@@ -82,7 +82,11 @@ class Karma:
     async def on_message(self, message):
         if message.content.startswith('!'):
             return
-        if message.guild.name in self.karma_blacklist:
+        try:
+            if message.guild.name in self.karma_blacklist:
+                return
+        except Exception as e:
+            print('An issue occurred when detecting a guild name in a message: {}'.format(e))
             return
         if message.author.id == self.client.user.id:
             return
