@@ -74,7 +74,7 @@ class EliteDangerous:
                 return None
             return pilot_page
         except Exception as e:
-            print('Get pilot information error', e)
+            print('[{}] An error occurred when retrieving pilot information error: {}'.format(datetime.now(), e))
             return None
 
     @wanted.group()
@@ -94,7 +94,8 @@ class EliteDangerous:
                           color=Color.red())
             await ctx.send(embed=embed)
         except Exception as e:
-            print('Error when adding a pilot to Wanted list: {}'.format(e))
+            print('[{}] Error when adding a pilot to Wanted list: {}'.format(datetime.now(), e))
+            raise
 
     @wanted.group()
     async def remove(self, ctx, *, wanted_cmdr: str):
@@ -110,7 +111,8 @@ class EliteDangerous:
                           color=Color.orange())
             await ctx.send(embed=embed)
         except Exception as e:
-            print('Error when removing a pilot from the Wanted list: {}'.format(e))
+            print('[{}] Error when removing a pilot from the Wanted list: {}'.format(datetime.now(), e))
+            raise
 
     @commands.command()
     async def faction(self, ctx, *, faction: str):
@@ -287,7 +289,8 @@ class EliteDangerous:
                     embed.set_thumbnail(url=thumbs[allegiance])
                     await ctx.send(embed=embed)
                 except Exception as e:
-                    print(e)
+                    await ctx.send('System not found')
+                    print('[{}] An error occurred when retrieving data for a system: {}'.format(datetime.now(), e))
                     raise
 
     @commands.command()

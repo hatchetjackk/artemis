@@ -176,7 +176,8 @@ class Chat:
                 elif event_id in msg and creator_id != message.author.id:
                     await message.channel.send('You are not the event\'s original author.')
         except Exception as e:
-            print('Chat_core (delete_an_event):', e)
+            print('[{}] An error occurred when attempting to delete an event: {}'.format(datetime.now(), e))
+            raise
         await message.channel.send('Sorry, I couldn\'t find that event.')
 
     async def time_formatter(self, message, day, month, year, h, m, tz):

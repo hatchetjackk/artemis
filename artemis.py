@@ -25,12 +25,11 @@ client.remove_command('help')
 
 @client.event
 async def on_ready():
-    now = datetime.now()
     print("{0:<15} {1}".format("Logged in as", client.user.name))
     print("{0:<15} {1}".format("Client", client.user.id))
     print('{0:<15} {1}'.format('Discord.py', discord.__version__))
     print("---------------------------------------")
-    print("[{0}] Artemis is online.".format(now))
+    print("[{}] Artemis is online.".format(datetime.now()))
 
 
 @client.event
@@ -72,7 +71,7 @@ if __name__ == '__main__':
         try:
             client.load_extension('cogs.' + extension)
         except Exception as error:
-            print('{0} cannot be loaded [{1}]'.format(extension, error))
+            print('[{}] {} cannot be loaded: {}'.format(datetime.now(), extension, error))
     with open('files/credentials.json', 'r') as f:
         credentials = json.load(f)
     client.run(credentials['token'])

@@ -1,4 +1,5 @@
 import sqlite3
+from datetime import datetime
 from artemis import load_db
 from discord.ext import commands
 
@@ -84,16 +85,16 @@ class User:
                 c.execute("INSERT INTO members VALUES (:id, :member_name, :karma)",
                           {'id': member.id, 'member_name': member.name, 'karma': 0})
         except Exception as e:
-            print(e)
-            pass
+            print('[{}] An error occurred when creating a users: {}'.format(datetime.now(), e))
+            raise
         try:
             with conn:
                 c.execute("INSERT INTO guilds VALUES (:id, :guild, :member_id, :member_name, :member_nick)",
                           {'id': member.guild.id, 'guild': member.guild.name, 'member_id': member.id,
                            'member_name': member.name, 'member_nick': member.nick})
         except Exception as e:
-            print(e)
-            pass
+            print('[{}] An error occurred when adding a user to a guild: {}'.format(datetime.now(), e))
+            raise
 
     @staticmethod
     async def on_message_error(ctx, error):

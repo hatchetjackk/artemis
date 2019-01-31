@@ -1,5 +1,6 @@
 import discord
 from artemis import load_db
+from datetime import datetime
 from discord.ext import commands
 
 
@@ -81,7 +82,7 @@ class Automod:
                 spam = before.guild.get_channel(spam_id)
             await spam.send(embed=embed)
         except Exception as e:
-            print('Error on message edit: {}'.format(e))
+            print('[{}] Error on message edit: {}'.format(datetime.now(), e))
             raise
 
     @staticmethod

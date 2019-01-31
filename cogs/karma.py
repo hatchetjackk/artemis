@@ -10,6 +10,7 @@ import re
 import discord
 import random
 import time
+from datetime import datetime
 from collections import OrderedDict
 from artemis import load_db
 from discord.ext import commands
@@ -88,7 +89,7 @@ class Karma:
             if message.guild.name in self.karma_blacklist:
                 return
         except Exception as e:
-            print('An issue occurred when detecting a guild name in a message: {}'.format(e))
+            print('[{}] An issue occurred when detecting a guild name in a message: Guild:{} Error: {}'.format(datetime.now(), message.guild, e))
             raise
 
         conn, c = await load_db()

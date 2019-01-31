@@ -1,4 +1,5 @@
 import discord
+from datetime import datetime
 from discord import Color, Embed
 from discord.ext import commands
 
@@ -160,7 +161,7 @@ class RichEmbed:
             embed = Embed.from_data(d)
             await ctx.send(embed=embed)
         except Exception as e:
-            print(e)
+            print('[{}] An error occurred when attempting to create an embed: {}'.format(datetime.now(), e))
             raise
 
     @richembed.group()
