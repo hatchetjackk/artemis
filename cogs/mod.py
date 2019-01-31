@@ -20,10 +20,10 @@ class Mod:
         except Exception as e:
             pass
 
-    @commands.command()
+    @commands.command(aliases=['restart'])
     @commands.is_owner()
     async def reboot(self, ctx):
-        await ctx.send("Restarting Artemis.")
+        await ctx.send("Rebooting Artemis.")
         python = sys.executable
         os.execl(python, python, *sys.argv)
 
@@ -156,7 +156,7 @@ class Mod:
             msg = 'You do not have permission to run this command.'
             await ctx.send(msg)
         if isinstance(error, commands.MissingRequiredArgument):
-            msg = 'A critical argument is missing from the command.'
+            msg = 'A critical argument is missing from the command. Use `botspam channel_name`.'
             await ctx.send(msg)
         if isinstance(error, commands.CheckFailure):
             msg = 'You do not have permission to run this command.'
