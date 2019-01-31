@@ -79,32 +79,38 @@ class EliteDangerous:
 
     @wanted.group()
     async def add(self, ctx, *args):
-        if ctx.guild.name == any(self.wanted_blacklist):
-            return
-        wanted_cmdr, reason = (value.strip() for value in ' '.join(args).split(','))
-        inara_page = await self.get_pilot_information(wanted_cmdr)
-        conn = await load_db()
-        c = conn.cursor()
-        with conn:
-            c.execute("INSERT INTO ed_wanted VALUES(:cmdr_name, :reason, :inara_page, :guild_id, :member_id)",
-                      {'cmdr_name': wanted_cmdr.lower(), 'reason': reason, 'inara_page': inara_page,
-                       'guild_id': ctx.guild.id, 'member_id': ctx.author.id})
-        embed = Embed(title='{} added to WANTED list'.format(wanted_cmdr.title()),
-                      color=Color.red())
-        await ctx.send(embed=embed)
+        try:
+            if ctx.guild.name == any(self.wanted_blacklist):
+                return
+            wanted_cmdr, reason = (value.strip() for value in ' '.join(args).split(','))
+            inara_page = await self.get_pilot_information(wanted_cmdr)
+            conn, c = await load_db()
+            c = conn.cursor()
+            with conn:
+                c.execute("INSERT INTO ed_wanted VALUES(:cmdr_name, :reason, :inara_page, :guild_id, :member_id)",
+                          {'cmdr_name': wanted_cmdr.lower(), 'reason': reason, 'inara_page': inara_page,
+                           'guild_id': ctx.guild.id, 'member_id': ctx.author.id})
+            embed = Embed(title='{} added to WANTED list'.format(wanted_cmdr.title()),
+                          color=Color.red())
+            await ctx.send(embed=embed)
+        except Exception as e:
+            print('Error when adding a pilot to Wanted list: {}'.format(e))
 
     @wanted.group()
     async def remove(self, ctx, *, wanted_cmdr: str):
-        if ctx.guild.name == any(self.wanted_blacklist):
-            return
-        conn = await load_db()
-        c = conn.cursor()
-        with conn:
-            c.execute("DELETE FROM ed_wanted WHERE cmdr_name = (:cmdr_name) AND guild_id = (:guild_id)",
-                      {'cmdr_name': wanted_cmdr.lower(), 'guild_id': ctx.guild.id})
-        embed = Embed(title='{} removed from WANTED list'.format(wanted_cmdr.title()),
-                      color=Color.orange())
-        await ctx.send(embed=embed)
+        try:
+            if ctx.guild.name == any(self.wanted_blacklist):
+                return
+            conn, c = await load_db()
+            c = conn.cursor()
+            with conn:
+                c.execute("DELETE FROM ed_wanted WHERE cmdr_name = (:cmdr_name) AND guild_id = (:guild_id)",
+                          {'cmdr_name': wanted_cmdr.lower(), 'guild_id': ctx.guild.id})
+            embed = Embed(title='{} removed from WANTED list'.format(wanted_cmdr.title()),
+                          color=Color.orange())
+            await ctx.send(embed=embed)
+        except Exception as e:
+            print('Error when removing a pilot from the Wanted list: {}'.format(e))
 
     @commands.command()
     async def faction(self, ctx, *, faction: str):
