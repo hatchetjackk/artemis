@@ -71,16 +71,18 @@ class Automod:
             embed.add_field(name='Before', value=before.content, inline=False)
             embed.add_field(name='After', value=after.content, inline=False)
 
-            conn = await load_db()
+            conn, c = await load_db()
             c = conn.cursor()
             with conn:
                 c.execute("SELECT spam FROM guilds WHERE id = (:id)", {'id': before.guild.id})
-                if c.fetchone()[0] is None:
+                spam_id = c.fetchone()[0]
+                if spam_id is None:
                     return
-                spam = before.guild.get_channel(c.fetchone()[0])
+                spam = before.guild.get_channel(spam_id)
             await spam.send(embed=embed)
         except Exception as e:
-            print(e)
+            print('Error on message edit: {}'.format(e))
+            raise
 
     @staticmethod
     async def on_message_delete(message):
