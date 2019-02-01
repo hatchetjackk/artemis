@@ -4,7 +4,7 @@ from artemis import load_db
 from discord.ext import commands
 
 
-class User:
+class Database:
     def __init__(self, client):
         self.client = client
 
@@ -39,16 +39,9 @@ class User:
             print('[{}] An error occurred when removing {} from {}: {}'.format(datetime.now(), member.name, member.guild.name, e))
             raise
 
-    async def on_message(self, message):
-        if message.author.id == self.client.user.id:
-            return
-        if not message.content.startswith('!'):
-            await self.update_database(message)
-
     @staticmethod
     async def on_member_update(before, after):
         conn, c = await load_db()
-        # if a member has changed their name or nick, reflect those changes in tables: members and guild_members,
         if before.name != after.name or before.nick != after.nick:
             with conn:
                 c.execute("SELECT karma, last_karma_given FROM members WHERE id = (:id)",
@@ -64,61 +57,35 @@ class User:
                 print('[{}] (Guild: {}) {}/{} has changed to {}/{}.'.format(*fmt))
 
     @staticmethod
-    async def update_database(message):
+    async def on_guild_join(guild):
+        # enter data for a new guild
         conn, c = await load_db()
         try:
             with conn:
-                c.execute(
-                    """CREATE TABLE IF NOT EXISTS members (
-                        id INTEGER,
-                        member_name TEXT,
-                        karma INTEGER,
-                        last_karma_given INTEGER
-                        UNIQUE(id, member_name)
-                        )"""
-                )
-                c.execute(
-                    """CREATE TABLE IF NOT EXISTS guild_members (
-                        id INTEGER,
-                        guild TEXT,
-                        member_id INTEGER,
-                        member_name TEXT,
-                        member_nick TEXT,
-                        UNIQUE(id, guild, member_id)
-                        )"""
-                )
-                c.execute(
-                    """CREATE TABLE IF NOT EXISTS guilds (
-                        id INTEGER UNIQUE,
-                        guild TEXT,
-                        mod_role TEXT,
-                        autorole TEXT
-                        prefix TEXT,
-                        spam INTEGER,
-                        thumbnail TEXT
-                        )"""
-                )
+                c.execute("INSERT INTO guilds VALUES (:id, :guild, :mod_role, :autorole, :prefix, :spam, :thumbnail)",
+                          {'id': guild.id, 'guild': guild.name, 'mod_role': None,
+                           'autorole': None, 'prefix': '!', 'spam': None, 'thumbnail': None})
+                print('[{}] Artemis has joined the {} guild!'.format(datetime.now(), guild.name))
         except sqlite3.DatabaseError:
-            pass
+            raise
 
-        for member in message.guild.members:
-            # enter data for a new guild
-            try:
-                with conn:
-                    c.execute("INSERT INTO guilds VALUES (:id, :guild, :mod_role, :autorole, :prefix, :spam, :thumbnail)",
-                              {'id': message.guild.id, 'guild': message.guild.name, 'mod_role': None,
-                               'autorole': None, 'prefix': '!', 'spam': None, 'thumbnail': None})
-            # if guild id already exists, check if guild name has changed
-            except sqlite3.IntegrityError:
-                with conn:
-                    c.execute("SELECT guild, mod_role, autorole, prefix, spam, thumbnail FROM guilds WHERE id = (:id)",
-                              {'id': message.guild.id})
-                    guild_name, mod_role, autorole, prefix, spam, thumbnail = c.fetchall()[0]
-                    if message.guild.name != guild_name:
-                        c.execute("REPLACE INTO guilds VALUES (:id, :guild, :mod_role, :autorole, :prefix, :spam, :thumbnail)",
-                                  {'id': message.guild.id, 'guild': message.guild.name, 'mod_role': mod_role,
-                                   'autorole': autorole, 'prefix': prefix, 'spam': spam, 'thumbnail': thumbnail})
-                        print('[{}] The {} guild changed its name to {}.'.format(datetime.now(), guild_name, message.guild.name))
+    @staticmethod
+    async def on_guild_remove(guild):
+        print('[{}] Artemis has been removed from {}.'.format(datetime.now(), guild.name))
+
+    @staticmethod
+    async def on_guild_update(before, after):
+        conn, c = await load_db()
+        if before.name != after.name:
+            with conn:
+                c.execute("SELECT mod_role, autorole, prefix, spam, thumbnail FROM guilds WHERE id = (:id)",
+                          {'id': before.id})
+                mod_role, autorole, prefix, spam, thumbnail = c.fetchall()[0]
+                c.execute(
+                    "REPLACE INTO guilds VALUES (:id, :guild, :mod_role, :autorole, :prefix, :spam, :thumbnail)",
+                    {'id': before.id, 'guild': after.name, 'mod_role': mod_role, 'autorole': autorole, 'prefix': prefix,
+                     'spam': spam, 'thumbnail': thumbnail})
+                print('[{}] The {} guild changed its name to {}.'.format(datetime.now(), before.name, after.name))
 
     @commands.command()
     @commands.is_owner()
@@ -137,16 +104,6 @@ class User:
                     except Exception:
                         raise
 
-    @staticmethod
-    async def on_message_error(ctx, error):
-        if isinstance(error, commands.CommandOnCooldown):
-            msg = ':sob: You\'ve triggered a cool down. Please try again in {} sec.'.format(
-                int(error.retry_after))
-            await ctx.send(msg)
-        if isinstance(error, commands.CheckFailure):
-            msg = 'You do not have permission to run this command.'
-            await ctx.send(msg)
-
 
 def setup(client):
-    client.add_cog(User(client))
+    client.add_cog(Database(client))
