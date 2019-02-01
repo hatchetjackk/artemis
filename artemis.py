@@ -30,6 +30,7 @@ async def on_ready():
     print('{0:<15} {1}'.format('Discord.py', discord.__version__))
     print("---------------------------------------")
     print("[{}] Artemis is online.".format(datetime.now()))
+    await build_db_tables()
 
 
 @client.event
@@ -66,6 +67,59 @@ async def dump_json(dump_file, data):
         json.dump(data, g, indent=2)
 
 
+async def build_db_tables():
+    conn, c = await load_db()
+    with conn:
+        try:
+            c.execute(
+                """CREATE TABLE IF NOT EXISTS members (
+                    id INTEGER,
+                    member_name TEXT,
+                    karma INTEGER,
+                    last_karma_given INTEGER,
+                    UNIQUE(id, member_name)
+                    )"""
+            )
+        except sqlite3.OperationalError:
+            raise
+        except sqlite3.DatabaseError:
+            raise
+
+        try:
+            c.execute(
+                """CREATE TABLE IF NOT EXISTS guild_members (
+                    id INTEGER,
+                    guild TEXT,
+                    member_id INTEGER,
+                    member_name TEXT,
+                    member_nick TEXT,
+                    UNIQUE(id, guild, member_id)
+                    )"""
+            )
+        except sqlite3.OperationalError:
+            raise
+        except sqlite3.DatabaseError:
+            raise
+
+        try:
+            c.execute(
+                """CREATE TABLE IF NOT EXISTS guilds (
+                    id INTEGER UNIQUE,
+                    guild TEXT,
+                    mod_role TEXT,
+                    autorole TEXT
+                    prefix TEXT,
+                    spam INTEGER,
+                    thumbnail TEXT
+                    )"""
+            )
+        except sqlite3.OperationalError:
+            raise
+        except sqlite3.DatabaseError:
+            raise
+
+
+
 if __name__ == '__main__':
     for extension in [f.replace('.py', '') for f in os.listdir('cogs/') if not f.startswith('_')]:
         try:
@@ -75,3 +129,4 @@ if __name__ == '__main__':
     with open('files/credentials.json', 'r') as f:
         credentials = json.load(f)
     client.run(credentials['token'])
+
