@@ -46,6 +46,24 @@ class User:
             await self.update_database(message)
 
     @staticmethod
+    async def on_member_update(before, after):
+        conn, c = await load_db()
+        # if a member has changed their name or nick, reflect those changes in tables: members and guild_members,
+        if before.name != after.name or before.nick != after.nick:
+            with conn:
+                c.execute("SELECT karma, last_karma_given FROM members WHERE id = (:id)",
+                          {'id': before.id})
+                karma, last_karma = c.fetchall()[0]
+                c.execute("REPLACE INTO members VALUES (:id, :member_name, :karma, :last_karma_given)",
+                          {'id': before.id, 'member_name': after.name, 'karma': karma,
+                           'last_karma_given': last_karma})
+                c.execute("REPLACE INTO guild_members VALUES (:id, :guild, :member_id, :member_name, :member_nick)",
+                          {'id': before.guild.id, 'guild': before.guild.name, 'member_id': before.id,
+                           'member_name': after.name, 'member_nick': after.nick})
+                fmt = (datetime.now(), before.guild.name, before.name, before.nick, after.name, after.nick)
+                print('[{}] (Guild: {}) {}/{} has changed to {}/{}.'.format(*fmt))
+
+    @staticmethod
     async def update_database(message):
         conn, c = await load_db()
         try:
@@ -84,43 +102,6 @@ class User:
             pass
 
         for member in message.guild.members:
-            # enter data for new members
-            try:
-                with conn:
-                    c.execute("INSERT INTO members VALUES (:id, :member_name, :karma, :last_karma_given)",
-                              {'id': member.id, 'member_name': member.name, 'karma': 0, 'last_karma_given': None})
-            # if member already exists, check for member_name change
-            except sqlite3.IntegrityError:
-                with conn:
-                    c.execute("SELECT member_name, karma, last_karma_given FROM members WHERE id = (:id)", {'id': member.id})
-                    member_name, karma, last_karma = c.fetchall()[0]
-                    if member.name != member_name:
-                        c.execute("REPLACE INTO members VALUES (:id, :member_name, :karma, :last_karma_given)",
-                                  {'id': member.id, 'member_name': member.name, 'karma': karma, 'last_karma_given': last_karma})
-
-            # enter data for a new member associated with their guild
-            try:
-                with conn:
-                    c.execute("INSERT INTO guild_members VALUES (:id, :guild, :member_id, :member_name, :member_nick)",
-                              {'id': message.guild.id, 'guild': message.guild.name, 'member_id': member.id,
-                               'member_name': member.name, 'member_nick': member.nick})
-            # if guild member already exists, check to see if the member_name or member_nick has changed
-            except sqlite3.IntegrityError:
-                with conn:
-                    c.execute("SELECT guild, member_id, member_name, member_nick FROM guild_members WHERE id = (:id) and member_id = (:member_id)",
-                              {'id': message.guild.id, 'member_id': member.id})
-                    guild_name, member_id, member_name, member_nick = c.fetchall()[0]
-                    if member_name != member.name:
-                        c.execute("REPLACE INTO guild_members VALUES (:id, :guild, :member_id, :member_name, :member_nick)",
-                                  {'id': message.guild.id, 'guild': message.guild.name, 'member_id': member.id,
-                                   'member_name': member.name, 'member_nick': member.nick})
-                        print('[{}] {} changed their name to {}.'.format(datetime.now(), member_name, member.name))
-                    if member_nick != member.nick:
-                        c.execute("REPLACE INTO guild_members VALUES (:id, :guild, :member_id, :member_name, :member_nick)",
-                                  {'id': message.guild.id, 'guild': message.guild.name, 'member_id': member.id,
-                                   'member_name': member.name, 'member_nick': member.nick})
-                        print('[{}] {} changed their nickname to {}.'.format(datetime.now(), member_nick, member.nick))
-
             # enter data for a new guild
             try:
                 with conn:
@@ -143,7 +124,6 @@ class User:
     @commands.is_owner()
     async def clean_database(self, ctx):
         conn, c = await load_db()
-        # for member in ctx.guild.members:
         with conn:
             c.execute("SELECT member_id, member_name FROM guild_members WHERE id = (:id)", {'id': ctx.guild.id})
             db_member_ids = c.fetchall()
