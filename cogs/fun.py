@@ -4,6 +4,7 @@ import urllib.request
 import urllib.parse
 import discord
 import requests
+from datetime import datetime
 from discord.ext.commands import BucketType, CommandNotFound
 from PyDictionary import PyDictionary
 from discord.ext import commands
@@ -76,18 +77,22 @@ class Fun:
 
     @commands.command()
     async def define(self, ctx, word: str):
-        dictionary = PyDictionary()
-        results = dictionary.meaning(word)
-        embed = discord.Embed(title=word.upper(), color=discord.Color.blue())
-        for key, definition in results.items():
-            definitions = []
-            num = 1
-            for value in definition:
-                definitions.append(str(num) + ') ' + value)
-                num += 1
-            all_def = '\n'.join(definitions)
-            embed.add_field(name=key, value=all_def)
-        await ctx.send(embed=embed)
+        try:
+            dictionary = PyDictionary()
+            results = dictionary.meaning(word)
+            embed = discord.Embed(title=word.upper(), color=discord.Color.blue())
+            for key, definition in results.items():
+                definitions = []
+                num = 1
+                for value in definition:
+                    definitions.append(str(num) + ') ' + value)
+                    num += 1
+                all_def = '\n'.join(definitions)
+                embed.add_field(name=key, value=all_def)
+            await ctx.send(embed=embed)
+        except Exception as e:
+            print('[{}] The definition for {} could not be found: {}'.format(datetime.now(), word, e))
+            await ctx.send('Sorry, I could not find the definition for {}!'.format(word))
 
     @commands.command(aliases=['g'])
     async def google(self, ctx, *, search: str):
@@ -99,14 +104,6 @@ class Fun:
         if message.content.startswith('r/'):
             reddit_search = 'https://reddit.com/' + message.content
             await message.channel.send(reddit_search)
-
-    @staticmethod
-    async def member_name(member):
-        # grab author nick
-        member_name = member.nick
-        if member_name is None:
-            member_name = member.name
-        return member_name
 
     @commands.command()
     async def rps(self, ctx, choice: str):
