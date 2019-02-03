@@ -32,26 +32,28 @@ class Automod:
         conn, c = await load_db()
         c.execute("SELECT autorole FROM guilds WHERE id = (:id)", {'id': member.guild.id})
         autorole = c.fetchone()[0]
-        if autorole is not None:
-            role = discord.utils.get(member.guild.roles, id=autorole)
-            await member.add_roles(role)
-        else:
-            role = None
-
-        spam_channel_id = await self.get_spam_channel(member.guild.id)
-        if spam_channel_id is not None:
-            msg1 = '{0.name} joined {1}.'.format(member, member.guild)
-            msg2 = '{0} was assigned the autorole {1}'.format(member.name, role)
-            embed = discord.Embed(color=discord.Color.blue())
-            embed.set_thumbnail(url=member.avatar_url)
-            embed.add_field(name='Alert', value=msg1, inline=False)
-            embed.add_field(name='Alert', value=msg2, inline=False)
-            channel = member.guild.get_channel(spam_channel_id)
-            await channel.send(embed=embed)
-        general_chat = discord.utils.get(member.guild.channels, name='general')
-        blacklist = await self.auto_mod_blacklist()
-        if member.guild.name not in blacklist:
-            await general_chat.send('Welcome to {}, {}!'.format(member.guild.name, member.name))
+        try:
+            if autorole is not None:
+                role = discord.utils.get(member.guild.roles, id=autorole)
+                await member.add_roles(role)
+            else:
+                role = None
+            spam_channel_id = await self.get_spam_channel(member.guild.id)
+            if spam_channel_id is not None:
+                msg1 = '{0.name} joined {1}.'.format(member, member.guild)
+                msg2 = '{0} was assigned the autorole {1}'.format(member.name, role)
+                embed = discord.Embed(color=discord.Color.blue())
+                embed.set_thumbnail(url=member.avatar_url)
+                embed.add_field(name='Alert', value=msg1, inline=False)
+                embed.add_field(name='Alert', value=msg2, inline=False)
+                channel = member.guild.get_channel(spam_channel_id)
+                await channel.send(embed=embed)
+            general_chat = discord.utils.get(member.guild.channels, name='general')
+            blacklist = await self.auto_mod_blacklist()
+            if member.guild.name not in blacklist:
+                await general_chat.send('Welcome to {}, {}!'.format(member.guild.name, member.name))
+        except Exception as e:
+            print('An error occurred when attempting to give {} the autorole: {}'.format(member.name, e))
 
     async def on_member_remove(self, member):
         spam_channel_id = await self.get_spam_channel(member.guild.id)
@@ -64,7 +66,7 @@ class Automod:
 
     async def on_message_edit(self, before, after):
         blacklist = await self.auto_mod_blacklist()
-        if before.guild.name in blacklist or before.author.bot:
+        if before.guild.name in blacklist or before.author.bot or 'http' in before.message.content:
             return
         spam_channel_id = await self.get_spam_channel(before.guild.id)
         if spam_channel_id is not None:
