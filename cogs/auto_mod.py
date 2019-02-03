@@ -7,12 +7,19 @@ from discord.ext import commands
 class Automod:
     def __init__(self, client):
         self.client = client
-        self.auto_mod_blacklist = ['Knights of Karma', 'Aurora Corporation']
+        self.blacklist = self.auto_mod_blacklist()
+
+    @staticmethod
+    async def auto_mod_blacklist():
+        conn, c = await load_db()
+        c.execute("SELECT * FROM auto_mod_blacklist")
+        blacklist = [guild[0] for guild in c.fetchall()]
+        return blacklist
 
     @commands.command()
     async def roles(self, ctx):
-        for role in ctx.guild.roles:
-            await ctx.send(role)
+        roles = [value.name for value in ctx.guild.roles if value.name != '@everyone']
+        await ctx.send('The roles for {} include {}.'.format(ctx.guild.name, ', '.join(roles)))
 
     @commands.command()
     @commands.has_any_role('Moderator', 'mod')
@@ -22,103 +29,74 @@ class Automod:
             return
         await ctx.channel.purge(limit=amount+1)
 
-    @staticmethod
-    async def on_member_join(member):
-        # when a member joins, give them an autorole if it exists
+    async def on_member_join(self, member):
         conn, c = await load_db()
-        with conn:
-            c.execute("SELECT autorole FROM guilds WHERE id = (:id)", {'id': member.guild.id})
-            autorole = c.fetchone()[0]
+        c.execute("SELECT autorole FROM guilds WHERE id = (:id)", {'id': member.guild.id})
+        autorole = c.fetchone()[0]
+        if autorole is not None:
             role = discord.utils.get(member.guild.roles, id=autorole)
-            if role is not None:
-                await member.add_roles(role)
-            c.execute("SELECT spam FROM guilds WHERE id = (?)", (member.guild.id,))
-            spam = c.fetchone()[0]
-            if spam is not None:
-                msg1 = '{0.name} joined {1}.'.format(member, member.guild)
-                msg2 = '{0} was assigned the autorole {1}'.format(member.name, role)
-                embed = discord.Embed(color=discord.Color.blue())
-                embed.set_thumbnail(url=member.avatar_url)
-                embed.add_field(name='Alert', value=msg1, inline=False)
-                embed.add_field(name='Alert', value=msg2, inline=False)
-                channel = member.guild.get_channel(spam)
-                await channel.send(embed=embed)
-        channel = discord.utils.get(member.guild.channels, name='general')
-        await channel.send('Welcome to {}, {}!'.format(member.guild.name, member.name))
+            await member.add_roles(role)
+        else:
+            role = None
 
-    @staticmethod
-    async def on_member_remove(member):
-        conn, c = await load_db()
-        with conn:
-            c.execute("SELECT spam FROM guilds WHERE id = (?)", (member.guild.id,))
-            spam = c.fetchone()[0]
-            if spam is not None:
-                msg = '{0.name} has left {1}.'.format(member, member.guild)
-                embed = discord.Embed(color=discord.Color.blue())
-                embed.add_field(name='Alert', value=msg, inline=False)
-                channel = member.guild.get_channel(spam)
-                await channel.send(embed=embed)
+        spam_channel_id = self.get_spam_channel(member.guild.id)
+        if spam_channel_id is not None:
+            msg1 = '{0.name} joined {1}.'.format(member, member.guild)
+            msg2 = '{0} was assigned the autorole {1}'.format(member.name, role)
+            embed = discord.Embed(color=discord.Color.blue())
+            embed.set_thumbnail(url=member.avatar_url)
+            embed.add_field(name='Alert', value=msg1, inline=False)
+            embed.add_field(name='Alert', value=msg2, inline=False)
+            channel = member.guild.get_channel(spam_channel_id)
+            await channel.send(embed=embed)
+        general_chat = discord.utils.get(member.guild.channels, name='general')
+        if member.guild.name not in self.blacklist:
+            await general_chat.send('Welcome to {}, {}!'.format(member.guild.name, member.name))
+
+    async def on_member_remove(self, member):
+        spam_channel_id = self.get_spam_channel(member.guild.id)
+        if spam_channel_id is not None:
+            msg = '{0.name} has left {1}.'.format(member, member.guild)
+            embed = discord.Embed(color=discord.Color.blue())
+            embed.add_field(name='Alert', value=msg, inline=False)
+            channel = member.guild.get_channel(spam_channel_id)
+            await channel.send(embed=embed)
 
     async def on_message_edit(self, before, after):
-        if before.guild in self.auto_mod_blacklist:
+        if before.guild in self.blacklist or before.author.bot:
             return
-        if before.author.bot:
-            return
-        try:
+        spam_channel_id = await self.get_spam_channel(before.guild.id)
+        if spam_channel_id is not None:
             embed = discord.Embed(title='{0} edited a message'.format(after.author.name),
                                   description='in channel {0.mention}.'.format(after.channel),
                                   color=discord.Color.blue())
             embed.set_thumbnail(url=after.author.avatar_url)
             embed.add_field(name='Before', value=before.content, inline=False)
             embed.add_field(name='After', value=after.content, inline=False)
+            channel = before.guild.get_channel(spam_channel_id)
+            await channel.send(embed=embed)
 
-            conn, c = await load_db()
-            c = conn.cursor()
-            with conn:
-                c.execute("SELECT spam FROM guilds WHERE id = (:id)", {'id': before.guild.id})
-                spam_id = c.fetchone()[0]
-                if spam_id is None:
-                    return
-                spam = before.guild.get_channel(spam_id)
-            await spam.send(embed=embed)
-        except Exception as e:
-            print('[{}] Error on message edit: {}'.format(datetime.now(), e))
-            raise
-
-    @staticmethod
-    async def on_message_delete(message):
+    async def on_message_delete(self, message):
         if message.author.bot:
             return
         msg = '{0.author.name}\'s message was deleted:\n' \
               '**Channel**: {0.channel.mention}\n' \
               '**Content**: {0.content}'
 
-        conn, c = await load_db()
-        with conn:
-            c.execute("SELECT spam FROM guilds WHERE id = (?)", (message.guild.id,))
-            spam = c.fetchone()[0]
-            if spam is not None:
-                embed = discord.Embed(color=discord.Color.blue())
-                embed.add_field(name='Alert', value=msg.format(message))
-                channel = message.guild.get_channel(spam)
-                if channel is None:
-                    return
-                await channel.send(embed=embed)
+        spam_channel_id = await self.get_spam_channel(message.guild.id)
+        if spam_channel_id is not None:
+            embed = discord.Embed(color=discord.Color.blue())
+            embed.add_field(name='Alert', value=msg.format(message))
+            channel = message.guild.get_channel(spam_channel_id)
+            await channel.send(embed=embed)
 
     @staticmethod
-    async def spam(ctx, message):
+    async def get_spam_channel(guild_id):
         conn, c = await load_db()
-        with conn:
-            c.execute("SELECT spam FROM guilds WHERE id = (?)", (ctx.guild.id,))
-            spam = c.fetchone()[0]
-            if spam is not None:
-                embed = discord.Embed(color=discord.Color.blue())
-                embed.add_field(name='Alert', value=message)
-                channel = ctx.guild.get_channel(spam)
-                await channel.send(embed=embed)
+        c.execute("SELECT spam FROM guilds WHERE id = (:id)", {'id': guild_id})
+        spam_channel_id = c.fetchone()[0]
+        return spam_channel_id
 
-    # @autorole.error
-    # @botspam.error
     @clear.error
     async def on_message_error(self, ctx, error):
         if isinstance(error, commands.CommandOnCooldown):
