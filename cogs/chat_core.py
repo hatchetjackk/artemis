@@ -2,6 +2,7 @@ import random
 import pytz
 import asyncio
 import discord
+import sqlite3
 from itertools import cycle
 from artemis import load_db
 from datetime import datetime
@@ -214,9 +215,11 @@ class Chat:
         if value > 0 and level == 50:
             return
         with conn:
-            level += value
-            c.execute("UPDATE bot_status SET level = (:level)", {'level': level})
-        # print('Artemis emotional level change: {0}'.format(level))
+            try:
+                level += value
+                c.execute("UPDATE bot_status SET level = (:level)", {'level': level})
+            except sqlite3.OperationalError as e:
+                print('Unable to access DB: ', e)
 
     async def change_status(self):
         await self.client.wait_until_ready()
@@ -226,7 +229,7 @@ class Chat:
         msg = cycle(status_responses)
         while not self.client.is_closed():
             current_status = next(msg)
-            await self.client.change_presence(game=discord.Game(name=current_status))
+            await self.client.change_presence(activity=discord.Game(name=current_status))
             await asyncio.sleep(60 * 5)
 
     @staticmethod
