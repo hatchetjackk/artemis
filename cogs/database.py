@@ -13,18 +13,18 @@ class Database:
         conn, c = await load_db()
         try:
             with conn:
-                c.execute("INSERT INTO members VALUES (:id, :member_name, :karma)",
-                          {'id': member.id, 'member_name': member.name, 'karma': 0})
+                c.execute("INSERT INTO members VALUES (:id, :member_name, :karma, :last_karma_given)",
+                          {'id': member.id, 'member_name': member.name, 'karma': 0, 'last_karma_given': None})
         except Exception as e:
-            print('[{}] An error occurred when creating a users: {}'.format(datetime.now(), e))
+            print('[{}] An error occurred when importing {} into the members database: {}'.format(datetime.now(), member.name, e))
             raise
         try:
             with conn:
-                c.execute("INSERT INTO guilds VALUES (:id, :guild, :member_id, :member_name, :member_nick)",
+                c.execute("INSERT INTO guild_members VALUES (:id, :guild, :member_id, :member_name, :member_nick)",
                           {'id': member.guild.id, 'guild': member.guild.name, 'member_id': member.id,
                            'member_name': member.name, 'member_nick': member.nick})
         except Exception as e:
-            print('[{}] An error occurred when adding a user to a guild: {}'.format(datetime.now(), e))
+            print('[{}] An error occurred when adding {} to {}: {}'.format(datetime.now(), member.name, member.guild.name, e))
             raise
 
     @staticmethod
@@ -101,6 +101,28 @@ class Database:
                         c.execute("DELETE FROM guild_members WHERE id = (:id) and member_id = (:member_id)",
                                   {'id': ctx.guild.id, 'member_id': user[0]})
                         print('[{}] {} ({}) cleaned from {}.'.format(datetime.now(), user[1], user[0], ctx.guild.name))
+                    except Exception:
+                        raise
+
+    @commands.command()
+    @commands.is_owner()
+    async def force_user_update(self, ctx):
+        conn, c = await load_db()
+        c.execute("SELECT member_id, member_name FROM guild_members WHERE id = (:id)", {'id': ctx.guild.id})
+        guild_members = c.fetchall()
+        for member in ctx.guild.members:
+            if member.name not in [db_member[1] for db_member in guild_members]:
+                with conn:
+                    try:
+                        c.execute("INSERT INTO members VALUES (:id, :member_name, :karma, :last_karma_given)",
+                                  {'id': member.id, 'member_name': member.name, 'karma': 0, 'last_karma_given': None})
+                    except Exception:
+                        raise
+                    try:
+                        c.execute("INSERT INTO guild_members VALUES (:id, :guild, :member_id, :member_name, :member_nick)",
+                                  {'id': member.guild.id, 'guild': member.guild.name, 'member_id': member.id,
+                                   'member_name': member.name, 'member_nick': member.nick})
+                        print('Successfully added {} to MEMBERS and GUILD_MEMBERS.'.format(member.name))
                     except Exception:
                         raise
 
