@@ -68,32 +68,36 @@ class Mod:
             c.execute("UPDATE guilds SET prefix = (:prefix) WHERE id = (:id)", {'prefix': prefix, 'id': ctx.guild.id})
         await ctx.send('Changed guild prefix to `{}`'.format(prefix))
 
-    @commands.command()
-    async def autorole(self, ctx, command=None, *, role=None):
-        if command is None:
-            await ctx.send('Invoke `autorole` with `add <role>` or `remove`.')
+    @commands.group()
+    @commands.is_owner()
+    async def autorole(self, ctx):
+        if ctx.invoked_subcommand is None:
+            msg = 'Please use `autorole add` or `autorole delete`.'
+            await ctx.send(msg, delete_after=5)
 
-        if command in ('remove', 'delete'):
+    @autorole.group(aliases=['set'])
+    async def add(self, ctx, role):
+        role = discord.utils.get(ctx.guild.roles, name=role)
+        if role is None:
+            msg = 'Role not found. Please check your spelling. Roles are case-sensitive.'
+        else:
             conn, c = await load_db()
             with conn:
                 c.execute("UPDATE guilds SET autorole = (:autorole) WHERE id = (:id)",
-                          {'autorole': None, 'id': ctx.guild.id})
-            msg = '{0} cleared {1}\'s autorole.'.format(ctx.author.name, ctx.guild.name)
-            await ctx.send(msg, delete_after=5)
-            await self.spam(ctx, msg)
+                          {'autorole': role.id, 'id': ctx.guild.id})
+            msg = '{0} set {1}\'s autorole to *{2}*.'.format(ctx.author.name, ctx.guild.name, role.name)
+        await ctx.send(msg, delete_after=5)
+        await self.spam(ctx, msg)
 
-        if command in ('add', 'set'):
-            role = discord.utils.get(ctx.guild.roles, name=role)
-            if role is None:
-                msg = 'Role not found. Please check your spelling. Roles are case-sensitive.'
-            else:
-                conn, c = await load_db()
-                with conn:
-                    c.execute("UPDATE guilds SET autorole = (:autorole) WHERE id = (:id)",
-                              {'autorole': role.id, 'id': ctx.guild.id})
-                msg = '{0} set {1}\'s autorole to *{2}*.'.format(ctx.author.name, ctx.guild.name, role.name)
-            await ctx.send(msg, delete_after=5)
-            await self.spam(ctx, msg)
+    @autorole.group(aliases=['remove'])
+    async def delete(self, ctx):
+        conn, c = await load_db()
+        with conn:
+            c.execute("UPDATE guilds SET autorole = (:autorole) WHERE id = (:id)",
+                      {'autorole': None, 'id': ctx.guild.id})
+        msg = '{0} cleared {1}\'s autorole.'.format(ctx.author.name, ctx.guild.name)
+        await ctx.send(msg, delete_after=5)
+        await self.spam(ctx, msg)
 
     @commands.command()
     async def modrole(self, ctx, command=None, *, role=None):
