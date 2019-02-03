@@ -7,7 +7,6 @@ from discord.ext import commands
 class Automod:
     def __init__(self, client):
         self.client = client
-        self.blacklist = self.auto_mod_blacklist()
 
     @staticmethod
     async def auto_mod_blacklist():
@@ -39,7 +38,7 @@ class Automod:
         else:
             role = None
 
-        spam_channel_id = self.get_spam_channel(member.guild.id)
+        spam_channel_id = await self.get_spam_channel(member.guild.id)
         if spam_channel_id is not None:
             msg1 = '{0.name} joined {1}.'.format(member, member.guild)
             msg2 = '{0} was assigned the autorole {1}'.format(member.name, role)
@@ -50,11 +49,12 @@ class Automod:
             channel = member.guild.get_channel(spam_channel_id)
             await channel.send(embed=embed)
         general_chat = discord.utils.get(member.guild.channels, name='general')
-        if member.guild.name not in self.blacklist:
+        blacklist = await self.auto_mod_blacklist()
+        if member.guild.name not in blacklist:
             await general_chat.send('Welcome to {}, {}!'.format(member.guild.name, member.name))
 
     async def on_member_remove(self, member):
-        spam_channel_id = self.get_spam_channel(member.guild.id)
+        spam_channel_id = await self.get_spam_channel(member.guild.id)
         if spam_channel_id is not None:
             msg = '{0.name} has left {1}.'.format(member, member.guild)
             embed = discord.Embed(color=discord.Color.blue())
@@ -63,7 +63,8 @@ class Automod:
             await channel.send(embed=embed)
 
     async def on_message_edit(self, before, after):
-        if before.guild in self.blacklist or before.author.bot:
+        blacklist = await self.auto_mod_blacklist()
+        if before.guild.name in blacklist or before.author.bot:
             return
         spam_channel_id = await self.get_spam_channel(before.guild.id)
         if spam_channel_id is not None:
