@@ -5,7 +5,7 @@ import urllib.parse
 import discord
 import requests
 from discord.ext.commands import BucketType, CommandNotFound
-# from PyDictionary import PyDictionary
+from PyDictionary import PyDictionary
 from discord.ext import commands
 
 
@@ -74,20 +74,20 @@ class Fun:
         msg = random.choice(responses).format(ctx.message)
         await ctx.send(msg)
 
-    # @commands.command()
-    # async def define(self, ctx, word: str):
-    #     dictionary = PyDictionary()
-    #     results = dictionary.meaning(word)
-    #     embed = discord.Embed(title=word.upper(), color=discord.Color.blue())
-    #     for key, definition in results.items():
-    #         definitions = []
-    #         num = 1
-    #         for value in definition:
-    #             definitions.append(str(num) + ') ' + value)
-    #             num += 1
-    #         all_def = '\n'.join(definitions)
-    #         embed.add_field(name=key, value=all_def)
-    #     await ctx.send(embed=embed)
+    @commands.command()
+    async def define(self, ctx, word: str):
+        dictionary = PyDictionary()
+        results = dictionary.meaning(word)
+        embed = discord.Embed(title=word.upper(), color=discord.Color.blue())
+        for key, definition in results.items():
+            definitions = []
+            num = 1
+            for value in definition:
+                definitions.append(str(num) + ') ' + value)
+                num += 1
+            all_def = '\n'.join(definitions)
+            embed.add_field(name=key, value=all_def)
+        await ctx.send(embed=embed)
 
     @commands.command(aliases=['g'])
     async def google(self, ctx, *, search: str):
