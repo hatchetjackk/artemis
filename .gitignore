@@ -84,3 +84,5 @@ files/guilds\.json
 files/transfer\.py
 
 files/artemis\.db
+
+src/

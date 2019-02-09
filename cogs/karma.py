@@ -116,7 +116,7 @@ class Karma:
                     await message.channel.send(msg)
                     return
         except TypeError as e:
-            print(e)
+            print('[{}] An error occurred when checking last karma', e)
             pass
 
         for member in thanked_members:

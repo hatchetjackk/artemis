@@ -245,7 +245,7 @@ class Events:
             await ctx.send(embed=embed)
         except Exception as e:
             await ctx.send('Please use the format `update event_id h:m day/mnth`.')
-            print(e)
+            print('[{}] An issue occurred when updating an event', e)
             raise
 
     # @commands.command(aliases=['local'])
@@ -651,6 +651,6 @@ class Events:
             await ctx.send(msg)
 
 
-def setup(client):
-    client.add_cog(Events(client))
-    client.loop.create_task(Events(client).check_notifier())
+# def setup(client):
+#     client.add_cog(Events(client))
+#     client.loop.create_task(Events(client).check_notifier())

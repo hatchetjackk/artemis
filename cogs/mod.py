@@ -18,6 +18,7 @@ class Mod:
         try:
             exit()
         except Exception as e:
+            print('[{}] An issue occurred when updating an event', e)
             pass
 
     @commands.command(aliases=['restart'])

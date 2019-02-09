@@ -365,8 +365,8 @@ class EliteDangerous:
                 wing_role = 'No Role'
             try:
                 preferred_role = pilot_data['eventData']['preferredGameRole']
-            except Exception:
-                print('An error occurred when retrieving preferred role for {}.'.format(pilot_name))
+            except Exception as e:
+                print('An error occurred when retrieving preferred role for {}: {}'.format(pilot_name, e))
                 preferred_role = None
             pilot_page = pilot_data['eventData']['inaraURL']
 

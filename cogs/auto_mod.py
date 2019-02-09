@@ -66,7 +66,9 @@ class Automod:
 
     async def on_message_edit(self, before, after):
         blacklist = await self.auto_mod_blacklist()
-        if before.guild.name in blacklist or before.author.bot or 'http' in before.message.content:
+        if before.guild.name in blacklist or before.author.bot or 'http' in before.content:
+            return
+        if before.content == '':
             return
         spam_channel_id = await self.get_spam_channel(before.guild.id)
         if spam_channel_id is not None:

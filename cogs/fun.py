@@ -56,7 +56,7 @@ class Fun:
         try:
             rolls, limit = map(int, dice.split('d'))
         except Exception as e:
-            print(e)
+            print('An error occurred when rolling dice', e)
             await ctx.send('Please use the format "NdN" when rolling dice. Thanks!')
             return
         rolls = [random.randint(1, limit) for _ in range(rolls)]
@@ -111,12 +111,10 @@ class Fun:
         lose = {'rock': 'paper', 'paper': 'scissors', 'scissors': 'rock'}
         win = {'paper': 'rock', 'rock': 'scissors', 'scissors': 'paper'}
 
-        # check for valid entry
         if choice not in rps:
             await ctx.send('You have to pick rock, paper, or scissors.')
 
         bot_choice = random.choice(rps)
-        # check choice against bot
         if bot_choice == choice:
             await ctx.send('Artemis chose {0}! It\'s a tie!'.format(bot_choice))
             print('{0} played rock, paper, scissors and tied with Artemis.'.format(ctx.author.name))
@@ -128,7 +126,7 @@ class Fun:
             print('{0} played rock, paper, scissors and beat Artemis!'.format(ctx.author.name))
 
     @commands.command(aliases=['yt'])
-    @commands.cooldown(rate=1, per=30, type=BucketType.user)
+    @commands.cooldown(rate=1, per=15, type=BucketType.user)
     async def youtube(self, ctx, *args):
         query_string = urllib.parse.urlencode({"search_query": ' '.join(args)})
         html_content = urllib.request.urlopen("http://www.youtube.com/results?" + query_string)

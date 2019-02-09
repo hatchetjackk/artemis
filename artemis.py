@@ -1,4 +1,4 @@
-#! python3
+#! python3.6
 import os
 import random
 import discord
@@ -119,13 +119,12 @@ async def build_db_tables():
             raise
 
 
-
 if __name__ == '__main__':
     for extension in [f.replace('.py', '') for f in os.listdir('cogs/') if not f.startswith('_')]:
         try:
             client.load_extension('cogs.' + extension)
-        except Exception as error:
-            print('[{}] {} cannot be loaded: {}'.format(datetime.now(), extension, error))
+        except Exception as e:
+            print('[{}] {} cannot be loaded: {}'.format(datetime.now(), extension, e))
     with open('files/credentials.json', 'r') as f:
         credentials = json.load(f)
     client.run(credentials['token'])
