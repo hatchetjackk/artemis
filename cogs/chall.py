@@ -57,8 +57,8 @@ class Chall:
     async def show(self, ctx, tourney_id):
         try:
             r = requests.get(
-                'https://{}:{}@api.challonge.com/v1/tournaments/{}.json?subdomain=lm&include_participants=1'.format(
-                    username, api, tourney_id))
+                'https://{}:{}@api.challonge.com/v1/tournaments/'
+                '{}.json?subdomain=lm&include_participants=1'.format(username, api, tourney_id))
             tournament = json.loads(r.content)
             name = tournament['tournament']['name']
             state = tournament['tournament']['state']
@@ -96,15 +96,14 @@ class Chall:
     @tourney.group()
     async def join(self, ctx, tourney_id, challonge_name):
         try:
-            url = 'https://{}:{}@api.challonge.com/v1/tournaments/{}/' \
-                  'participants.json?subdomain=lm&participant[challonge_username]={}' \
-                  ''.format(username, api, tourney_id, challonge_name)
+            url = 'https://{}:{}@api.challonge.com/v1/tournaments/{}/participants.json?' \
+                  'subdomain=lm&participant[challonge_username]={}'.format(username, api, tourney_id, challonge_name)
             r = requests.post(url)
             participant = json.loads(r.content)
 
             r = requests.get(
-                'https://{}:{}@api.challonge.com/v1/tournaments/{}.json?subdomain=lm&include_participants=1'.format(
-                    username, api, tourney_id))
+                'https://{}:{}@api.challonge.com/v1/tournaments/'
+                '{}.json?subdomain=lm&include_participants=1'.format(username, api, tourney_id))
             tournament = json.loads(r.content)
             name = tournament['tournament']['name']
             state = tournament['tournament']['state']
@@ -133,7 +132,7 @@ class Chall:
         await self.client.wait_until_ready()
         while not self.client.is_closed():
             await asyncio.sleep(60)
-            print('Checking challonge...')
+            # print('Checking challonge...')
             await self.check_for_new_events()
             await self.check_for_removed_events()
 
