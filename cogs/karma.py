@@ -1,11 +1,3 @@
-""" Generate karma!
-
-This section of code splits messages into lists. It then parses the lists for user mentions. If it finds a
-user ID in the message, it will search for other keywords from the karma list to determine if a user is
-thanking  another user. Because of how mentions work, two variants of the user ID have to be passed to
-catch all users.
-"""
-
 import re
 import discord
 import random
@@ -25,36 +17,42 @@ class Karma:
     async def karma(self, ctx, *, member_check=None):
         if ctx.guild.name in self.karma_blacklist:
             return
+
         conn, c = await load_db()
+
         if member_check is None:
             c.execute("SELECT id, karma FROM members WHERE id = (:id)", {'id': ctx.author.id})
             member_id, karma = c.fetchone()
             await ctx.send('You have {0} karma.'.format(karma))
-        else:
-            if len(member_check) < 3:
-                await ctx.send('Please search using 3 or more characters.')
-                return
-            target_member = ''
-            for member_object in ctx.guild.members:
-                member_name = member_object.name.lower()
-                if member_object.nick is not None:
-                    member_name = member_object.nick.lower()
-                if member_object.mention in member_check:
-                    target_member = member_object
-                else:
-                    pattern = re.compile(r'' + re.escape(member_check))
-                    matches = pattern.findall(member_name)
-                    for _ in matches:
-                        target_member = member_object
-            c.execute("SELECT id, karma FROM members WHERE id = (:id)", {'id': target_member.id})
-            member_id, karma = c.fetchone()
-            target_member_name = target_member.name
-            if target_member.nick is not None:
-                target_member_name = target_member.nick
-            msg = '{0} has {1} karma.'.format(target_member_name, karma)
-            await ctx.send(msg)
+            print('{} checked their karma level.'.format(ctx.author.name))
 
-    @commands.command(aliases=['leaderboards'])
+        if len(member_check) < 3:
+            await ctx.send('Please search using 3 or more characters.')
+            return
+
+        target_member = ''
+        for member_object in ctx.guild.members:
+            member_name = member_object.name.lower()
+            if member_object.nick is not None:
+                member_name = member_object.nick.lower()
+            if member_object.mention in member_check:
+                target_member = member_object
+            else:
+                pattern = re.compile(r'' + re.escape(member_check))
+                matches = pattern.findall(member_name)
+                for _ in matches:
+                    target_member = member_object
+
+        c.execute("SELECT id, karma FROM members WHERE id = (:id)", {'id': target_member.id})
+        member_id, karma = c.fetchone()
+        target_member_name = target_member.name
+        if target_member.nick is not None:
+            target_member_name = target_member.nick
+        msg = '{0} has {1} karma.'.format(target_member_name, karma)
+        await ctx.send(msg)
+        print('{} checked {}\'s karma level.'.format(ctx.author.name, target_member_name))
+
+    @commands.command(aliases=['leaderboards', 'karmaboard'])
     async def leaderboard(self, ctx):
         conn, c = await load_db()
         leaderboard = {}
@@ -78,12 +76,10 @@ class Karma:
                               color=discord.Color.blue(),
                               description='\n'.join(karma_leaderboard[:10]))
         await ctx.send(embed=embed)
-        print('Leaderboard displayed by {} in {}.'.format(ctx.message.author, ctx.guild.name))
+        print('Leaderboard displayed by {} in {}.'.format(ctx.message.author.name, ctx.guild.name))
 
     async def on_message(self, message):
-        if message.author.id == self.client.user.id:
-            return
-        if message.content.startswith('!'):
+        if message.author.id == self.client.user.id or message.author.name == 'Dyno' or message.content.startswith('!'):
             return
         try:
             if message.guild.name in self.karma_blacklist:
@@ -106,9 +102,7 @@ class Karma:
         try:
             c.execute("SELECT * FROM members WHERE id = (:id)", {'id': message.author.id})
             member_id, membername, points, last_karma_given = c.fetchone()
-            if last_karma_given is None:
-                pass
-            else:
+            if last_karma_given is not None:
                 remaining_time = int(time.time() - last_karma_given)
                 time_limit = 60 * 3
                 if remaining_time < time_limit and len(thanked_members) > 0 and len(karma_key) > 0:
@@ -116,27 +110,27 @@ class Karma:
                     await message.channel.send(msg)
                     return
         except TypeError as e:
-            print('[{}] An error occurred when checking last karma', e)
-            pass
+            args = [datetime.now(), message.author.name, e]
+            print('[{}] An error occurred when checking last karma for {}: {}'.format(*args))
 
         for member in thanked_members:
             member_name = member.name
             if member.nick is not None:
                 member_name = member.nick
             if len(karma_key) > 0:
-                # check if someone is trying to give artemis karma
+
                 if member.id == self.client.user.id:
                     c.execute("SELECT response FROM bot_responses WHERE message_type = 'client_karma'")
                     client_karma = c.fetchall()
                     msg = random.choice([resp[0] for resp in client_karma])
                     await message.channel.send(msg)
-                # check if someone is trying to farm karma
+
                 elif member.id is message.author.id:
                     c.execute("SELECT response FROM bot_responses WHERE message_type = 'bad_karma'")
                     bad_karma = c.fetchall()
                     msg = random.choice([resp[0] for resp in bad_karma]).format(message.author.id)
                     await message.channel.send(msg)
-                # if karma is going to a user and not artemis or the author
+
                 else:
                     c.execute("SELECT * FROM members WHERE id = (:id)", {'id': member.id})
                     member_id, membername, points, last_karma_given = c.fetchone()
