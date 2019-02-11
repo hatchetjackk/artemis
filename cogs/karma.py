@@ -13,13 +13,26 @@ class Karma:
         self.client = client
         self.karma_blacklist = ['Knights of Karma']
 
-    @commands.command()
-    async def karma(self, ctx, *, member_check=None):
+    @commands.group()
+    async def karma(self, ctx):
         if ctx.guild.name in self.karma_blacklist:
             return
+        if ctx.invoked_subcommand is None:
+            pass
 
+    @karma.group()
+    async def help(self, ctx):
+        embed = discord.Embed(color=discord.Color.blue())
+        embed.add_field(name='Karma Help',
+                        value='`karma check` Check your own Karma\n'
+                              '`karma check [username]` Check a member\'s Karma\n'
+                              '`karma board` Check top 10 Karma leaders'
+                              '`thanks [@user]` Give a member Karma\n')
+        await ctx.send(embed=embed)
+
+    @karma.group()
+    async def check(self, ctx, *, member_check=None):
         conn, c = await load_db()
-
         if member_check is None:
             c.execute("SELECT id, karma FROM members WHERE id = (:id)", {'id': ctx.author.id})
             member_id, karma = c.fetchone()
@@ -52,7 +65,7 @@ class Karma:
         await ctx.send(msg)
         print('{} checked {}\'s karma level.'.format(ctx.author.name, target_member_name))
 
-    @commands.command(aliases=['leaderboards', 'karmaboard'])
+    @karma.group(aliases=['leaderboards', 'karmaboard', 'board'])
     async def leaderboard(self, ctx):
         conn, c = await load_db()
         leaderboard = {}
