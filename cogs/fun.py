@@ -14,6 +14,27 @@ class Fun:
     def __init__(self, client):
         self.client = client
 
+    @commands.group()
+    async def fun(self, ctx):
+        if ctx.invoked_subcommand is None:
+            pass
+
+    @fun.group()
+    async def help(self, ctx):
+        embed = discord.Embed(color=discord.Color.blue())
+        embed.add_field(name='Fun Help',
+                        value='`playing` View all current statuses\n'
+                              '`ping` Check if Artemis is reactive\n'
+                              '`roll ndn` Roll n dice\n'
+                              '`draw` Draw a random card. High/low anyone?\n'
+                              '`hello` Say hi to Artemis\n'
+                              '`define [word]` Get a definition\n'
+                              '`google [topic]` Retrieve the first link from Google\n'
+                              '`r/[subreddit]` Retrieve a subreddit link\n'
+                              '`youtube [topic]` Retrieve the first video from YouTube\n'
+                              '`rps [rock/paper/scissors]` Play against Artemis')
+        await ctx.send(embed=embed)
+
     @commands.command()
     async def playing(self, ctx, *, game_match='all'):
         if game_match == 'all':
