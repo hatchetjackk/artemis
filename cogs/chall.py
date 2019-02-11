@@ -23,6 +23,15 @@ class Chall:
         pass
 
     @tourney.group()
+    async def help(self, ctx):
+        embed = Embed(color=Color.blue())
+        embed.add_field(name='Challonge Help',
+                        value='`chall index` View all tournaments\n'
+                              '`chall show [id]` Show details about a tournament\n'
+                              '`chall join [id] [username]` Join a tournament')
+        await ctx.send(embed=embed)
+
+    @tourney.group()
     async def index(self, ctx):
         try:
             embed = Embed(title='Tournaments', color=Color.blue())
@@ -213,8 +222,8 @@ class Chall:
                                     inline=False)
                     await challonge_channel.send(embed=embed)
                     print('A new Challonge Event has been created: {}'.format(name.title()))
-        except sqlite3.Error as e:
-            print(e)
+        except sqlite3.Error:
+            pass
 
     @staticmethod
     async def format_time(datetime_string):
