@@ -13,42 +13,10 @@ class Help:
             embed.set_author(name="Help Page")
             embed.add_field(name='Artemis is in Beta',
                             value='Things might bend, break, or tear a whole into another dimension.\n')
-            embed.add_field(name="status", value="Check Artemis' status", inline=False)
-            embed.add_field(name='help elite', value='See available options for Elite: Dangerous.', inline=False)
             embed.add_field(name='help events', value='See available options for events.', inline=False)
             embed.add_field(name='help embeds', value='See available options for embeds.', inline=False)
             await ctx.author.send(embed=embed)
             print('Artemis: Sent help to {0}'.format(ctx.author.name))
-
-    @staticmethod
-    @help.group()
-    async def elite(ctx):
-        embed = discord.Embed(
-            title='Elite: Dangerous Help',
-            color=discord.Color.red()
-        )
-        embed.add_field(name='system',
-                        value='Find information about Elite Dangerous systems and stations\n'
-                              'Stations in the systems information brief are marked with \n'
-                              '[m]arket, [o]utfitting, and [s]hipyard and an abbreviation for\n'
-                              'the controlling faction.\n'
-                              '`system <system name>`\n'
-                              '`system <system name>, <station name>`',
-                        inline=False)
-        embed.add_field(name='cmdr',
-                        value='Find information about a CMDR. This information is taken from INARA\n'
-                              'and only reflects that which is updated on the site.\n'
-                              '`cmdr hatchet jackk`',
-                        inline=False)
-        embed.add_field(name='wanted',
-                        value='When you run into a bad hombre...\n'
-                              'Add CMDRs to or check against the wanted list.\n'
-                              '`wanted` to check the list\n'
-                              '`wanted add <cmdr name>, <reason for being wanted>`\n'
-                              '`wanted remove <cmdr name>`',
-                        inline=False)
-
-        await ctx.author.send(embed=embed)
 
     @staticmethod
     @help.group()

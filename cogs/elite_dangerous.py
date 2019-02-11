@@ -14,6 +14,24 @@ class EliteDangerous:
         self.client = client
         self.wanted_blacklist = ['Knights of Karma']
 
+    @commands.group(aliases=['ed'])
+    async def elite(self, ctx):
+        if ctx.invoked_subcommand is None:
+            pass
+
+    @elite.group()
+    async def help(self, ctx):
+        embed = Embed(color=Color.blue())
+        embed.add_field(name='Elite Help',
+                        value='`wanted` List Wanted CMDRs for this guild\n'
+                              '`wanted add [cmdr], [reason]` Add a CMDR to the Wanted list\n'
+                              '`wanted remove [cmdr]` Remove a CMDR from the Wanted list\n'
+                              '`faction [faction_name]` Get details about a faction\n'
+                              '`system [system_name]` Get details about a system name\n'
+                              '`dist [system1], [system2]` Get the distance between two systems\n'
+                              '`cmdr [cmdr_name]` Get details about a CMDR (must be in INARA)')
+        await ctx.send(embed=embed)
+
     @staticmethod
     async def fetch(session, url):
         async with session.get(url) as response:
@@ -41,42 +59,6 @@ class EliteDangerous:
                                     inline=False)
             await ctx.send(embed=embed)
 
-    @staticmethod
-    async def get_pilot_information(cmdr_name):
-        try:
-            with open('files/credentials.json') as f:
-                data = json.load(f)
-            inara_api = data['inara']
-            json_data = {
-                "header": {
-                    "appName": "Artemis_Bot",
-                    "appVersion": "0.7",
-                    "isDeveloped": True,
-                    "APIkey": inara_api,
-                    "commanderName": "Hatchet Jackk"
-                },
-                "events": [
-                    {
-                        "eventName": "getCommanderProfile",
-                        "eventTimestamp": str(datetime.utcnow().isoformat()),
-                        "eventData": {
-                            "searchName": cmdr_name
-                        }
-                    }
-                ]
-            }
-            json_string = json.dumps(json_data)
-            url = 'https://inara.cz/inapi/v1/'
-            r = requests.post(url, json_string)
-            pilot_data = list(r.json()['events'])[0]
-            pilot_page = pilot_data['eventData']['inaraURL']
-            if pilot_page is None:
-                return None
-            return pilot_page
-        except Exception as e:
-            print('[{}] An error occurred when retrieving pilot information error: {}'.format(datetime.now(), e))
-            return None
-
     @wanted.group()
     async def add(self, ctx, *args):
         try:
@@ -97,7 +79,7 @@ class EliteDangerous:
             print('[{}] Error when adding a pilot to Wanted list: {}'.format(datetime.now(), e))
             raise
 
-    @wanted.group()
+    @wanted.group(aliases=['delete', 'del'])
     async def remove(self, ctx, *, wanted_cmdr: str):
         try:
             if ctx.guild.name == any(self.wanted_blacklist):
@@ -437,6 +419,42 @@ class EliteDangerous:
             await ctx.send('Pilot not found.')
             print('An error occurred when retrieving pilot data for {}: {}'.format(pilot_name, e))
             raise
+
+    @staticmethod
+    async def get_pilot_information(cmdr_name):
+        try:
+            with open('files/credentials.json') as f:
+                data = json.load(f)
+            inara_api = data['inara']
+            json_data = {
+                "header": {
+                    "appName": "Artemis_Bot",
+                    "appVersion": "0.7",
+                    "isDeveloped": True,
+                    "APIkey": inara_api,
+                    "commanderName": "Hatchet Jackk"
+                },
+                "events": [
+                    {
+                        "eventName": "getCommanderProfile",
+                        "eventTimestamp": str(datetime.utcnow().isoformat()),
+                        "eventData": {
+                            "searchName": cmdr_name
+                        }
+                    }
+                ]
+            }
+            json_string = json.dumps(json_data)
+            url = 'https://inara.cz/inapi/v1/'
+            r = requests.post(url, json_string)
+            pilot_data = list(r.json()['events'])[0]
+            pilot_page = pilot_data['eventData']['inaraURL']
+            if pilot_page is None:
+                return None
+            return pilot_page
+        except Exception as e:
+            print('[{}] An error occurred when retrieving pilot information error: {}'.format(datetime.now(), e))
+            return None
 
 
 def setup(client):
