@@ -10,45 +10,45 @@ class Mod:
         self.client = client
         self.mod_blacklist = []
 
-    @commands.command()
+    @commands.group()
     @commands.is_owner()
-    async def stop(self, ctx):
-        await ctx.send('Artemis shutting down.')
-        print('Artemis is shutting down.')
-        try:
-            exit()
-        except Exception as e:
-            print('[{}] An issue occurred when updating an event', e)
+    async def admin(self, ctx):
+        if ctx.invoked_subcommand is None:
             pass
 
-    @commands.command(aliases=['restart'])
-    @commands.is_owner()
+    @admin.group()
+    async def help(self, ctx):
+        embed = discord.Embed(color=discord.Color.blue())
+        embed.add_field(name='Admin Help',
+                        value='`admin stop` Stop Artemis\n'
+                              '`admin reboot` Reboot Artemis\n'
+                              '`admin emoji` Print server emoji list\n'
+                              '`admin gavatar` Print the guild icon url\n'
+                              '`admin spam [channel]` Change the guild\'s spam channel\n'
+                              '`admin prefix [new_prefix]` Change the guild\'s prefix')
+        await ctx.send(embed=embed)
+
+    @admin.group()
+    async def stop(self, ctx):
+        await ctx.send('Artemis shutting down.')
+        exit()
+
+    @admin.group(aliases=['restart'])
     async def reboot(self, ctx):
         await ctx.send("Rebooting Artemis.")
         python = sys.executable
         os.execl(python, python, *sys.argv)
 
-    @commands.command()
-    async def test(self, ctx):
-        conn, c = await load_db()
-        c.execute("SELECT autorole FROM guilds WHERE id = (:id)", {'id': ctx.guild.id})
-        autorole = c.fetchone()[0]
-        role = discord.utils.get(ctx.guild.roles, id=autorole)
-        print(role)
-        print(ctx.member.guild.get_role)
-
-    @commands.command()
+    @admin.group()
     async def emoji(self, ctx):
         emojis = ctx.guild.emojis
-        print("Guild Emoji List:")
-        for value in emojis:
-            print(value)
+        await ctx.send(', '.join(emojis))
 
-    @commands.command()
+    @admin.group(aliases=['gavatar'])
     async def print_guild_avatar(self, ctx):
-        print(ctx.guild.icon_url)
+        await ctx.send(ctx.guild.icon_url)
 
-    @commands.command(aliases=['spam'])
+    @admin.group(aliases=['spam'])
     async def botspam(self, ctx, *, channel: str):
         conn, c = await load_db()
         channel = discord.utils.get(ctx.guild.channels, name=channel)
@@ -58,8 +58,7 @@ class Mod:
         await ctx.send(msg, delete_after=10)
         await self.spam(ctx, msg)
 
-    @commands.command()
-    @commands.is_owner()
+    @admin.group()
     async def prefix(self, ctx, prefix: str):
         if len(prefix) > 1:
             await ctx.send('Please use single character prefixes only.')
