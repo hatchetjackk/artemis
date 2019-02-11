@@ -20,7 +20,8 @@ class Chall:
 
     @commands.group(aliases=['chall'])
     async def tourney(self, ctx):
-        pass
+        if ctx.invoked_subcommand is None:
+            pass
 
     @tourney.group()
     async def help(self, ctx):
@@ -59,10 +60,6 @@ class Chall:
             print('An error occurred when retrieving tournament data: {}'.format(e))
 
     @tourney.group()
-    async def create(self, ctx):
-        pass
-
-    @tourney.group()
     async def show(self, ctx, tourney_id):
         try:
             r = requests.get(
@@ -97,10 +94,6 @@ class Chall:
             await ctx.send(embed=embed)
         except Exception as e:
             print('An error occurred when showing challonge tourney {}: {}'.format(tourney_id, e))
-
-    @tourney.group()
-    async def destroy(self, ctx):
-        pass
 
     @tourney.group()
     async def join(self, ctx, tourney_id, challonge_name):
