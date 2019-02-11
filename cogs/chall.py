@@ -96,8 +96,8 @@ class Chall:
     @tourney.group()
     async def join(self, ctx, tourney_id, challonge_name):
         try:
-            url = 'https://{}:{}@api.challonge.com/v1/tournaments/{}/participants.json?' \
-                  'subdomain=lm&participant[challonge_username]={}'.format(username, api, tourney_id, challonge_name)
+            url = 'https://{}:{}@api.challonge.com/v1/tournaments/{}/participants.json' \
+                  '?subdomain=lm&participant[challonge_username]={}'.format(username, api, tourney_id, challonge_name)
             r = requests.post(url)
             participant = json.loads(r.content)
 
@@ -132,9 +132,41 @@ class Chall:
         await self.client.wait_until_ready()
         while not self.client.is_closed():
             await asyncio.sleep(60)
-            # print('Checking challonge...')
             await self.check_for_new_events()
             await self.check_for_removed_events()
+            await self.check_for_new_participants()
+
+    async def check_for_new_participants(self):
+        challonge_channel = utils.get(self.client.get_all_channels(), name='challonge_notifications')
+        try:
+            conn, c = await load_db()
+            c.execute("SELECT * FROM tournament_members")
+            tournament_members = c.fetchall()
+            c.execute("SELECT * FROM tournament_list")
+            tournament_list = c.fetchall()
+            for tournament in tournament_list:
+                tourney_id, name = tournament
+                url = 'https://{}:{}@api.challonge.com/v1/tournaments/{}/participants.json'
+                r = requests.get(url.format(username, api, tourney_id))
+                participants = json.loads(r.content)
+                for participant in participants:
+                    for k, v in participant.items():
+                        members = [member for tournament_id, member
+                                   in tournament_members
+                                   if tournament_id == int(tourney_id)]
+                        if v['id'] not in members:
+                            user = v['challonge_username']
+                            if user is None:
+                                user = v['name']
+                            with conn:
+                                c.execute("INSERT INTO tournament_members VALUES (:id, :member_id)",
+                                          {'id': tourney_id, 'member_id': v['id']})
+                            embed = Embed(color=Color.blue())
+                            embed.add_field(name=name.title(),
+                                            value='"{}" has signed up!'.format(user))
+                            await challonge_channel.send(embed=embed)
+        except sqlite3.Error as e:
+            print(e)
 
     async def check_for_removed_events(self):
         challonge_channel = utils.get(self.client.get_all_channels(), name='challonge_notifications')
@@ -149,8 +181,9 @@ class Chall:
                 if db_id not in challonge_tournaments:
                     with conn:
                         c.execute("DELETE FROM tournament_list WHERE id = (:id)", {'id': db_id})
-                    embed = Embed(title='A Challonge Event has been removed: {}'.format(name.title()),
-                                  color=Color.blue())
+                    embed = Embed(color=Color.red())
+                    embed.add_field(name='A Challonge Event has been removed',
+                                    value=name.title())
                     await challonge_channel.send(embed=embed)
                     print('A Challonge Event has been removed: {}'.format(name.title()))
         except sqlite3.Error as e:
@@ -168,18 +201,20 @@ class Chall:
                 name = tournament['tournament']['name']
                 tournament_id = tournament['tournament']['id']
                 sign_up = tournament['tournament']['sign_up_url']
+                if sign_up is None:
+                    sign_up = 'No Sign Up Page yet'
                 if tournament_id not in tournament_database:
                     with conn:
                         c.execute("INSERT INTO tournament_list VALUES (:id, :name)",
                                   {'id': tournament_id, 'name': name})
-                    embed = Embed(title='A new Challonge Event has been created: {}'.format(name.title()),
-                                  color=Color.blue())
-                    if sign_up is not None:
-                        embed.add_field(name='Sign Up Here', value=sign_up, inline=False)
+                    embed = Embed(color=Color.blue())
+                    embed.add_field(name='A new Challonge event has been created!',
+                                    value='{}\nSign Up Here: {}'.format(name.title(), sign_up),
+                                    inline=False)
                     await challonge_channel.send(embed=embed)
                     print('A new Challonge Event has been created: {}'.format(name.title()))
-        except sqlite3.Error:
-            pass
+        except sqlite3.Error as e:
+            print(e)
 
     @staticmethod
     async def format_time(datetime_string):
