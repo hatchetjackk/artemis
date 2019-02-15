@@ -70,6 +70,8 @@ class Chall:
             state = tournament['tournament']['state']
             style = tournament['tournament']['tournament_type']
             sign_up = tournament['tournament']['sign_up_url']
+            date_object = tournament['tournament']['start_at']
+            date, time = date_object.split('T')
             if sign_up is None:
                 sign_up = 'No sign up page'
             game = tournament['tournament']['game_name']
@@ -85,8 +87,8 @@ class Chall:
             tourney_id = tournament['tournament']['id']
             args = (sign_up, style.title(), tourney_id)
             fmt = '{}\n{}\nid: *{}*'.format(*args)
-            embed = Embed(title='{} - {}'.format(name.title(), game), color=Color.blue())
-            embed.add_field(name='Status: {}'.format(state.title()), value=fmt, inline=False)
+            embed = Embed(title='{} - {}'.format(name.upper(), game), color=Color.blue())
+            embed.add_field(name='Status: {}\nScheduled for {}'.format(state.title(), date), value=fmt, inline=False)
             if len(participants_dict) > 0:
                 embed.add_field(name='Players (by seed)',
                                 value='\n'.join('{}: {}'.format(seed, player) for seed, player in sorted_participants.items()),
@@ -164,7 +166,7 @@ class Chall:
                                 c.execute("INSERT INTO tournament_members VALUES (:id, :member_id)",
                                           {'id': tourney_id, 'member_id': v['id']})
                             embed = Embed(color=Color.blue())
-                            embed.add_field(name=name.title(),
+                            embed.add_field(name=name.upper(),
                                             value='"{}" has signed up!'.format(user))
                             await challonge_channel.send(embed=embed)
         except sqlite3.Error as e:
@@ -187,7 +189,7 @@ class Chall:
                     embed.add_field(name='A Challonge Event has been removed',
                                     value=name.title())
                     await challonge_channel.send(embed=embed)
-                    print('A Challonge Event has been removed: {}'.format(name.title()))
+                    print('A Challonge Event has been removed: {}'.format(name.upper()))
         except sqlite3.Error as e:
             print(e)
 
@@ -202,6 +204,8 @@ class Chall:
             for tournament in challonge_tournaments:
                 name = tournament['tournament']['name']
                 tournament_id = tournament['tournament']['id']
+                date_object = tournament['tournament']['start_at']
+                date, time = date_object.split('T')
                 sign_up = tournament['tournament']['sign_up_url']
                 if sign_up is None:
                     sign_up = 'No Sign Up Page yet'
@@ -211,7 +215,9 @@ class Chall:
                                   {'id': tournament_id, 'name': name})
                     embed = Embed(color=Color.blue())
                     embed.add_field(name='A new Challonge event has been created!',
-                                    value='{}\nSign Up Here: {}'.format(name.title(), sign_up),
+                                    value='Event Name: {}\n'
+                                          'Date: {}\n'
+                                          'Sign Up Here: {}'.format(name.upper(), date, sign_up),
                                     inline=False)
                     await challonge_channel.send(embed=embed)
                     print('A new Challonge Event has been created: {}'.format(name.title()))
