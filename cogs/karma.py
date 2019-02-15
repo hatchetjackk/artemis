@@ -98,67 +98,60 @@ class Karma:
             if message.guild.name in self.karma_blacklist:
                 return
         except Exception as e:
-            print('[{}] An issue occurred when detecting a guild name in a message: Guild:{} Error: {}'.format(datetime.now(), message.guild, e))
-            raise
+            print('[{}] An issue occurred when detecting a guild name in a message:'
+                  ' Guild:{} Error: {}'.format(datetime.now(), message.guild, e))
 
-        conn, c = await load_db()
         keywords = ['thanks', 'thank', 'gracias', 'kudos', 'thx', 'appreciate', 'cheers']
-        msg = [word.lower() for word in message.content.split()]
+        msg = [word.lower().replace('.', '').replace('!', '') for word in message.content.split()]
         karma_key = [item for item in keywords if item in msg]
 
-        thanked_members = []
-        for member in message.guild.members:
-            if member.mention in msg:
-                if member not in thanked_members:
-                    thanked_members.append(member)
-        # check last karma timer
-        try:
-            c.execute("SELECT * FROM members WHERE id = (:id)", {'id': message.author.id})
-            member_id, membername, points, last_karma_given = c.fetchone()
-            if last_karma_given is not None:
-                remaining_time = int(time.time() - last_karma_given)
-                time_limit = 60 * 3
-                if remaining_time < time_limit and len(thanked_members) > 0 and len(karma_key) > 0:
-                    msg = 'You must wait {0} seconds to give karma again.'.format(time_limit - remaining_time)
-                    await message.channel.send(msg)
-                    return
-        except TypeError as e:
-            args = [datetime.now(), message.author.name, e]
-            print('[{}] An error occurred when checking last karma for {}: {}'.format(*args))
+        if len(karma_key) > 0:
+            thanked_members = [member for member in message.guild.members if member.mention in msg]
+            if len(thanked_members) > 0:
+                conn, c = await load_db()
 
-        for member in thanked_members:
-            member_name = member.name
-            if member.nick is not None:
-                member_name = member.nick
-            if len(karma_key) > 0:
+                c.execute("SELECT * FROM members WHERE id = (:id)", {'id': message.author.id})
+                member_id, membername, points, last_karma_given = c.fetchone()
+                if last_karma_given is not None:
+                    remaining_time = int(time.time() - last_karma_given)
+                    time_limit = 60 * 3
+                    if remaining_time < time_limit:
+                        msg = 'You must wait {0} seconds to give karma again.'.format(time_limit - remaining_time)
+                        await message.channel.send(msg)
+                        return
 
-                if member.id == self.client.user.id:
-                    c.execute("SELECT response FROM bot_responses WHERE message_type = 'client_karma'")
-                    client_karma = c.fetchall()
-                    msg = random.choice([resp[0] for resp in client_karma])
-                    await message.channel.send(msg)
+                for member in thanked_members:
+                    member_name = member.name
+                    if member.nick is not None:
+                        member_name = member.nick
 
-                elif member.id is message.author.id:
-                    c.execute("SELECT response FROM bot_responses WHERE message_type = 'bad_karma'")
-                    bad_karma = c.fetchall()
-                    msg = random.choice([resp[0] for resp in bad_karma]).format(message.author.id)
-                    await message.channel.send(msg)
+                    if member.id == self.client.user.id:
+                        c.execute("SELECT response FROM bot_responses WHERE message_type = 'client_karma'")
+                        client_karma = c.fetchall()
+                        msg = random.choice([response[0] for response in client_karma])
+                        await message.channel.send(msg)
 
-                else:
-                    c.execute("SELECT * FROM members WHERE id = (:id)", {'id': member.id})
-                    member_id, membername, points, last_karma_given = c.fetchone()
-                    last_karma_given = int(time.time())
-                    points += 1
-                    with conn:
-                        c.execute("UPDATE members SET karma = (:karma) WHERE id = (:id)",
-                                  {'karma': points, 'id': member.id})
-                        c.execute("UPDATE members SET last_karma_given = (:last_karma_given) WHERE id = (:id)",
-                                  {'last_karma_given': last_karma_given, 'id': message.author.id})
-                    c.execute("SELECT response FROM bot_responses WHERE message_type = 'good_karma'")
-                    good_responses = c.fetchall()
-                    msg = random.choice([resp[0] for resp in good_responses]).format(member_name)
-                    await message.channel.send(msg)
-                    print("{0} received a karma point from {1}".format(member_name, message.author.name))
+                    elif member.id is message.author.id:
+                        c.execute("SELECT response FROM bot_responses WHERE message_type = 'bad_karma'")
+                        bad_karma = c.fetchall()
+                        msg = random.choice([response[0] for response in bad_karma]).format(message.author.id)
+                        await message.channel.send(msg)
+
+                    else:
+                        c.execute("SELECT * FROM members WHERE id = (:id)", {'id': member.id})
+                        member_id, membername, points, last_karma_given = c.fetchone()
+                        last_karma_given = int(time.time())
+                        points += 1
+                        with conn:
+                            c.execute("UPDATE members SET karma = (:karma) WHERE id = (:id)",
+                                      {'karma': points, 'id': member.id})
+                            c.execute("UPDATE members SET last_karma_given = (:last_karma_given) WHERE id = (:id)",
+                                      {'last_karma_given': last_karma_given, 'id': message.author.id})
+                        c.execute("SELECT response FROM bot_responses WHERE message_type = 'good_karma'")
+                        good_responses = c.fetchall()
+                        msg = random.choice([response[0] for response in good_responses]).format(member_name)
+                        await message.channel.send(msg)
+                        print("{0} received a karma point from {1}".format(member_name, message.author.name))
 
 
 def setup(client):
