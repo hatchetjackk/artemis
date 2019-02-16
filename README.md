@@ -5,13 +5,12 @@ reward members with a point system for performing helpful tasks in my college's
 Discord server. From there it grew into an experiment to push my programming
 skills from fundamental to professional.\
 Artemis includes these capabilities:
-- Google and Youtube searches `!google dogs` `!youtube cat videos`
-- Word definitions `!define python`
-- Event generation and reminders `!event add 11:00 25/12 It's Christmas!`
+- Google and Youtube searches
+- Dictionary definitions
 - Rich embed generation
-- Point system `thanks <user>`
-- An RPG system [*work in progress*]
-- Elite Dangerous functionality `!cmdr hatchet jackk` `!system qa'wakana`
+- Karma point system
+- Elite Dangerous integration
+- Challonge integration 
 - Auto moderation
 
 ## Author
