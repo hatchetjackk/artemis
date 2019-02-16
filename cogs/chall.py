@@ -4,7 +4,7 @@ import asyncio
 import sqlite3
 from datetime import datetime
 from artemis import load_db
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from discord import Embed, Color, utils
 from discord.ext import commands
 
@@ -55,6 +55,7 @@ class Chall:
                 embed.add_field(name='{} - {} {}'.format(name.title(), game, '({})'.format(state)),
                                 inline=False,
                                 value=fmt)
+                embed.set_thumbnail(url='https://s3.amazonaws.com/challonge_app/organizations/images/000/094/501/xlarge/redacted.png?1549047416')
             await ctx.send(embed=embed)
         except Exception as e:
             print('An error occurred when retrieving tournament data: {}'.format(e))
@@ -77,22 +78,39 @@ class Chall:
             game = tournament['tournament']['game_name']
             if game is None:
                 game = 'No Game Selected'
-            participants_dict = {}
+            seeded_players = {}
+            final_standings = defaultdict(list)
             for player in tournament['tournament']['participants']:
-                if player['participant']['name'] != '' and player['participant']['name'] is not None:
-                    participants_dict[player['participant']['seed']] = player['participant']['name']
+                player = player['participant']
+                if state == 'complete':
+                    if player['name'] != '' and player['name'] is not None:
+                        final_standings[player['final_rank']].append(player['name'])
+                    else:
+                        final_standings[player['final_rank']].append(player['challonge_username'])
                 else:
-                    participants_dict[player['participant']['seed']] = player['participant']['challonge_username']
-            sorted_participants = OrderedDict(sorted(participants_dict.items(), key=lambda x: x[0]))
+                    if player['name'] != '' and player['name'] is not None:
+                        seeded_players[player['seed']] = player['name']
+                    else:
+                        seeded_players[player['seed']] = player['challonge_username']
+            sorted_standings = OrderedDict(sorted(final_standings.items(), key=lambda x: x[0]))
+            sorted_seed = OrderedDict(sorted(seeded_players.items(), key=lambda x: x[0]))
             tourney_id = tournament['tournament']['id']
             args = (sign_up, style.title(), tourney_id)
             fmt = '{}\n{}\nid: *{}*'.format(*args)
             embed = Embed(title='{} - {}'.format(name.upper(), game), color=Color.blue())
             embed.add_field(name='Status: {}\nScheduled for {}'.format(state.title(), date), value=fmt, inline=False)
-            if len(participants_dict) > 0:
+            if len(seeded_players) > 0 and state != 'complete':
                 embed.add_field(name='Players (by seed)',
-                                value='\n'.join('{}: {}'.format(seed, player) for seed, player in sorted_participants.items()),
+                                value='\n'.join('{}: {}'.format(seed, player) for seed, player in sorted_seed.items()),
                                 inline=False)
+            else:
+                embed.add_field(name='Final Results',
+                                value='\n'.join(
+                                    '{}: {}'.format(place, ', '.join(player)) for place, player
+                                    in sorted_standings.items()),
+                                inline=False)
+            embed.set_thumbnail(url='https://s3.amazonaws.com/challonge_app/organizations/images/000/094/501/xlarge/'
+                                    'redacted.png?1549047416')
             await ctx.send(embed=embed)
         except Exception as e:
             print('An error occurred when showing challonge tourney {}: {}'.format(tourney_id, e))
@@ -128,6 +146,7 @@ class Chall:
                 embed.add_field(name='{} - {} {}'.format(name.title(), game, '({})'.format(state)),
                                 inline=False,
                                 value=fmt)
+                embed.set_thumbnail(url='https://s3.amazonaws.com/challonge_app/organizations/images/000/094/501/xlarge/redacted.png?1549047416')
                 await ctx.send(embed=embed)
         except Exception as e:
             print(e)
@@ -168,6 +187,7 @@ class Chall:
                             embed = Embed(color=Color.blue())
                             embed.add_field(name=name.upper(),
                                             value='"{}" has signed up!'.format(user))
+                            embed.set_thumbnail(url='https://s3.amazonaws.com/challonge_app/organizations/images/000/094/501/xlarge/redacted.png?1549047416')
                             await challonge_channel.send(embed=embed)
         except sqlite3.Error as e:
             print(e)
@@ -188,6 +208,7 @@ class Chall:
                     embed = Embed(color=Color.red())
                     embed.add_field(name='A Challonge Event has been removed',
                                     value=name.title())
+                    embed.set_thumbnail(url='https://s3.amazonaws.com/challonge_app/organizations/images/000/094/501/xlarge/redacted.png?1549047416')
                     await challonge_channel.send(embed=embed)
                     print('A Challonge Event has been removed: {}'.format(name.upper()))
         except sqlite3.Error as e:
@@ -214,11 +235,13 @@ class Chall:
                         c.execute("INSERT INTO tournament_list VALUES (:id, :name)",
                                   {'id': tournament_id, 'name': name})
                     embed = Embed(color=Color.blue())
+                    embed.set_thumbnail(url='https://s3.amazonaws.com/challonge_app/organizations/images/000/094/501/xlarge/redacted.png?1549047416')
                     embed.add_field(name='A new Challonge event has been created!',
                                     value='Event Name: {}\n'
                                           'Date: {}\n'
                                           'Sign Up Here: {}'.format(name.upper(), date, sign_up),
                                     inline=False)
+                    embed.set_thumbnail(url='https://s3.amazonaws.com/challonge_app/organizations/images/000/094/501/xlarge/redacted.png?1549047416')
                     await challonge_channel.send(embed=embed)
                     print('A new Challonge Event has been created: {}'.format(name.title()))
         except sqlite3.Error:
