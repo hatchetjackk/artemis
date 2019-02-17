@@ -154,13 +154,20 @@ class Chall:
     async def check_challonge(self):
         await self.client.wait_until_ready()
         while not self.client.is_closed():
-            await asyncio.sleep(60)
             await self.check_for_new_events()
             await self.check_for_removed_events()
             await self.check_for_new_participants()
+            await asyncio.sleep(60)
+
+    async def get_challonge_channels(self):
+        challonge_channels = []
+        for guild in self.client.guilds:
+            challonge_channel = utils.get(guild.channels, name='challonge_notifications')
+            if challonge_channel is not None:
+                challonge_channels.append(challonge_channel)
+        return challonge_channels
 
     async def check_for_new_participants(self):
-        challonge_channel = utils.get(self.client.get_all_channels(), name='challonge_notifications')
         try:
             conn, c = await load_db()
             c.execute("SELECT * FROM tournament_members")
@@ -187,13 +194,15 @@ class Chall:
                             embed = Embed(color=Color.blue())
                             embed.add_field(name=name.upper(),
                                             value='"{}" has signed up!'.format(user))
-                            embed.set_thumbnail(url='https://s3.amazonaws.com/challonge_app/organizations/images/000/094/501/xlarge/redacted.png?1549047416')
-                            await challonge_channel.send(embed=embed)
+                            embed.set_thumbnail(url='https://s3.amazonaws.com/challonge_app/organizations/images/'
+                                                    '000/094/501/xlarge/redacted.png?1549047416')
+                            challonge_channels = await self.get_challonge_channels()
+                            for challonge_channel in challonge_channels:
+                                await challonge_channel.send(embed=embed)
         except sqlite3.Error as e:
             print(e)
 
     async def check_for_removed_events(self):
-        challonge_channel = utils.get(self.client.get_all_channels(), name='challonge_notifications')
         try:
             conn, c = await load_db()
             c.execute("SELECT * FROM tournament_list")
@@ -208,14 +217,16 @@ class Chall:
                     embed = Embed(color=Color.red())
                     embed.add_field(name='A Challonge Event has been removed',
                                     value=name.title())
-                    embed.set_thumbnail(url='https://s3.amazonaws.com/challonge_app/organizations/images/000/094/501/xlarge/redacted.png?1549047416')
-                    await challonge_channel.send(embed=embed)
+                    embed.set_thumbnail(url='https://s3.amazonaws.com/challonge_app/organizations/images/'
+                                            '000/094/501/xlarge/redacted.png?1549047416')
+                    challonge_channels = await self.get_challonge_channels()
+                    for challonge_channel in challonge_channels:
+                        await challonge_channel.send(embed=embed)
                     print('A Challonge Event has been removed: {}'.format(name.upper()))
         except sqlite3.Error as e:
             print(e)
 
     async def check_for_new_events(self):
-        challonge_channel = utils.get(self.client.get_all_channels(), name='challonge_notifications')
         try:
             conn, c = await load_db()
             c.execute("SELECT * FROM tournament_list")
@@ -226,7 +237,10 @@ class Chall:
                 name = tournament['tournament']['name']
                 tournament_id = tournament['tournament']['id']
                 date_object = tournament['tournament']['start_at']
-                date, time = date_object.split('T')
+                if date_object is not None:
+                    date, time = date_object.split('T')
+                else:
+                    date = 'No date currently selected'
                 sign_up = tournament['tournament']['sign_up_url']
                 if sign_up is None:
                     sign_up = 'No Sign Up Page yet'
@@ -235,14 +249,18 @@ class Chall:
                         c.execute("INSERT INTO tournament_list VALUES (:id, :name)",
                                   {'id': tournament_id, 'name': name})
                     embed = Embed(color=Color.blue())
-                    embed.set_thumbnail(url='https://s3.amazonaws.com/challonge_app/organizations/images/000/094/501/xlarge/redacted.png?1549047416')
+                    embed.set_thumbnail(url='https://s3.amazonaws.com/challonge_app/organizations/images/'
+                                            '000/094/501/xlarge/redacted.png?1549047416')
                     embed.add_field(name='A new Challonge event has been created!',
                                     value='Event Name: {}\n'
                                           'Date: {}\n'
                                           'Sign Up Here: {}'.format(name.upper(), date, sign_up),
                                     inline=False)
-                    embed.set_thumbnail(url='https://s3.amazonaws.com/challonge_app/organizations/images/000/094/501/xlarge/redacted.png?1549047416')
-                    await challonge_channel.send(embed=embed)
+                    embed.set_thumbnail(url='https://s3.amazonaws.com/challonge_app/organizations/images/'
+                                            '000/094/501/xlarge/redacted.png?1549047416')
+                    challonge_channels = await self.get_challonge_channels()
+                    for challonge_channel in challonge_channels:
+                        await challonge_channel.send(embed=embed)
                     print('A new Challonge Event has been created: {}'.format(name.title()))
         except sqlite3.Error:
             pass
