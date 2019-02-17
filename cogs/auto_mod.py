@@ -8,6 +8,9 @@ class Automod:
     def __init__(self, client):
         self.client = client
 
+    async def spam_detection(self):
+        pass
+
     @staticmethod
     async def auto_mod_blacklist():
         conn, c = await load_db()
