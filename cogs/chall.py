@@ -157,6 +157,7 @@ class Chall:
             await self.check_for_new_events()
             await self.check_for_removed_events()
             await self.check_for_new_participants()
+            await self.check_tournament_countdown()
             await asyncio.sleep(60)
 
     async def get_challonge_channels(self):
@@ -262,6 +263,44 @@ class Chall:
                     for challonge_channel in challonge_channels:
                         await challonge_channel.send(embed=embed)
                     print('A new Challonge Event has been created: {}'.format(name.title()))
+        except sqlite3.Error:
+            pass
+
+    async def check_tournament_countdown(self):
+        try:
+            conn, c = await load_db()
+            r = requests.get('https://{}:{}@api.challonge.com/v1/tournaments.json?subdomain=lm'.format(username, api))
+            challonge_tournaments = json.loads(r.content)
+            for tournament in challonge_tournaments:
+                start_at = tournament['tournament']['start_at'].split('.')[0]
+                tourney_id = tournament['tournament']['id']
+                name = tournament['tournament']['name']
+                if start_at is not None:
+                    start_at = datetime.strptime(start_at, '%Y-%m-%dT%H:%M:%S')
+                    time_until_start = start_at - datetime.now()
+                    days_full, time = time_until_start.__str__().split(',')
+                    days = days_full.split()[0]
+
+                    embed = Embed(title='{} is {} away!'.format(name, days_full), color=Color.blue())
+                    embed.add_field(name='Remember to sign up!', value=tournament['tournament']['sign_up_url'])
+                    challonge_channels = await self.get_challonge_channels()
+
+                    if int(days) == 7:
+                        c.execute("SELECT one_week_notify FROM tournament_list WHERE id = (:id)", {'id': tourney_id})
+                        if c.fetchone()[0] != 1:
+                            with conn:
+                                c.execute("UPDATE tournament_list SET one_week_notify=1 WHERE id = (:id)",
+                                          {'id': tourney_id})
+                            for challonge_channel in challonge_channels:
+                                await challonge_channel.send(embed=embed)
+                    elif int(days) == 1:
+                        c.execute("SELECT one_day_notify FROM tournament_list WHERE id = (:id)", {'id': tourney_id})
+                        if c.fetchone()[0] != 1:
+                            with conn:
+                                c.execute("UPDATE tournament_list SET one_day_notify=1 WHERE id = (:id)",
+                                          {'id': tourney_id})
+                            for challonge_channel in challonge_channels:
+                                await challonge_channel.send(embed=embed)
         except sqlite3.Error:
             pass
 
