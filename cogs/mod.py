@@ -5,7 +5,7 @@ from artemis import load_db
 from discord.ext import commands
 
 
-class Mod:
+class Mod(commands.Cog):
     def __init__(self, client):
         self.client = client
         self.mod_blacklist = []
@@ -152,6 +152,7 @@ class Mod:
     @prefix.error
     @modrole.error
     @botspam.error
+    @commands.Cog.listener()
     async def on_message_error(self, ctx, error):
         if isinstance(error, commands.CommandOnCooldown):
             msg = 'You\'ve triggered a cool down. Please try again in {} sec.'.format(int(error.retry_after))

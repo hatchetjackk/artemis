@@ -10,7 +10,7 @@ from PyDictionary import PyDictionary
 from discord.ext import commands
 
 
-class Fun:
+class Fun(commands.Cog):
     def __init__(self, client):
         self.client = client
 
@@ -120,11 +120,13 @@ class Fun:
         r = requests.get('http://www.google.com/search?q="{}"&btnI'.format(search))
         await ctx.send(r.url)
 
-    @staticmethod
-    async def on_message(message):
+    @commands.Cog.listener()
+    async def on_message(self, message):
         if message.content.startswith('r/'):
             reddit_search = 'https://reddit.com/' + message.content
             await message.channel.send(reddit_search)
+        await self.client.process_commands(message)
+
 
     @commands.command()
     async def rps(self, ctx, choice: str):
@@ -170,6 +172,7 @@ class Fun:
 
     @rps.error
     @youtube.error
+    @commands.Cog.listener()
     async def on_message_error(self, ctx, error):
         if isinstance(error, commands.CommandOnCooldown):
             msg = 'You\'ve triggered a cool down. Please try again in {} sec.'.format(

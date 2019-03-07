@@ -4,7 +4,7 @@ from datetime import datetime
 from discord.ext import commands
 
 
-class Automod:
+class Automod(commands.Cog):
     def __init__(self, client):
         self.client = client
 
@@ -67,6 +67,7 @@ class Automod:
             channel = member.guild.get_channel(spam_channel_id)
             await channel.send(embed=embed)
 
+    @commands.Cog.listener()
     async def on_message_edit(self, before, after):
         blacklist = await self.auto_mod_blacklist()
         if before.guild.name in blacklist or before.author.bot or 'http' in before.content:
@@ -84,6 +85,7 @@ class Automod:
             channel = before.guild.get_channel(spam_channel_id)
             await channel.send(embed=embed)
 
+    @commands.Cog.listener()
     async def on_message_delete(self, message):
         if message.author.bot:
             return
@@ -106,6 +108,7 @@ class Automod:
         return spam_channel_id
 
     @clear.error
+    @commands.Cog.listener()
     async def on_message_error(self, ctx, error):
         if isinstance(error, commands.CommandOnCooldown):
             msg = ':sob: You\'ve triggered a cool down. Please try again in {} sec.'.format(

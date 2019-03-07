@@ -8,7 +8,7 @@ from artemis import load_db
 from discord.ext import commands
 
 
-class Karma:
+class Karma(commands.Cog):
     def __init__(self, client):
         self.client = client
         self.karma_blacklist = ['Knights of Karma']
@@ -91,7 +91,9 @@ class Karma:
         await ctx.send(embed=embed)
         print('Leaderboard displayed by {} in {}.'.format(ctx.message.author.name, ctx.guild.name))
 
+    @commands.Cog.listener()
     async def on_message(self, message):
+        print('reading message')
         if message.author.id == self.client.user.id or message.author.name == 'Dyno' or message.content.startswith('!'):
             return
         try:
@@ -152,6 +154,7 @@ class Karma:
                         msg = random.choice([response[0] for response in good_responses]).format(member_name)
                         await message.channel.send(msg)
                         print("{0} received a karma point from {1}".format(member_name, message.author.name))
+        await self.client.process_commands(message)
 
 
 def setup(client):

@@ -4,7 +4,7 @@ from discord import Color, Embed
 from discord.ext import commands
 
 
-class RichEmbed:
+class RichEmbed(commands.Cog):
 
     def __init__(self, client):
         self.client = client
@@ -220,6 +220,7 @@ class RichEmbed:
         return tut_embed
 
     @richembed.error
+    @commands.Cog.listener()
     async def on_message_error(self, ctx, error):
         if isinstance(error, commands.CommandOnCooldown):
             msg = ':sob: You\'ve triggered a cool down. Please try again in {} sec.'.format(

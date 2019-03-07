@@ -9,7 +9,7 @@ from datetime import datetime
 from discord.ext import commands
 
 
-class EliteDangerous:
+class EliteDangerous(commands.Cog):
     def __init__(self, client):
         self.client = client
         self.wanted_blacklist = ['Knights of Karma']
@@ -210,7 +210,8 @@ class EliteDangerous:
             else:
                 try:
                     system = args[0].strip()
-                    url = 'https://www.edsm.net/api-v1/system?sysname={}&coords=1&showInformation=1&showPrimaryStar=1'.format(system)
+                    url = 'https://www.edsm.net/api-v1/system?sysname={}' \
+                          '&coords=1&showInformation=1&showPrimaryStar=1'.format(system)
                     f = await self.fetch(session, url)
                     system_data = json.loads(f)
                     system_name = system_data['name']
@@ -280,8 +281,10 @@ class EliteDangerous:
         async with aiohttp.ClientSession() as session:
             systems = ' '.join(args).split(',')
             system1, system2 = (systems[0].strip(), systems[1].strip())
-            system1_fetch = await self.fetch(session, 'http://www.edsm.net/api-v1/system?sysname=' + system1 + '&coords=1')
-            system2_fetch = await self.fetch(session, 'http://www.edsm.net/api-v1/system?sysname=' + system2 + '&coords=1')
+            system1_fetch = await self.fetch(session,
+                                             'http://www.edsm.net/api-v1/system?sysname=' + system1 + '&coords=1')
+            system2_fetch = await self.fetch(session,
+                                             'http://www.edsm.net/api-v1/system?sysname=' + system2 + '&coords=1')
 
             system1_json = json.loads(system1_fetch)
             system2_json = json.loads(system2_fetch)

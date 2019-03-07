@@ -6,9 +6,10 @@ import sqlite3
 from itertools import cycle
 from artemis import load_db
 from datetime import datetime
+from discord.ext import commands
 
 
-class Chat:
+class Chat(commands.Cog):
     def __init__(self, client):
         self.client = client
         self.popular_zones = {
@@ -24,6 +25,7 @@ class Chat:
             'cest': pytz.timezone('Europe/Brussels')}
         self.morning_check = True
 
+    @commands.Cog.listener()
     async def on_message(self, message):
         artemis = self.client.user
         channel = message.channel
@@ -87,6 +89,8 @@ class Chat:
                 c.execute("SELECT * FROM bot_responses WHERE message_type = 'bot_responder_bad_response'")
                 bad_response = [value[1] for value in c.fetchall()]
                 await message.channel.send(random.choice(bad_response))
+        await self.client.process_commands(message)
+
 
     async def create_an_event(self, message):
         contents_split = message.content.lower().split()

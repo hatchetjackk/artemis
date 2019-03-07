@@ -12,7 +12,7 @@ from discord.ext.commands import BucketType, CommandNotFound
 from _datetime import datetime, timedelta
 
 
-class Events:
+class Events(commands.Cog):
     def __init__(self, client):
         self.client = client
         self.pop_zones = {
@@ -638,6 +638,7 @@ class Events:
     @events.error
     @notify.error
     # @mytime.error
+    @commands.Cog.listener()
     async def on_message_error(self, ctx, error):
         if isinstance(error, commands.CommandOnCooldown):
             msg = ':sob: You\'ve triggered a cool down. Please try again in {} sec.'.format(
