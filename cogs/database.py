@@ -4,7 +4,7 @@ from artemis import load_db
 from discord.ext import commands
 
 
-class Database:
+class Database(commands.Cog):
     def __init__(self, client):
         self.client = client
 
