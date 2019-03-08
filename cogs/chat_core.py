@@ -91,7 +91,6 @@ class Chat(commands.Cog):
                 await message.channel.send(random.choice(bad_response))
         await self.client.process_commands(message)
 
-
     async def create_an_event(self, message):
         contents_split = message.content.lower().split()
         msg = contents_split[1:]
@@ -250,5 +249,6 @@ class Chat(commands.Cog):
 
 
 def setup(client):
-    client.add_cog(Chat(client))
-    client.loop.create_task(Chat(client).change_status())
+    chat = Chat(client)
+    client.add_cog(chat)
+    client.loop.create_task(chat.change_status())

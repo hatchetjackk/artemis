@@ -119,7 +119,8 @@ class Database(commands.Cog):
                     except Exception:
                         raise
                     try:
-                        c.execute("INSERT INTO guild_members VALUES (:id, :guild, :member_id, :member_name, :member_nick)",
+                        c.execute("INSERT INTO guild_members "
+                                  "VALUES (:id, :guild, :member_id, :member_name, :member_nick)",
                                   {'id': member.guild.id, 'guild': member.guild.name, 'member_id': member.id,
                                    'member_name': member.name, 'member_nick': member.nick})
                         print('Successfully added {} to MEMBERS and GUILD_MEMBERS.'.format(member.name))
