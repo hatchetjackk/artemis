@@ -14,7 +14,7 @@ username = challonge_data['challonge']['username']
 api = challonge_data['challonge']['API']
 
 
-class Chall:
+class Chall(commands.Cog):
     def __init__(self, client):
         self.client = client
 
@@ -55,7 +55,8 @@ class Chall:
                 embed.add_field(name='{} - {} {}'.format(name.title(), game, '({})'.format(state)),
                                 inline=False,
                                 value=fmt)
-                embed.set_thumbnail(url='https://s3.amazonaws.com/challonge_app/organizations/images/000/094/501/xlarge/redacted.png?1549047416')
+                embed.set_thumbnail(url='https://s3.amazonaws.com/challonge_app/organizations/images/000/094/501/'
+                                        'xlarge/redacted.png?1549047416')
             await ctx.send(embed=embed)
         except Exception as e:
             print('An error occurred when retrieving tournament data: {}'.format(e))
@@ -146,7 +147,8 @@ class Chall:
                 embed.add_field(name='{} - {} {}'.format(name.title(), game, '({})'.format(state)),
                                 inline=False,
                                 value=fmt)
-                embed.set_thumbnail(url='https://s3.amazonaws.com/challonge_app/organizations/images/000/094/501/xlarge/redacted.png?1549047416')
+                embed.set_thumbnail(url='https://s3.amazonaws.com/challonge_app/organizations/images/000/094/501/'
+                                        'xlarge/redacted.png?1549047416')
                 await ctx.send(embed=embed)
         except Exception as e:
             print(e)
@@ -176,7 +178,7 @@ class Chall:
             c.execute("SELECT * FROM tournament_list")
             tournament_list = c.fetchall()
             for tournament in tournament_list:
-                tourney_id, name = tournament
+                tourney_id, name, one_week_notify, one_day_notify = tournament
                 url = 'https://{}:{}@api.challonge.com/v1/tournaments/{}/participants.json'
                 r = requests.get(url.format(username, api, tourney_id))
                 participants = json.loads(r.content)
@@ -201,7 +203,8 @@ class Chall:
                             for challonge_channel in challonge_channels:
                                 await challonge_channel.send(embed=embed)
         except sqlite3.Error as e:
-            print(e)
+            print('Check for new participants', e)
+            pass
 
     async def check_for_removed_events(self):
         try:
@@ -211,10 +214,11 @@ class Chall:
             r = requests.get('https://{}:{}@api.challonge.com/v1/tournaments.json?subdomain=lm'.format(username, api))
             challonge_tournaments = [str(tournament['tournament']['id']) for tournament in json.loads(r.content)]
             for row in tournament_database:
-                db_id, name = row
+                db_id, name, one_week_notify, one_day_notify = row
                 if db_id not in challonge_tournaments:
                     with conn:
                         c.execute("DELETE FROM tournament_list WHERE id = (:id)", {'id': db_id})
+
                     embed = Embed(color=Color.red())
                     embed.add_field(name='A Challonge Event has been removed',
                                     value=name.title())
@@ -225,7 +229,8 @@ class Chall:
                         await challonge_channel.send(embed=embed)
                     print('A Challonge Event has been removed: {}'.format(name.upper()))
         except sqlite3.Error as e:
-            print(e)
+            print('Check for removed events', e)
+            pass
 
     async def check_for_new_events(self):
         try:
@@ -247,8 +252,8 @@ class Chall:
                     sign_up = 'No Sign Up Page yet'
                 if tournament_id not in tournament_database:
                     with conn:
-                        c.execute("INSERT INTO tournament_list VALUES (:id, :name)",
-                                  {'id': tournament_id, 'name': name})
+                        c.execute("INSERT INTO tournament_list VALUES (:id, :name, :one_week_notify, :one_day_notify)",
+                                  {'id': tournament_id, 'name': name, 'one_week_notify': None, 'one_day_notify': None})
                     embed = Embed(color=Color.blue())
                     embed.set_thumbnail(url='https://s3.amazonaws.com/challonge_app/organizations/images/'
                                             '000/094/501/xlarge/redacted.png?1549047416')
@@ -280,11 +285,9 @@ class Chall:
                     time_until_start = start_at - datetime.now()
                     days_full, time = time_until_start.__str__().split(',')
                     days = days_full.split()[0]
-
                     embed = Embed(title='{} is {} away!'.format(name, days_full), color=Color.blue())
                     embed.add_field(name='Remember to sign up!', value=tournament['tournament']['sign_up_url'])
                     challonge_channels = await self.get_challonge_channels()
-
                     if int(days) == 7:
                         c.execute("SELECT one_week_notify FROM tournament_list WHERE id = (:id)", {'id': tourney_id})
                         if c.fetchone()[0] != 1:
@@ -301,7 +304,8 @@ class Chall:
                                           {'id': tourney_id})
                             for challonge_channel in challonge_channels:
                                 await challonge_channel.send(embed=embed)
-        except sqlite3.Error:
+        except sqlite3.Error as e:
+            print('Check tournament countdown', e)
             pass
 
     @staticmethod
@@ -312,5 +316,6 @@ class Chall:
 
 
 def setup(client):
-    client.add_cog(Chall(client))
-    client.loop.create_task(Chall(client).check_challonge())
+    chall = Chall(client)
+    client.add_cog(chall)
+    client.loop.create_task(chall.check_challonge())
