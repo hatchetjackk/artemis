@@ -125,7 +125,6 @@ class Fun(commands.Cog):
         if message.content.startswith('r/'):
             reddit_search = 'https://reddit.com/' + message.content
             await message.channel.send(reddit_search)
-        await self.client.process_commands(message)
 
     @commands.command()
     async def rps(self, ctx, choice: str):

@@ -89,7 +89,6 @@ class Chat(commands.Cog):
                 c.execute("SELECT * FROM bot_responses WHERE message_type = 'bot_responder_bad_response'")
                 bad_response = [value[1] for value in c.fetchall()]
                 await message.channel.send(random.choice(bad_response))
-        await self.client.process_commands(message)
 
     async def create_an_event(self, message):
         contents_split = message.content.lower().split()
