@@ -70,7 +70,7 @@ class Mod(commands.Cog):
         await ctx.send('Changed guild prefix to `{}`'.format(prefix))
 
     @admin.group()
-    async def autorole(self, ctx, *, role):
+    async def autorole(self, ctx, *, role=None):
         conn, c = await load_db()
         if role == 'remove':
             with conn:
@@ -92,30 +92,25 @@ class Mod(commands.Cog):
         await self.spam(ctx, msg)
 
     @admin.group()
-    async def modrole(self, ctx, command=None, *, role=None):
-        if command is None:
-            await ctx.send('Invoke `modrole` with `set <role>` or `remove`.')
-        if command in ('remove', 'delete'):
-            conn, c = await load_db()
+    async def modrole(self, ctx, *, role=None):
+        conn, c = await load_db()
+        if role == 'remove':
             with conn:
                 c.execute("UPDATE guilds SET mod_role = (:mod_role) WHERE id = (:id)",
                           {'mod_role': None, 'id': ctx.guild.id})
             msg = '{0} cleared {1}\'s mod role.'.format(ctx.author.name, ctx.guild.name)
             await ctx.send(msg, delete_after=5)
             await self.spam(ctx, msg)
-
-        if command in ('add', 'set'):
-            role = discord.utils.get(ctx.guild.roles, name=role)
-            if role is None:
-                msg = 'Role not found. Please check your spelling. Roles are case-sensitive.'
-            else:
-                conn, c = await load_db()
-                with conn:
-                    c.execute("UPDATE guilds SET mod_role = (:mod_role) WHERE id = (:id)",
-                              {'mod_role': role.id, 'id': ctx.guild.id})
-                msg = '{0} set {1}\'s mod role to *{2}*'.format(ctx.author.name, ctx.guild.name, role.name)
-            await ctx.send(msg, delete_after=5)
-            await self.spam(ctx, msg)
+        role = discord.utils.get(ctx.guild.roles, name=role)
+        if role is None:
+            msg = 'Role not found. Please check your spelling. Roles are case-sensitive.'
+        else:
+            with conn:
+                c.execute("UPDATE guilds SET mod_role = (:mod_role) WHERE id = (:id)",
+                          {'mod_role': role.id, 'id': ctx.guild.id})
+            msg = '{0} set {1}\'s mod role to *{2}*'.format(ctx.author.name, ctx.guild.name, role.name)
+        await ctx.send(msg, delete_after=5)
+        await self.spam(ctx, msg)
 
     @commands.command(aliases=['server'])
     async def guild(self, ctx):
