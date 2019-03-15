@@ -638,7 +638,7 @@ class Events(commands.Cog):
     @events.error
     @notify.error
     # @mytime.error
-    @commands.Cog.listener()
+    # @commands.Cog.listener()
     async def on_message_error(self, ctx, error):
         if isinstance(error, commands.CommandOnCooldown):
             msg = ':sob: You\'ve triggered a cool down. Please try again in {} sec.'.format(
@@ -652,6 +652,7 @@ class Events(commands.Cog):
             await ctx.send(msg)
 
 
-# def setup(client):
-#     client.add_cog(Events(client))
-#     client.loop.create_task(Events(client).check_notifier())
+def setup(client):
+    events = Events(client)
+    client.add_cog(events)
+    client.loop.create_task(events.check_notifier())
