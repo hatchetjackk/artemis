@@ -103,7 +103,7 @@ class Karma(commands.Cog):
             print('[{}] An issue occurred when detecting a guild name in a message:'
                   ' Guild:{} Error: {}'.format(datetime.now(), message.guild, e))
 
-        keywords = ['thanks', 'thank', 'gracias', 'kudos', 'thx', 'appreciate', 'cheers']
+        keywords = ['thanks', 'thank', 'gracias', 'kudos', 'thx', 'appreciate it', 'cheers']
         msg = [word.lower().replace('.', '').replace('!', '') for word in message.content.split()]
         karma_key = [item for item in keywords if item in msg]
 
