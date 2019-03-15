@@ -25,7 +25,8 @@ class Mod(commands.Cog):
                               '`admin emoji` Print server emoji list\n'
                               '`admin gavatar` Print the guild icon url\n'
                               '`admin spam [channel]` Change the guild\'s spam channel\n'
-                              '`admin prefix [new_prefix]` Change the guild\'s prefix')
+                              '`admin prefix [new_prefix]` Change the guild\'s prefix\n'
+                              '`admin autorole [role name]` Set a new autorole or remove it with `remove`')
         await ctx.send(embed=embed)
 
     @admin.group()
@@ -68,34 +69,25 @@ class Mod(commands.Cog):
             c.execute("UPDATE guilds SET prefix = (:prefix) WHERE id = (:id)", {'prefix': prefix, 'id': ctx.guild.id})
         await ctx.send('Changed guild prefix to `{}`'.format(prefix))
 
-    @commands.group()
-    @commands.is_owner()
-    async def autorole(self, ctx):
-        if ctx.invoked_subcommand is None:
-            msg = 'Please use `autorole add` or `autorole delete`.'
+    @admin.group()
+    async def autorole(self, ctx, *, role):
+        conn, c = await load_db()
+        if role == 'remove':
+            with conn:
+                c.execute("UPDATE guilds SET autorole = (:autorole) WHERE id = (:id)",
+                          {'autorole': None, 'id': ctx.guild.id})
+            msg = '{0} cleared {1}\'s autorole.'.format(ctx.author.name, ctx.guild.name)
             await ctx.send(msg, delete_after=5)
+            return
 
-    @autorole.group(aliases=['set'])
-    async def add(self, ctx, role):
         role = discord.utils.get(ctx.guild.roles, name=role)
         if role is None:
             msg = 'Role not found. Please check your spelling. Roles are case-sensitive.'
         else:
-            conn, c = await load_db()
             with conn:
                 c.execute("UPDATE guilds SET autorole = (:autorole) WHERE id = (:id)",
                           {'autorole': role.id, 'id': ctx.guild.id})
             msg = '{0} set {1}\'s autorole to *{2}*.'.format(ctx.author.name, ctx.guild.name, role.name)
-        await ctx.send(msg, delete_after=5)
-        await self.spam(ctx, msg)
-
-    @autorole.group(aliases=['remove'])
-    async def delete(self, ctx):
-        conn, c = await load_db()
-        with conn:
-            c.execute("UPDATE guilds SET autorole = (:autorole) WHERE id = (:id)",
-                      {'autorole': None, 'id': ctx.guild.id})
-        msg = '{0} cleared {1}\'s autorole.'.format(ctx.author.name, ctx.guild.name)
         await ctx.send(msg, delete_after=5)
         await self.spam(ctx, msg)
 
@@ -152,7 +144,7 @@ class Mod(commands.Cog):
     @prefix.error
     @modrole.error
     @botspam.error
-    @commands.Cog.listener()
+    # @commands.Cog.listener()
     async def on_message_error(self, ctx, error):
         if isinstance(error, commands.CommandOnCooldown):
             msg = 'You\'ve triggered a cool down. Please try again in {} sec.'.format(int(error.retry_after))
