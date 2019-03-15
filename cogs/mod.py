@@ -91,7 +91,7 @@ class Mod(commands.Cog):
         await ctx.send(msg, delete_after=5)
         await self.spam(ctx, msg)
 
-    @commands.command()
+    @admin.group()
     async def modrole(self, ctx, command=None, *, role=None):
         if command is None:
             await ctx.send('Invoke `modrole` with `set <role>` or `remove`.')
