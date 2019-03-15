@@ -26,7 +26,7 @@ class Karma(commands.Cog):
         embed.add_field(name='Karma Help',
                         value='`karma check` Check your own Karma\n'
                               '`karma check [username]` Check a member\'s Karma\n'
-                              '`karma board` Check top 10 Karma leaders'
+                              '`karma board` Check top 10 Karma leaders\n'
                               '`thanks [@user]` Give a member Karma\n')
         await ctx.send(embed=embed)
 
@@ -78,7 +78,8 @@ class Karma(commands.Cog):
             member_identity = member_nick
             if member_identity is None:
                 member_identity = member_name
-            leaderboard[member_identity] = karma
+            if member_identity != 'Artemis':
+                leaderboard[member_identity] = karma
         sorted_karma = OrderedDict(reversed(sorted(leaderboard.items(), key=lambda x: x[1])))
         counter = 1
         karma_leaderboard = []

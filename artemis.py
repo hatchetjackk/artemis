@@ -125,7 +125,6 @@ if __name__ == '__main__':
             client.load_extension('cogs.' + extension)
         except Exception as e:
             print('[{}] {} cannot be loaded: {}'.format(datetime.now(), extension, e))
-            # raise
     with open('files/credentials.json', 'r') as f:
         credentials = json.load(f)
     client.run(credentials['token'])

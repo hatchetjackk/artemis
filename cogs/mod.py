@@ -101,6 +101,7 @@ class Mod(commands.Cog):
             msg = '{0} cleared {1}\'s mod role.'.format(ctx.author.name, ctx.guild.name)
             await ctx.send(msg, delete_after=5)
             await self.spam(ctx, msg)
+
         role = discord.utils.get(ctx.guild.roles, name=role)
         if role is None:
             msg = 'Role not found. Please check your spelling. Roles are case-sensitive.'
