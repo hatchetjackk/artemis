@@ -9,6 +9,7 @@ class Database(commands.Cog):
         self.client = client
 
     @staticmethod
+    @commands.Cog.listener()
     async def on_member_join(member):
         conn, c = await load_db()
         try:
@@ -30,6 +31,7 @@ class Database(commands.Cog):
             raise
 
     @staticmethod
+    @commands.Cog.listener()
     async def on_member_remove(member):
         conn, c = await load_db()
         try:
@@ -43,6 +45,7 @@ class Database(commands.Cog):
             raise
 
     @staticmethod
+    @commands.Cog.listener()
     async def on_member_update(before, after):
         conn, c = await load_db()
         try:
@@ -64,6 +67,7 @@ class Database(commands.Cog):
             raise
 
     @staticmethod
+    @commands.Cog.listener()
     async def on_guild_join(guild):
         conn, c = await load_db()
         try:
@@ -76,10 +80,12 @@ class Database(commands.Cog):
             raise
 
     @staticmethod
+    @commands.Cog.listener()
     async def on_guild_remove(guild):
         print('[{}] Artemis has been removed from {}.'.format(datetime.now(), guild.name))
 
     @staticmethod
+    @commands.Cog.listener()
     async def on_guild_update(before, after):
         conn, c = await load_db()
         if before.name != after.name:
