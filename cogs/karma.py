@@ -18,7 +18,7 @@ class Karma(commands.Cog):
         if ctx.guild.name in self.karma_blacklist:
             return
         if ctx.invoked_subcommand is None:
-            pass
+            await ctx.send('Try `karma help`')
 
     @karma.group()
     async def help(self, ctx):
@@ -103,9 +103,9 @@ class Karma(commands.Cog):
             print('[{}] An issue occurred when detecting a guild name in a message:'
                   ' Guild:{} Error: {}'.format(datetime.now(), message.guild, e))
 
-        keywords = ['thanks', 'thank', 'gracias', 'kudos', 'thx', 'appreciate it', 'cheers']
+        karma_keywords = ['thanks', 'thank', 'gracias', 'kudos', 'thx', 'appreciate it', 'cheers']
         msg = [word.lower().replace('.', '').replace('!', '') for word in message.content.split()]
-        karma_key = [item for item in keywords if item in msg]
+        karma_key = [word for word in karma_keywords if word in msg]
 
         if len(karma_key) > 0:
             thanked_members = [member for member in message.guild.members if member.mention in msg]
@@ -114,6 +114,7 @@ class Karma(commands.Cog):
 
                 c.execute("SELECT * FROM members WHERE id = (:id)", {'id': message.author.id})
                 member_id, membername, points, last_karma_given = c.fetchone()
+
                 if last_karma_given is not None:
                     remaining_time = int(time.time() - last_karma_given)
                     time_limit = 60 * 3
@@ -127,12 +128,14 @@ class Karma(commands.Cog):
                     if member.nick is not None:
                         member_name = member.nick
 
+                    # catch artemis karma
                     if member.id == self.client.user.id:
                         c.execute("SELECT response FROM bot_responses WHERE message_type = 'client_karma'")
                         client_karma = c.fetchall()
                         msg = random.choice([response[0] for response in client_karma])
                         await message.channel.send(msg)
 
+                    # catch self karma
                     elif member.id is message.author.id:
                         c.execute("SELECT response FROM bot_responses WHERE message_type = 'bad_karma'")
                         bad_karma = c.fetchall()
@@ -142,6 +145,7 @@ class Karma(commands.Cog):
                     else:
                         c.execute("SELECT * FROM members WHERE id = (:id)", {'id': member.id})
                         member_id, membername, points, last_karma_given = c.fetchone()
+
                         last_karma_given = int(time.time())
                         points += 1
                         with conn:
@@ -149,6 +153,7 @@ class Karma(commands.Cog):
                                       {'karma': points, 'id': member.id})
                             c.execute("UPDATE members SET last_karma_given = (:last_karma_given) WHERE id = (:id)",
                                       {'last_karma_given': last_karma_given, 'id': message.author.id})
+
                         c.execute("SELECT response FROM bot_responses WHERE message_type = 'good_karma'")
                         good_responses = c.fetchall()
                         msg = random.choice([response[0] for response in good_responses]).format(member_name)
