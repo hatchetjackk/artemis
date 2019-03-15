@@ -16,7 +16,8 @@ class Database(commands.Cog):
                 c.execute("INSERT INTO members VALUES (:id, :member_name, :karma, :last_karma_given)",
                           {'id': member.id, 'member_name': member.name, 'karma': 0, 'last_karma_given': None})
         except Exception as e:
-            print('[{}] An error occurred when importing {} into the members database: {}'.format(datetime.now(), member.name, e))
+            fmt = (datetime.now(), member.name, e)
+            print('[{}] An error occurred when importing {} into the members database: {}'.format(*fmt))
             raise
         try:
             with conn:
@@ -24,7 +25,8 @@ class Database(commands.Cog):
                           {'id': member.guild.id, 'guild': member.guild.name, 'member_id': member.id,
                            'member_name': member.name, 'member_nick': member.nick})
         except Exception as e:
-            print('[{}] An error occurred when adding {} to {}: {}'.format(datetime.now(), member.name, member.guild.name, e))
+            fmt = (datetime.now(), member.name, member.guild.name, e)
+            print('[{}] An error occurred when adding {} to {}: {}'.format(*fmt))
             raise
 
     @staticmethod
@@ -36,29 +38,33 @@ class Database(commands.Cog):
                           {'id': member.guild.id, 'member_id': member.id})
                 print('[{}] {} has been removed from from {}.'.format(datetime.now(), member.name, member.guild.name))
         except sqlite3.DatabaseError as e:
-            print('[{}] An error occurred when removing {} from {}: {}'.format(datetime.now(), member.name, member.guild.name, e))
+            fmt = (datetime.now(), member.name, member.guild.name, e)
+            print('[{}] An error occurred when removing {} from {}: {}'.format(*fmt))
             raise
 
     @staticmethod
     async def on_member_update(before, after):
         conn, c = await load_db()
-        if before.name != after.name or before.nick != after.nick:
-            with conn:
-                c.execute("SELECT karma, last_karma_given FROM members WHERE id = (:id)",
-                          {'id': before.id})
-                karma, last_karma = c.fetchall()[0]
-                c.execute("REPLACE INTO members VALUES (:id, :member_name, :karma, :last_karma_given)",
-                          {'id': before.id, 'member_name': after.name, 'karma': karma,
-                           'last_karma_given': last_karma})
-                c.execute("REPLACE INTO guild_members VALUES (:id, :guild, :member_id, :member_name, :member_nick)",
-                          {'id': before.guild.id, 'guild': before.guild.name, 'member_id': before.id,
-                           'member_name': after.name, 'member_nick': after.nick})
-                fmt = (datetime.now(), before.guild.name, before.name, before.nick, after.name, after.nick)
-                print('[{}] (Guild: {}) {}/{} has changed to {}/{}.'.format(*fmt))
+        try:
+            if before.name != after.name or before.nick != after.nick:
+                with conn:
+                    c.execute("SELECT karma, last_karma_given FROM members WHERE id = (:id)",
+                              {'id': before.id})
+                    karma, last_karma = c.fetchall()[0]
+                    c.execute("REPLACE INTO members VALUES (:id, :member_name, :karma, :last_karma_given)",
+                              {'id': before.id, 'member_name': after.name, 'karma': karma,
+                               'last_karma_given': last_karma})
+                    c.execute("REPLACE INTO guild_members VALUES (:id, :guild, :member_id, :member_name, :member_nick)",
+                              {'id': before.guild.id, 'guild': before.guild.name, 'member_id': before.id,
+                               'member_name': after.name, 'member_nick': after.nick})
+                    fmt = (datetime.now(), before.guild.name, before.name, before.nick, after.name, after.nick)
+                    print('[{}] (Guild: {}) {}/{} has changed to {}/{}.'.format(*fmt))
+        except Exception as e:
+            print(e)
+            raise
 
     @staticmethod
     async def on_guild_join(guild):
-        # enter data for a new guild
         conn, c = await load_db()
         try:
             with conn:
