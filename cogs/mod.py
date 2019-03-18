@@ -113,6 +113,15 @@ class Mod(commands.Cog):
         await ctx.send(msg, delete_after=5)
         await self.spam(ctx, msg)
 
+    @admin.group()
+    async def clear(self, ctx, amount=0):
+        amount = int(amount)
+        if 100 < amount or amount < 2:
+            embed = await self.msg('`clear [amount]` must be greater than 1 and less than 100.')
+            await ctx.send(embed=embed)
+        else:
+            await ctx.channel.purge(limit=amount+1)
+
     @commands.command(aliases=['server'])
     async def guild(self, ctx):
         conn, c = await load_db()
@@ -136,6 +145,14 @@ class Mod(commands.Cog):
             embed.add_field(name='Alert', value=message)
             channel = self.client.get_channel(spam)
             await channel.send(embed=embed)
+
+    @staticmethod
+    async def msg(msg):
+        embed = discord.Embed()
+        embed.add_field(name='Watch out!',
+                        value=msg,
+                        inline=False)
+        return embed
 
     @prefix.error
     @modrole.error

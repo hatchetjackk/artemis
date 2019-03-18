@@ -21,18 +21,10 @@ class Automod(commands.Cog):
     @commands.command()
     async def roles(self, ctx):
         roles = [value.name for value in ctx.guild.roles if value.name != '@everyone']
-        await ctx.send('The roles for {} include {}.'.format(ctx.guild.name, ', '.join(roles)))
+        embed = await self.msg('The roles for {} include\n{}'.format(ctx.guild.name, '\n'.join(roles)))
+        await ctx.send(embed=embed)
 
-    @commands.command()
-    @commands.has_any_role('Moderator', 'mod')
-    async def clear(self, ctx, amount=0):
-        amount = int(amount)
-        if 100 < amount or amount < 2:
-            embed = await self.msg('`clear [amount]` must be greater than 1 and less than 100.')
-            await ctx.send(embed=embed)
-        else:
-            await ctx.channel.purge(limit=amount+1)
-
+    @commands.Cog.listener()
     async def on_member_join(self, member):
         conn, c = await load_db()
         c.execute("SELECT autorole FROM guilds WHERE id = (:id)", {'id': member.guild.id})
@@ -121,7 +113,6 @@ class Automod(commands.Cog):
         spam_channel_id = c.fetchone()[0]
         return spam_channel_id
 
-    @clear.error
     @commands.Cog.listener()
     async def on_message_error(self, ctx, error):
         if isinstance(error, commands.CommandOnCooldown):
