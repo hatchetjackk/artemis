@@ -7,6 +7,8 @@ from discord.ext import commands
 class Automod(commands.Cog):
     def __init__(self, client):
         self.client = client
+        self.color_alert = discord.Color.orange()
+        self.color_info = discord.Color.dark_blue()
 
     async def spam_detection(self):
         # todo add spam detection
@@ -22,14 +24,19 @@ class Automod(commands.Cog):
     @commands.command()
     async def roles(self, ctx):
         roles = ['`{}`'.format(value.name) for value in ctx.guild.roles if value.name != '@everyone']
-        embed = await self.msg('Roles', 'The roles for {0} include:\n{1}'.format(ctx.guild.name, '\n'.join(roles)))
+        fmt = [ctx.guild.name, '\n'.join(roles)]
+        embed = await self.msg(color=self.color_info,
+                               title='Roles',
+                               thumb_url=ctx.guild.icon_url,
+                               msg='The roles for {0} include:\n{1}'.format(*fmt)
+                               )
         await ctx.send(embed=embed)
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
         conn, c = await load_db()
-        c.execute("SELECT autorole FROM guilds WHERE id = (:id)", {'id': member.guild.id})
-        autorole_id = c.fetchone()[0]
+        c.execute("SELECT autorole, thumbnail FROM guilds WHERE id = (:id)", {'id': member.guild.id})
+        autorole_id, thumbnail_url = c.fetchone()[0]
         autorole = None
         try:
             if autorole_id is not None:
@@ -38,21 +45,19 @@ class Automod(commands.Cog):
 
             spam_channel_id = await self.get_spam_channel(member.guild.id)
             if spam_channel_id is not None:
-                embed = discord.Embed(color=discord.Color.blue())
-                embed.set_thumbnail(url=member.avatar_url)
-                embed.add_field(
-                    name='A New User Has Joined the Server',
-                    value='{0.name} joined {0.guild}.'.format(member),
-                    inline=False
-                )
-                embed.add_field(
-                    name='Alert',
-                    value='{0} was assigned the role {1}'.format(member.name, autorole.name),
-                    inline=False
-                )
                 channel = member.guild.get_channel(spam_channel_id)
+                embed = await self.msg(color=self.color_alert,
+                                       thumb_url=member.avatar_url,
+                                       title='A New User Has Joined the Server',
+                                       msg='{0.name} joined {0.guild}.'.format(member)
+                                       )
                 await channel.send(embed=embed)
-
+                embed = await self.msg(color=self.color_alert,
+                                       thumb_url=member.avatar_url,
+                                       title='Autorole Assigned',
+                                       msg='{0} was assigned the role {1}'.format(member.name, autorole.name)
+                                       )
+                await channel.send(embed=embed)
             general_channel = discord.utils.get(member.guild.channels, name='general')
             guild_blacklist = await self.guild_blacklist()
             if member.guild.name not in guild_blacklist:
@@ -69,9 +74,9 @@ class Automod(commands.Cog):
         if spam_channel_id is not None:
             msg = '{0.name} has left {0.guild}.'.format(member)
             embed = discord.Embed(color=discord.Color.blue())
-            embed.add_field(name='Alert', value=msg, inline=False)
-            channel = member.guild.get_channel(spam_channel_id)
-            await channel.send(embed=embed)
+            embed.add_field(name='A Member has Left', value=msg, inline=False)
+            spam_channel = member.guild.get_channel(spam_channel_id)
+            await spam_channel.send(embed=embed)
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
@@ -111,10 +116,11 @@ class Automod(commands.Cog):
             await channel.send(embed=embed)
 
     @staticmethod
-    async def msg(title, *messages):
-        embed = discord.Embed()
-        for msg in messages:
-            embed.add_field(name=title, value=msg, inline=False)
+    async def msg(color=discord.Color.dark_grey(), title='Alert', thumb_url=None, msg=None):
+        embed = discord.Embed(color=color)
+        if thumb_url is not None:
+            embed.set_thumbnail(url=thumb_url)
+        embed.add_field(name=title, value=msg, inline=False)
         return embed
 
     @staticmethod
