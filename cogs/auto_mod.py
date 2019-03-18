@@ -1,6 +1,5 @@
 import discord
 from artemis import load_db
-# from datetime import datetime
 from discord.ext import commands
 
 
@@ -9,12 +8,13 @@ class Automod(commands.Cog):
         self.client = client
 
     async def spam_detection(self):
+        # todo add spam detection
         pass
 
     @staticmethod
-    async def auto_mod_blacklist():
+    async def automod_blacklist():
         conn, c = await load_db()
-        c.execute("SELECT * FROM auto_mod_blacklist")
+        c.execute("SELECT guild FROM auto_mod_blacklist")
         blacklist = [guild[0] for guild in c.fetchall()]
         return blacklist
 
@@ -25,11 +25,13 @@ class Automod(commands.Cog):
 
     @commands.command()
     @commands.has_any_role('Moderator', 'mod')
-    async def clear(self, ctx, amount: int):
+    async def clear(self, ctx, amount=0):
+        amount = int(amount)
         if 100 < amount or amount < 2:
-            await ctx.send('Amount must be between 1 and 100.')
-            return
-        await ctx.channel.purge(limit=amount+1)
+            embed = await self.msg('`clear [amount]` must be greater than 1 and less than 100.')
+            await ctx.send(embed=embed)
+        else:
+            await ctx.channel.purge(limit=amount+1)
 
     async def on_member_join(self, member):
         conn, c = await load_db()
@@ -52,7 +54,7 @@ class Automod(commands.Cog):
                 channel = member.guild.get_channel(spam_channel_id)
                 await channel.send(embed=embed)
             general_chat = discord.utils.get(member.guild.channels, name='general')
-            blacklist = await self.auto_mod_blacklist()
+            blacklist = await self.automod_blacklist()
             if member.guild.name not in blacklist:
                 await general_chat.send('Welcome to {}, {}!'.format(member.guild.name, member.name))
         except Exception as e:
@@ -69,21 +71,25 @@ class Automod(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
-        blacklist = await self.auto_mod_blacklist()
-        if before.guild.name in blacklist or before.author.bot or 'http' in before.content:
-            return
-        if before.content == '':
-            return
-        spam_channel_id = await self.get_spam_channel(before.guild.id)
-        if spam_channel_id is not None:
-            embed = discord.Embed(title='{0} edited a message'.format(after.author.name),
-                                  description='in channel {0.mention}.'.format(after.channel),
-                                  color=discord.Color.blue())
-            embed.set_thumbnail(url=after.author.avatar_url)
-            embed.add_field(name='Before', value=before.content, inline=False)
-            embed.add_field(name='After', value=after.content, inline=False)
-            channel = before.guild.get_channel(spam_channel_id)
-            await channel.send(embed=embed)
+        try:
+            blacklist = await self.automod_blacklist()
+            if before.guild.name in blacklist or before.author.bot or 'http' in before.content:
+                return
+            if before.content == '':
+                return
+            spam_channel_id = await self.get_spam_channel(before.guild.id)
+            if spam_channel_id is not None:
+                embed = discord.Embed(title='{0} edited a message'.format(after.author.name),
+                                      description='in channel {0.mention}.'.format(after.channel),
+                                      color=discord.Color.blue())
+                embed.set_thumbnail(url=after.author.avatar_url)
+                embed.add_field(name='Before', value=before.content, inline=False)
+                embed.add_field(name='After', value=after.content, inline=False)
+                channel = before.guild.get_channel(spam_channel_id)
+                await channel.send(embed=embed)
+        except Exception as e:
+            print(e)
+            raise
 
     @commands.Cog.listener()
     async def on_message_delete(self, message):
@@ -99,6 +105,14 @@ class Automod(commands.Cog):
             embed.add_field(name='Alert', value=msg.format(message))
             channel = message.guild.get_channel(spam_channel_id)
             await channel.send(embed=embed)
+
+    @staticmethod
+    async def msg(msg):
+        embed = discord.Embed()
+        embed.add_field(name='Watch out!',
+                        value=msg,
+                        inline=False)
+        return embed
 
     @staticmethod
     async def get_spam_channel(guild_id):
