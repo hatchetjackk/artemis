@@ -1,4 +1,5 @@
 import discord
+import sqlite3
 from artemis import load_db
 from discord.ext import commands
 
@@ -12,7 +13,7 @@ class Automod(commands.Cog):
         pass
 
     @staticmethod
-    async def automod_blacklist():
+    async def guild_blacklist():
         conn, c = await load_db()
         c.execute("SELECT guild FROM auto_mod_blacklist")
         blacklist = [guild[0] for guild in c.fetchall()]
@@ -20,42 +21,53 @@ class Automod(commands.Cog):
 
     @commands.command()
     async def roles(self, ctx):
-        roles = [value.name for value in ctx.guild.roles if value.name != '@everyone']
-        embed = await self.msg('The roles for {} include\n{}'.format(ctx.guild.name, '\n'.join(roles)))
+        roles = ['`{}`'.format(value.name) for value in ctx.guild.roles if value.name != '@everyone']
+        embed = await self.msg('Roles', 'The roles for {0} include:\n{1}'.format(ctx.guild.name, '\n'.join(roles)))
         await ctx.send(embed=embed)
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
         conn, c = await load_db()
         c.execute("SELECT autorole FROM guilds WHERE id = (:id)", {'id': member.guild.id})
-        autorole = c.fetchone()[0]
+        autorole_id = c.fetchone()[0]
+        autorole = None
         try:
-            if autorole is not None:
-                role = discord.utils.get(member.guild.roles, id=autorole)
-                await member.add_roles(role)
-            else:
-                role = None
+            if autorole_id is not None:
+                autorole = discord.utils.get(member.guild.roles, id=autorole_id)
+                await member.add_roles(autorole)
+
             spam_channel_id = await self.get_spam_channel(member.guild.id)
             if spam_channel_id is not None:
-                msg1 = '{0.name} joined {1}.'.format(member, member.guild)
-                msg2 = '{0} was assigned the autorole {1}'.format(member.name, role)
                 embed = discord.Embed(color=discord.Color.blue())
                 embed.set_thumbnail(url=member.avatar_url)
-                embed.add_field(name='Alert', value=msg1, inline=False)
-                embed.add_field(name='Alert', value=msg2, inline=False)
+                embed.add_field(
+                    name='A New User Has Joined the Server',
+                    value='{0.name} joined {0.guild}.'.format(member),
+                    inline=False
+                )
+                embed.add_field(
+                    name='Alert',
+                    value='{0} was assigned the role {1}'.format(member.name, autorole.name),
+                    inline=False
+                )
                 channel = member.guild.get_channel(spam_channel_id)
                 await channel.send(embed=embed)
-            general_chat = discord.utils.get(member.guild.channels, name='general')
-            blacklist = await self.automod_blacklist()
-            if member.guild.name not in blacklist:
-                await general_chat.send('Welcome to {}, {}!'.format(member.guild.name, member.name))
-        except Exception as e:
-            print('An error occurred when attempting to give {} the autorole: {}'.format(member.name, e))
 
+            general_channel = discord.utils.get(member.guild.channels, name='general')
+            guild_blacklist = await self.guild_blacklist()
+            if member.guild.name not in guild_blacklist:
+                await general_channel.send('Welcome to {0.guild.name}, {0.name}!'.format(member))
+        except sqlite3.OperationalError as e:
+            print('An error occurred with the database: {}'.format(e))
+        except Exception as e:
+            print('An error occurred when attempting to give {0.name} an autorole: {1}'.format(member, e))
+            raise
+
+    @commands.Cog.listener()
     async def on_member_remove(self, member):
         spam_channel_id = await self.get_spam_channel(member.guild.id)
         if spam_channel_id is not None:
-            msg = '{0.name} has left {1}.'.format(member, member.guild)
+            msg = '{0.name} has left {0.guild}.'.format(member)
             embed = discord.Embed(color=discord.Color.blue())
             embed.add_field(name='Alert', value=msg, inline=False)
             channel = member.guild.get_channel(spam_channel_id)
@@ -64,7 +76,7 @@ class Automod(commands.Cog):
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
         try:
-            blacklist = await self.automod_blacklist()
+            blacklist = await self.guild_blacklist()
             if before.guild.name in blacklist or before.author.bot or 'http' in before.content:
                 return
             if before.content == '':
@@ -99,11 +111,10 @@ class Automod(commands.Cog):
             await channel.send(embed=embed)
 
     @staticmethod
-    async def msg(msg):
+    async def msg(title, *messages):
         embed = discord.Embed()
-        embed.add_field(name='Watch out!',
-                        value=msg,
-                        inline=False)
+        for msg in messages:
+            embed.add_field(name=title, value=msg, inline=False)
         return embed
 
     @staticmethod
