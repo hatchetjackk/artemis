@@ -49,6 +49,7 @@ class Chall(commands.Cog):
                 state = tournament['tournament']['state']
                 style = tournament['tournament']['tournament_type']
                 sign_up = tournament['tournament']['sign_up_url']
+                url = tournament['tournament']['full_challonge_url']
                 if sign_up is None:
                     sign_up = 'No sign up page'
                 game = tournament['tournament']['game_name']
@@ -56,9 +57,12 @@ class Chall(commands.Cog):
                     game = 'No Game Selected'
                 num_participants = tournament['tournament']['participants_count']
                 tourney_id = tournament['tournament']['id']
-                args = (sign_up, style.title(), num_participants, tourney_id)
+                args = (sign_up, url, style.title(), num_participants, tourney_id)
                 name = '{0} - {1} ({2})'.format(tourney_name, game, state)
-                value = '{}\n{}\nPlayers: {}\nid: *{}*'.format(*args)
+                if state != 'complete':
+                    value = '[Sign Up]({0}) / [View]({1})\n{2}\nPlayers: {3}\nid: *{4}*'.format(*args)
+                else:
+                    value = '[View]({1})\n{2}\nPlayers: {3}\nid: *{4}*'.format(*args)
                 embed_messages.append([name, value])
 
             embed = await self.multi_msg(
@@ -84,6 +88,7 @@ class Chall(commands.Cog):
             state = tournament['tournament']['state']
             style = tournament['tournament']['tournament_type'].title()
             sign_up = tournament['tournament']['sign_up_url']
+            url = tournament['tournament']['full_challonge_url']
             date_object = tournament['tournament']['start_at']
             tourney_id = tournament['tournament']['id']
             date, time = date_object.split('T')
@@ -114,7 +119,9 @@ class Chall(commands.Cog):
             sorted_seed = OrderedDict(sorted(seeded_players.items(), key=lambda x: x[0]))
 
             name = 'Status: {0}\nScheduled for {1}'.format(state, date)
-            value = '{0}\n{1}\nTourney ID: *{2}*'.format(sign_up, style, tourney_id)
+            value = '{0}\nTourney ID: *{1}*'.format(style, tourney_id)
+            if state != 'complete':
+                value = '[Sign Up]({0}) / [View]({3})\n{1}\nTourney ID: *{2}*'.format(sign_up, style, tourney_id, url)
             embed_messages = [[name, value]]
 
             # generate message based on tourney state
@@ -131,6 +138,7 @@ class Chall(commands.Cog):
                 color=self.color_info,
                 title='{0} - {1}'.format(tourney_name, game),
                 thumb_url=thumb,
+                url=url,
                 messages=embed_messages
             )
             await ctx.send(embed=embed)
@@ -308,8 +316,8 @@ class Chall(commands.Cog):
         return embed
 
     @staticmethod
-    async def multi_msg(color=Color.dark_grey(), title='Alert', thumb_url=None, messages=None):
-        embed = Embed(color=color, title=title)
+    async def multi_msg(color=Color.dark_grey(), url=None, title='Alert', thumb_url=None, messages=None):
+        embed = Embed(color=color, title=title, url=url)
         if thumb_url is not None:
             embed.set_thumbnail(url=thumb_url)
         for msg in messages:
