@@ -63,7 +63,7 @@ class Chall(commands.Cog):
                     'value': '{}\n{}\nPlayers: {}\nid: *{}*'.format(*args)
                 }
 
-            embed = await self.multimsg(
+            embed = await self.multi_msg(
                 color=self.color_info,
                 title='Challonge Tournaments',
                 thumb_url=thumb,
@@ -76,21 +76,26 @@ class Chall(commands.Cog):
     @tourney.group()
     async def show(self, ctx, tourney_id):
         try:
-            r = requests.get(
-                'https://{}:{}@api.challonge.com/v1/tournaments/'
-                '{}.json?subdomain=lm&include_participants=1'.format(username, api, tourney_id))
+            # get the challonge api
+            r = requests.get('https://{}:{}@api.challonge.com/v1/tournaments/'
+                             '{}.json?subdomain=lm&include_participants=1'.format(username, api, tourney_id))
+
+            # parse api data into meaningful variables
             tournament = json.loads(r.content)
-            name = tournament['tournament']['name']
+            name = tournament['tournament']['name'].upper()
             state = tournament['tournament']['state']
-            style = tournament['tournament']['tournament_type']
+            style = tournament['tournament']['tournament_type'].title()
             sign_up = tournament['tournament']['sign_up_url']
             date_object = tournament['tournament']['start_at']
+            tourney_id = tournament['tournament']['id']
             date, time = date_object.split('T')
             if sign_up is None:
                 sign_up = 'No sign up page'
             game = tournament['tournament']['game_name']
             if game is None:
                 game = 'No Game Selected'
+
+            # parse players into a meaningful dictionary
             seeded_players = {}
             final_standings = defaultdict(list)
             for player in tournament['tournament']['participants']:
@@ -105,25 +110,35 @@ class Chall(commands.Cog):
                         seeded_players[player['seed']] = player['name']
                     else:
                         seeded_players[player['seed']] = player['challonge_username']
+
+            # sort participants by standings or seed
             sorted_standings = OrderedDict(sorted(final_standings.items(), key=lambda x: x[0]))
             sorted_seed = OrderedDict(sorted(seeded_players.items(), key=lambda x: x[0]))
-            tourney_id = tournament['tournament']['id']
-            args = (sign_up, style.title(), tourney_id)
-            fmt = '{}\n{}\nid: *{}*'.format(*args)
-            embed = Embed(title='{} - {}'.format(name.upper(), game), color=Color.blue())
-            embed.add_field(name='Status: {}\nScheduled for {}'.format(state.title(), date), value=fmt, inline=False)
+            embed_messages = {
+                'default_values': {
+                    'name': 'Status: {0}\nScheduled for {1}'.format(state, date),
+                    'value': '{0}\n{1}\nTourney ID: *{2}*'.format(sign_up, style, tourney_id)
+                }
+            }
+
+            # generate message based on state
             if len(seeded_players) > 0 and state != 'complete':
-                embed.add_field(name='Players (by seed)',
-                                value='\n'.join('{}: {}'.format(seed, player) for seed, player in sorted_seed.items()),
-                                inline=False)
+                embed_messages[tourney_id] = {
+                    'name': 'Players (by seed)',
+                    'value': '\n'.join('{0}: {1}'.format(seed, player) for seed, player in sorted_seed.items())
+                }
             else:
-                embed.add_field(name='Final Results',
-                                value='\n'.join(
-                                    '{}: {}'.format(place, ', '.join(player)) for place, player
-                                    in sorted_standings.items()),
-                                inline=False)
-            embed.set_thumbnail(url='https://s3.amazonaws.com/challonge_app/organizations/images/000/094/501/xlarge/'
-                                    'redacted.png?1549047416')
+                standings = ['{}: {}'.format(place, ', '.join(player)) for place, player in sorted_standings.items()]
+                embed_messages[tourney_id] = {
+                    'name': 'Final Results',
+                    'value': '\n'.join(standings)
+                }
+            embed = await self.multi_msg(
+                color=self.color_info,
+                title='{0} - {1}'.format(name, game),
+                thumb_url=thumb,
+                messages=embed_messages
+            )
             await ctx.send(embed=embed)
         except Exception as e:
             print('An error occurred when showing challonge tourney {}: {}'.format(tourney_id, e))
@@ -329,7 +344,7 @@ class Chall(commands.Cog):
         return embed
 
     @staticmethod
-    async def multimsg(color=Color.dark_grey(), title='Alert', thumb_url=None, messages=None):
+    async def multi_msg(color=Color.dark_grey(), title='Alert', thumb_url=None, messages=None):
         embed = Embed(color=color, title=title)
         if thumb_url is not None:
             embed.set_thumbnail(url=thumb_url)
