@@ -181,23 +181,25 @@ class Chall(commands.Cog):
 
                 tournament_participants = json.loads(r.content)
                 for participant in tournament_participants:
-                    if participant.get('id') not in tournament_members:
-                        user = participant.get('challonge_username')
+                    if participant.get('participant').get('id') not in tournament_members:
+                        user = participant.get('participant').get('challonge_username')
                         if user is None:
-                            user = participant.get('name')
-                        messages.append([tournament_name.upper(), '"{}" has signed up!'.format(user)])
+                            user = participant.get('participant').get('name')
+                        msg = [tournament_name.upper(), '"{}" has signed up!'.format(user)]
+                        messages.append(msg)
                         with conn:
                             c.execute("INSERT INTO tournament_members VALUES (:id, :member_id)",
-                                      {'id': tournament_id, 'member_id': participant.get('id')})
-            embed = await self.multi_msg(
-                color=self.color_info,
-                title='A New Challenger Approaches!',
-                thumb_url=thumb,
-                messages=messages
-            )
-            challonge_notification_channels = await self.get_challonge_notification_channels()
-            for challonge_channel in challonge_notification_channels:
-                await challonge_channel.send(embed=embed)
+                                      {'id': tournament_id, 'member_id': participant.get('participant').get('id')})
+            if len(messages) > 0:
+                embed = await self.multi_msg(
+                    color=self.color_info,
+                    title='A New Challenger Approaches!',
+                    thumb_url=thumb,
+                    messages=messages
+                )
+                challonge_notification_channels = await self.get_challonge_notification_channels()
+                for challonge_channel in challonge_notification_channels:
+                    await challonge_channel.send(embed=embed)
         except sqlite3.Error as e:
             print('Check for new participants', e)
             raise
