@@ -34,8 +34,7 @@ class Chall(commands.Cog):
             title='Challonge Help',
             thumb_url=self.client.user.avatar_url,
             msg='`chall index` View all tournaments\n'
-                '`chall show [id]` Show details about a tournament\n'
-                '`chall join [id] [username]` Join a tournament'
+                '`chall show [id]` Show details about a tournament'
         )
         await ctx.send(embed=embed)
 
@@ -142,43 +141,6 @@ class Chall(commands.Cog):
             await ctx.send(embed=embed)
         except Exception as e:
             print('An error occurred when showing challonge tourney {}: {}'.format(tourney_id, e))
-
-    @tourney.group()
-    async def join(self, ctx, tourney_id, challonge_name):
-        try:
-            url = 'https://{}:{}@api.challonge.com/v1/tournaments/{}/participants.json' \
-                  '?subdomain=lm&participant[challonge_username]={}'.format(username, api, tourney_id, challonge_name)
-            r = requests.post(url)
-            participant = json.loads(r.content)
-
-            r = requests.get(
-                'https://{}:{}@api.challonge.com/v1/tournaments/'
-                '{}.json?subdomain=lm&include_participants=1'.format(username, api, tourney_id))
-            tournament = json.loads(r.content)
-            name = tournament['tournament']['name']
-            state = tournament['tournament']['state']
-            style = tournament['tournament']['tournament_type']
-            sign_up = tournament['tournament']['sign_up_url']
-            if sign_up is None:
-                sign_up = 'No sign up page'
-            participants = tournament['tournament']['participants_count']
-            game = tournament['tournament']['game_name']
-            if game is None:
-                game = 'No Game Selected'
-
-            for key, value in participant.items():
-                player = value['challonge_username']
-                embed = Embed(title='{} joined {}'.format(player, name.title()), color=Color.blue())
-                args = (sign_up, style.title(), participants, tourney_id)
-                fmt = '{}\n{}\nPlayers: {}\nid: *{}*'.format(*args)
-                embed.add_field(name='{} - {} {}'.format(name.title(), game, '({})'.format(state)),
-                                inline=False,
-                                value=fmt)
-                embed.set_thumbnail(url='https://s3.amazonaws.com/challonge_app/organizations/images/000/094/501/'
-                                        'xlarge/redacted.png?1549047416')
-                await ctx.send(embed=embed)
-        except Exception as e:
-            print(e)
 
     async def check_challonge(self):
         await self.client.wait_until_ready()
