@@ -17,19 +17,25 @@ api = challonge_data['challonge']['API']
 class Chall(commands.Cog):
     def __init__(self, client):
         self.client = client
+        self.color_alert = Color.orange()
+        self.color_info = Color.dark_blue()
+        self.color_help = Color.dark_green()
 
-    @commands.group(aliases=['chall'])
+    @commands.group(aliases=['chall', 'challonge'])
     async def tourney(self, ctx):
         if ctx.invoked_subcommand is None:
             pass
 
     @tourney.group()
     async def help(self, ctx):
-        embed = Embed(color=Color.blue())
-        embed.add_field(name='Challonge Help',
-                        value='`chall index` View all tournaments\n'
-                              '`chall show [id]` Show details about a tournament\n'
-                              '`chall join [id] [username]` Join a tournament')
+        embed = await self.msg(
+            color=self.color_help,
+            title='Challonge Help',
+            thumb_url=self.client.user.avatar_url,
+            msg='`chall index` View all tournaments\n'
+                '`chall show [id]` Show details about a tournament\n'
+                '`chall join [id] [username]` Join a tournament'
+        )
         await ctx.send(embed=embed)
 
     @tourney.group()
@@ -307,6 +313,14 @@ class Chall(commands.Cog):
         except sqlite3.Error as e:
             print('Check tournament countdown', e)
             pass
+
+    @staticmethod
+    async def msg(color=Color.dark_grey(), title='Alert', thumb_url=None, msg=None):
+        embed = Embed(color=color)
+        if thumb_url is not None:
+            embed.set_thumbnail(url=thumb_url)
+        embed.add_field(name=title, value=msg, inline=False)
+        return embed
 
     @staticmethod
     async def format_time(datetime_string):

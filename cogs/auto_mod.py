@@ -70,16 +70,20 @@ class Automod(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_remove(self, member):
-        spam_channel_id = await self.get_spam_channel(member.guild.id)
-        if spam_channel_id is not None:
-            embed = await self.msg(
-                color=self.color_alert,
-                title='A Member Has Left',
-                thumb_url=member.avatar_url,
-                msg='{0.name} has left {0.guild}.'.format(member)
-            )
-            spam_channel = member.guild.get_channel(spam_channel_id)
-            await spam_channel.send(embed=embed)
+        try:
+            spam_channel_id = await self.get_spam_channel(member.guild.id)
+            if spam_channel_id is not None:
+                embed = await self.msg(
+                    color=self.color_alert,
+                    title='A Member Has Left',
+                    thumb_url=member.avatar_url,
+                    msg='{0.name} has left {0.guild}.'.format(member)
+                )
+                spam_channel = member.guild.get_channel(spam_channel_id)
+                await spam_channel.send(embed=embed)
+        except Exception as e:
+            print('An error occurred when removing a user: {}'.format(e))
+            raise
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
