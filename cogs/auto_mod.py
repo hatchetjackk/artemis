@@ -36,7 +36,7 @@ class Automod(commands.Cog):
     async def on_member_join(self, member):
         conn, c = await load_db()
         c.execute("SELECT autorole, thumbnail FROM guilds WHERE id = (:id)", {'id': member.guild.id})
-        autorole_id, thumbnail_url = c.fetchone()[0]
+        autorole_id, thumbnail_url = c.fetchone()
         autorole = None
         try:
             if autorole_id is not None:
