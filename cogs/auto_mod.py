@@ -72,9 +72,12 @@ class Automod(commands.Cog):
     async def on_member_remove(self, member):
         spam_channel_id = await self.get_spam_channel(member.guild.id)
         if spam_channel_id is not None:
-            msg = '{0.name} has left {0.guild}.'.format(member)
-            embed = discord.Embed(color=discord.Color.blue())
-            embed.add_field(name='A Member has Left', value=msg, inline=False)
+            embed = await self.msg(
+                color=self.color_alert,
+                title='A Member Has Left',
+                thumb_url=member.avatar_url,
+                msg='{0.name} has left {0.guild}.'.format(member)
+            )
             spam_channel = member.guild.get_channel(spam_channel_id)
             await spam_channel.send(embed=embed)
 
