@@ -12,6 +12,7 @@ with open('files/credentials.json') as f:
     challonge_data = json.load(f)
 username = challonge_data['challonge']['username']
 api = challonge_data['challonge']['API']
+thumb = challonge_data['challonge']['thumb']
 
 
 class Chall(commands.Cog):
@@ -41,11 +42,11 @@ class Chall(commands.Cog):
     @tourney.group()
     async def index(self, ctx):
         try:
-            embed = Embed(title='Tournaments', color=Color.blue())
-            r = requests.get('https://{}:{}@api.challonge.com/v1/tournaments.json?subdomain=lm'.format(username, api))
+            r = requests.get('https://{0}:{1}@api.challonge.com/v1/tournaments.json?subdomain=lm'.format(username, api))
             tournaments = json.loads(r.content)
+            embed_messages = {}
             for tournament in tournaments:
-                name = tournament['tournament']['name']
+                name = tournament['tournament']['name'].upper()
                 state = tournament['tournament']['state']
                 style = tournament['tournament']['tournament_type']
                 sign_up = tournament['tournament']['sign_up_url']
@@ -54,15 +55,20 @@ class Chall(commands.Cog):
                 game = tournament['tournament']['game_name']
                 if game is None:
                     game = 'No Game Selected'
-                participants = tournament['tournament']['participants_count']
+                num_participants = tournament['tournament']['participants_count']
                 tourney_id = tournament['tournament']['id']
-                args = (sign_up, style.title(), participants, tourney_id)
-                fmt = '{}\n{}\nPlayers: {}\nid: *{}*'.format(*args)
-                embed.add_field(name='{} - {} {}'.format(name.title(), game, '({})'.format(state)),
-                                inline=False,
-                                value=fmt)
-                embed.set_thumbnail(url='https://s3.amazonaws.com/challonge_app/organizations/images/000/094/501/'
-                                        'xlarge/redacted.png?1549047416')
+                args = (sign_up, style.title(), num_participants, tourney_id)
+                embed_messages[tourney_id] = {
+                    'name': '{0} - {1} ({2})'.format(name, game, state),
+                    'value': '{}\n{}\nPlayers: {}\nid: *{}*'.format(*args)
+                }
+
+            embed = await self.multimsg(
+                color=self.color_info,
+                title='Challonge Tournaments',
+                thumb_url=thumb,
+                messages=embed_messages
+            )
             await ctx.send(embed=embed)
         except Exception as e:
             print('An error occurred when retrieving tournament data: {}'.format(e))
@@ -320,6 +326,15 @@ class Chall(commands.Cog):
         if thumb_url is not None:
             embed.set_thumbnail(url=thumb_url)
         embed.add_field(name=title, value=msg, inline=False)
+        return embed
+
+    @staticmethod
+    async def multimsg(color=Color.dark_grey(), title='Alert', thumb_url=None, messages=None):
+        embed = Embed(color=color, title=title)
+        if thumb_url is not None:
+            embed.set_thumbnail(url=thumb_url)
+        for key, value in messages.items():
+            embed.add_field(name=value['name'], value=value['value'], inline=False)
         return embed
 
     @staticmethod
