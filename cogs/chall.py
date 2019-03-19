@@ -81,7 +81,7 @@ class Chall(commands.Cog):
 
             # parse api data into meaningful variables
             tournament = json.loads(r.content)
-            name = tournament['tournament']['name'].upper()
+            tourney_name = tournament['tournament']['name'].upper()
             state = tournament['tournament']['state']
             style = tournament['tournament']['tournament_type'].title()
             sign_up = tournament['tournament']['sign_up_url']
@@ -113,28 +113,23 @@ class Chall(commands.Cog):
             # sort participants by standings or seed
             sorted_standings = OrderedDict(sorted(final_standings.items(), key=lambda x: x[0]))
             sorted_seed = OrderedDict(sorted(seeded_players.items(), key=lambda x: x[0]))
-            embed_messages = {
-                'default_values': {
-                    'name': 'Status: {0}\nScheduled for {1}'.format(state, date),
-                    'value': '{0}\n{1}\nTourney ID: *{2}*'.format(sign_up, style, tourney_id)
-                }
-            }
+            name = 'Status: {0}\nScheduled for {1}'.format(state, date)
+            value = '{0}\n{1}\nTourney ID: *{2}*'.format(sign_up, style, tourney_id)
+            embed_messages = [[name, value]]
 
             # generate message based on state
             if len(seeded_players) > 0 and state != 'complete':
-                embed_messages[tourney_id] = {
-                    'name': 'Players (by seed)',
-                    'value': '\n'.join('{0}: {1}'.format(seed, player) for seed, player in sorted_seed.items())
-                }
+                name = 'Players (by seed)'
+                value = '\n'.join('{0}: {1}'.format(seed, player) for seed, player in sorted_seed.items())
+                embed_messages.append([name, value])
             else:
                 standings = ['{}: {}'.format(place, ', '.join(player)) for place, player in sorted_standings.items()]
-                embed_messages[tourney_id] = {
-                    'name': 'Final Results',
-                    'value': '\n'.join(standings)
-                }
+                name = 'Final Results'
+                value = '\n'.join(standings)
+                embed_messages.append([name, value])
             embed = await self.multi_msg(
                 color=self.color_info,
-                title='{0} - {1}'.format(name, game),
+                title='{0} - {1}'.format(tourney_name, game),
                 thumb_url=thumb,
                 messages=embed_messages
             )
@@ -142,7 +137,7 @@ class Chall(commands.Cog):
         except Exception as e:
             print('An error occurred when showing challonge tourney {}: {}'.format(tourney_id, e))
 
-    async def check_challonge(self):
+    async def check_for_challonge_changes(self):
         await self.client.wait_until_ready()
         while not self.client.is_closed():
             await self.check_for_new_events()
@@ -151,45 +146,48 @@ class Chall(commands.Cog):
             await self.check_tournament_countdown()
             await asyncio.sleep(60)
 
-    async def get_challonge_channels(self):
-        challonge_channels = []
+    async def get_challonge_notification_channels(self):
+        challonge_notification_channels = []
         for guild in self.client.guilds:
-            challonge_channel = utils.get(guild.channels, name='challonge_notifications')
-            if challonge_channel is not None:
-                challonge_channels.append(challonge_channel)
-        return challonge_channels
+            channel = utils.get(guild.channels, name='challonge_notifications')
+            if channel is not None:
+                challonge_notification_channels.append(channel)
+        return challonge_notification_channels
 
     async def check_for_new_participants(self):
         try:
             conn, c = await load_db()
             c.execute("SELECT * FROM tournament_members")
             tournament_members = c.fetchall()
+
             c.execute("SELECT * FROM tournament_list")
             tournament_list = c.fetchall()
+
             for tournament in tournament_list:
                 tourney_id, name, one_week_notify, one_day_notify = tournament
-                url = 'https://{}:{}@api.challonge.com/v1/tournaments/{}/participants.json'
-                r = requests.get(url.format(username, api, tourney_id))
+                chall_api = 'https://{}:{}@api.challonge.com/v1/tournaments/{}/participants.json'
+                r = requests.get(chall_api.format(username, api, tourney_id))
                 participants = json.loads(r.content)
+
                 for participant in participants:
-                    for k, v in participant.items():
+                    for key, value in participant.items():
                         members = [member for tournament_id, member
                                    in tournament_members
                                    if tournament_id == int(tourney_id)]
-                        if v['id'] not in members:
-                            user = v['challonge_username']
+                        if value['id'] not in members:
+                            user = value['challonge_username']
                             if user is None:
-                                user = v['name']
+                                user = value['name']
                             with conn:
                                 c.execute("INSERT INTO tournament_members VALUES (:id, :member_id)",
-                                          {'id': tourney_id, 'member_id': v['id']})
+                                          {'id': tourney_id, 'member_id': value['id']})
                             embed = Embed(color=Color.blue())
                             embed.add_field(name=name.upper(),
                                             value='"{}" has signed up!'.format(user))
                             embed.set_thumbnail(url='https://s3.amazonaws.com/challonge_app/organizations/images/'
                                                     '000/094/501/xlarge/redacted.png?1549047416')
-                            challonge_channels = await self.get_challonge_channels()
-                            for challonge_channel in challonge_channels:
+                            challonge_notification_channels = await self.get_challonge_notification_channels()
+                            for challonge_channel in challonge_notification_channels:
                                 await challonge_channel.send(embed=embed)
         except sqlite3.Error as e:
             print('Check for new participants', e)
@@ -213,8 +211,8 @@ class Chall(commands.Cog):
                                     value=name.title())
                     embed.set_thumbnail(url='https://s3.amazonaws.com/challonge_app/organizations/images/'
                                             '000/094/501/xlarge/redacted.png?1549047416')
-                    challonge_channels = await self.get_challonge_channels()
-                    for challonge_channel in challonge_channels:
+                    challonge_notification_channels = await self.get_challonge_notification_channels()
+                    for challonge_channel in challonge_notification_channels:
                         await challonge_channel.send(embed=embed)
                     print('A Challonge Event has been removed: {}'.format(name.upper()))
         except sqlite3.Error as e:
@@ -253,8 +251,8 @@ class Chall(commands.Cog):
                                     inline=False)
                     embed.set_thumbnail(url='https://s3.amazonaws.com/challonge_app/organizations/images/'
                                             '000/094/501/xlarge/redacted.png?1549047416')
-                    challonge_channels = await self.get_challonge_channels()
-                    for challonge_channel in challonge_channels:
+                    challonge_notification_channels = await self.get_challonge_notification_channels()
+                    for challonge_channel in challonge_notification_channels:
                         await challonge_channel.send(embed=embed)
                     print('A new Challonge Event has been created: {}'.format(name.title()))
         except sqlite3.Error:
@@ -276,14 +274,14 @@ class Chall(commands.Cog):
                     days = days_full.split()[0]
                     embed = Embed(title='{} is {} away!'.format(name, days_full), color=Color.blue())
                     embed.add_field(name='Remember to sign up!', value=tournament['tournament']['sign_up_url'])
-                    challonge_channels = await self.get_challonge_channels()
+                    challonge_notification_channels = await self.get_challonge_notification_channels()
                     if int(days) == 7:
                         c.execute("SELECT one_week_notify FROM tournament_list WHERE id = (:id)", {'id': tourney_id})
                         if c.fetchone()[0] != 1:
                             with conn:
                                 c.execute("UPDATE tournament_list SET one_week_notify=1 WHERE id = (:id)",
                                           {'id': tourney_id})
-                            for challonge_channel in challonge_channels:
+                            for challonge_channel in challonge_notification_channels:
                                 await challonge_channel.send(embed=embed)
                     elif int(days) == 1:
                         c.execute("SELECT one_day_notify FROM tournament_list WHERE id = (:id)", {'id': tourney_id})
@@ -291,7 +289,7 @@ class Chall(commands.Cog):
                             with conn:
                                 c.execute("UPDATE tournament_list SET one_day_notify=1 WHERE id = (:id)",
                                           {'id': tourney_id})
-                            for challonge_channel in challonge_channels:
+                            for challonge_channel in challonge_notification_channels:
                                 await challonge_channel.send(embed=embed)
         except sqlite3.Error as e:
             print('Check tournament countdown', e)
@@ -310,8 +308,8 @@ class Chall(commands.Cog):
         embed = Embed(color=color, title=title)
         if thumb_url is not None:
             embed.set_thumbnail(url=thumb_url)
-        for key, value in messages.items():
-            embed.add_field(name=value['name'], value=value['value'], inline=False)
+        for msg in messages:
+            embed.add_field(name=msg[0], value=msg[1], inline=False)
         return embed
 
     @staticmethod
@@ -324,4 +322,4 @@ class Chall(commands.Cog):
 def setup(client):
     chall = Chall(client)
     client.add_cog(chall)
-    client.loop.create_task(chall.check_challonge())
+    client.loop.create_task(chall.check_for_challonge_changes())
