@@ -113,10 +113,11 @@ class Automod(commands.Cog):
 
         spam_channel_id = await self.get_spam_channel(message.guild.id)
         if spam_channel_id is not None:
-            embed = discord.Embed(color=discord.Color.blue())
+            embed = discord.Embed(color=self.color_alert)
+            embed.set_thumbnail(url=message.author.avatar_url)
             embed.add_field(name='Alert', value=msg.format(message))
-            channel = message.guild.get_channel(spam_channel_id)
-            await channel.send(embed=embed)
+            spam_channel = message.guild.get_channel(spam_channel_id)
+            await spam_channel .send(embed=embed)
 
     @staticmethod
     async def msg(color=discord.Color.dark_grey(), title='Alert', thumb_url=None, msg=None):
