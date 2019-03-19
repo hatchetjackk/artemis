@@ -84,8 +84,8 @@ class Automod(commands.Cog):
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
         try:
-            blacklist = await self.guild_blacklist()
-            if before.guild.name in blacklist or before.author.bot or 'http' in before.content:
+            guild_blacklist = await self.guild_blacklist()
+            if before.guild.name in guild_blacklist or before.author.bot or 'http' in before.content:
                 return
             if before.content == '':
                 return
@@ -93,14 +93,14 @@ class Automod(commands.Cog):
             if spam_channel_id is not None:
                 embed = discord.Embed(title='{0} edited a message'.format(after.author.name),
                                       description='in channel {0.mention}.'.format(after.channel),
-                                      color=discord.Color.blue())
+                                      color=self.color_info)
                 embed.set_thumbnail(url=after.author.avatar_url)
                 embed.add_field(name='Before', value=before.content, inline=False)
                 embed.add_field(name='After', value=after.content, inline=False)
-                channel = before.guild.get_channel(spam_channel_id)
-                await channel.send(embed=embed)
+                spam_channel = before.guild.get_channel(spam_channel_id)
+                await spam_channel.send(embed=embed)
         except Exception as e:
-            print(e)
+            print('An error occurred when parsing an edited message: {}'.format(e))
             raise
 
     @commands.Cog.listener()
