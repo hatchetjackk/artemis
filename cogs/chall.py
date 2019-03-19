@@ -43,9 +43,9 @@ class Chall(commands.Cog):
         try:
             r = requests.get('https://{0}:{1}@api.challonge.com/v1/tournaments.json?subdomain=lm'.format(username, api))
             tournaments = json.loads(r.content)
-            embed_messages = {}
+            embed_messages = []
             for tournament in tournaments:
-                name = tournament['tournament']['name'].upper()
+                tourney_name = tournament['tournament']['name'].upper()
                 state = tournament['tournament']['state']
                 style = tournament['tournament']['tournament_type']
                 sign_up = tournament['tournament']['sign_up_url']
@@ -57,10 +57,9 @@ class Chall(commands.Cog):
                 num_participants = tournament['tournament']['participants_count']
                 tourney_id = tournament['tournament']['id']
                 args = (sign_up, style.title(), num_participants, tourney_id)
-                embed_messages[tourney_id] = {
-                    'name': '{0} - {1} ({2})'.format(name, game, state),
-                    'value': '{}\n{}\nPlayers: {}\nid: *{}*'.format(*args)
-                }
+                name = '{0} - {1} ({2})'.format(tourney_name, game, state)
+                value = '{}\n{}\nPlayers: {}\nid: *{}*'.format(*args)
+                embed_messages.append([name, value])
 
             embed = await self.multi_msg(
                 color=self.color_info,
@@ -113,11 +112,12 @@ class Chall(commands.Cog):
             # sort participants by standings or seed
             sorted_standings = OrderedDict(sorted(final_standings.items(), key=lambda x: x[0]))
             sorted_seed = OrderedDict(sorted(seeded_players.items(), key=lambda x: x[0]))
+
             name = 'Status: {0}\nScheduled for {1}'.format(state, date)
             value = '{0}\n{1}\nTourney ID: *{2}*'.format(sign_up, style, tourney_id)
             embed_messages = [[name, value]]
 
-            # generate message based on state
+            # generate message based on tourney state
             if len(seeded_players) > 0 and state != 'complete':
                 name = 'Players (by seed)'
                 value = '\n'.join('{0}: {1}'.format(seed, player) for seed, player in sorted_seed.items())
@@ -158,40 +158,44 @@ class Chall(commands.Cog):
         try:
             conn, c = await load_db()
             c.execute("SELECT * FROM tournament_members")
-            tournament_members = c.fetchall()
+            member_database = c.fetchall()
 
             c.execute("SELECT * FROM tournament_list")
-            tournament_list = c.fetchall()
+            tournament_database = c.fetchall()
 
-            for tournament in tournament_list:
-                tourney_id, name, one_week_notify, one_day_notify = tournament
+            messages = []
+            for tournament in tournament_database:
+                tournament_id, tournament_name, one_week_notify, one_day_notify = tournament
+                tournament_members = [member_id for tid, member_id in member_database if tid == int(tournament_id)]
+
                 chall_api = 'https://{}:{}@api.challonge.com/v1/tournaments/{}/participants.json'
-                r = requests.get(chall_api.format(username, api, tourney_id))
-                participants = json.loads(r.content)
+                r = requests.get(chall_api.format(username, api, tournament_id))
 
-                for participant in participants:
-                    for key, value in participant.items():
-                        members = [member for tournament_id, member
-                                   in tournament_members
-                                   if tournament_id == int(tourney_id)]
-                        if value['id'] not in members:
-                            user = value['challonge_username']
-                            if user is None:
-                                user = value['name']
-                            with conn:
-                                c.execute("INSERT INTO tournament_members VALUES (:id, :member_id)",
-                                          {'id': tourney_id, 'member_id': value['id']})
-                            embed = Embed(color=Color.blue())
-                            embed.add_field(name=name.upper(),
-                                            value='"{}" has signed up!'.format(user))
-                            embed.set_thumbnail(url='https://s3.amazonaws.com/challonge_app/organizations/images/'
-                                                    '000/094/501/xlarge/redacted.png?1549047416')
-                            challonge_notification_channels = await self.get_challonge_notification_channels()
-                            for challonge_channel in challonge_notification_channels:
-                                await challonge_channel.send(embed=embed)
+                tournament_participants = json.loads(r.content)
+                for participant in tournament_participants:
+                    if participant.get('id') not in tournament_members:
+                        user = participant.get('challonge_username')
+                        if user is None:
+                            user = participant.get('name')
+                        messages.append([tournament_name.upper(), '"{}" has signed up!'.format(user)])
+                        with conn:
+                            c.execute("INSERT INTO tournament_members VALUES (:id, :member_id)",
+                                      {'id': tournament_id, 'member_id': participant.get('id')})
+            embed = await self.multi_msg(
+                color=self.color_info,
+                title='A New Challenger Approaches!',
+                thumb_url=thumb,
+                messages=messages
+            )
+            challonge_notification_channels = await self.get_challonge_notification_channels()
+            for challonge_channel in challonge_notification_channels:
+                await challonge_channel.send(embed=embed)
         except sqlite3.Error as e:
             print('Check for new participants', e)
-            pass
+            raise
+        except NameError as e:
+            print('A NameError occurred when checking for new participants: {}'.format(e))
+            raise
 
     async def check_for_removed_events(self):
         try:
