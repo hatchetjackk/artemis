@@ -239,38 +239,39 @@ class Chall(commands.Cog):
             c.execute("SELECT * FROM tournament_list")
             tournament_database = c.fetchall()
             r = requests.get('https://{}:{}@api.challonge.com/v1/tournaments.json?subdomain=lm'.format(username, api))
-            challonge_tournaments = json.loads(r.content)
+            challonge_tournaments = [value['tournament'] for value in json.loads(r.content)]
+            messages = []
             for tournament in challonge_tournaments:
-                name = tournament['tournament']['name']
-                tournament_id = tournament['tournament']['id']
-                date_object = tournament['tournament']['start_at']
-                if date_object is not None:
-                    date, time = date_object.split('T')
+                name = tournament.get('name')
+                tournament_id = tournament.get('id')
+                start_at = tournament.get('start_at')
+                url = tournament.get('full_challonge_url')
+                if start_at is not None:
+                    date, time = start_at.split('T')
                 else:
                     date = 'No date currently selected'
-                sign_up = tournament['tournament']['sign_up_url']
-                if sign_up is None:
-                    sign_up = 'No Sign Up Page yet'
+                sign_up_url = tournament.get('sign_up_url')
+                if sign_up_url is None:
+                    sign_up_url = 'No Sign Up Page yet'
                 if tournament_id not in tournament_database:
                     with conn:
                         c.execute("INSERT INTO tournament_list VALUES (:id, :name, :one_week_notify, :one_day_notify)",
                                   {'id': tournament_id, 'name': name, 'one_week_notify': None, 'one_day_notify': None})
-                    embed = Embed(color=Color.blue())
-                    embed.set_thumbnail(url='https://s3.amazonaws.com/challonge_app/organizations/images/'
-                                            '000/094/501/xlarge/redacted.png?1549047416')
-                    embed.add_field(name='A new Challonge event has been created!',
-                                    value='Event Name: {}\n'
-                                          'Date: {}\n'
-                                          'Sign Up Here: {}'.format(name.upper(), date, sign_up),
-                                    inline=False)
-                    embed.set_thumbnail(url='https://s3.amazonaws.com/challonge_app/organizations/images/'
-                                            '000/094/501/xlarge/redacted.png?1549047416')
-                    challonge_notification_channels = await self.get_challonge_notification_channels()
-                    for challonge_channel in challonge_notification_channels:
-                        await challonge_channel.send(embed=embed)
-                    print('A new Challonge Event has been created: {}'.format(name.title()))
-        except sqlite3.Error:
-            pass
+                    msg_name = 'A new Challonge event has been created!'
+                    value = '[{}]({})\nDate: {}\n[Sign Up]({})'.format(name.upper(), url, date, sign_up_url)
+                    messages.append([msg_name, value])
+            if len(messages) > 0:
+                embed = await self.multi_msg(
+                    color=self.color_info,
+                    thumb_url=thumb,
+                    messages=messages
+                )
+                challonge_notification_channels = await self.get_challonge_notification_channels()
+                for challonge_channel in challonge_notification_channels:
+                    await challonge_channel.send(embed=embed)
+        except sqlite3.Error as e:
+            print(e)
+            raise
 
     async def check_tournament_countdown(self):
         try:
