@@ -31,10 +31,10 @@ class Chall(commands.Cog):
     async def help(self, ctx):
         embed = await self.msg(
             color=self.color_help,
-            title='Challonge Help',
             thumb_url=self.client.user.avatar_url,
-            msg='`chall index` View all tournaments\n'
-                '`chall show [id]` Show details about a tournament'
+            msg=['Challonge Help',
+                 '`chall index` View all tournaments\n'
+                 '`chall show [id]` Show details about a tournament']
         )
         await ctx.send(embed=embed)
 
@@ -256,10 +256,8 @@ class Chall(commands.Cog):
                     sign_up_url = 'No Sign Up Page yet'
                 if tournament_id not in tournament_database:
                     with conn:
-                        c.execute("""
-                        INSERT OR IGNORE INTO tournament_list 
-                        VALUES (:id, :name, :one_week_notify, :one_day_notify)
-                        """, {'id': tournament_id, 'name': name, 'one_week_notify': None, 'one_day_notify': None})
+                        c.execute("INSERT INTO tournament_list VALUES (:id, :name, :one_week_notify, :one_day_notify)",
+                                  {'id': tournament_id, 'name': name, 'one_week_notify': None, 'one_day_notify': None})
                     msg_name = 'A new Challonge event has been created!'
                     value = '[{}]({})\nDate: {}\n[Sign Up]({})'.format(name.upper(), url, date, sign_up_url)
                     messages.append([msg_name, value])
@@ -273,7 +271,8 @@ class Chall(commands.Cog):
                 for challonge_channel in challonge_notification_channels:
                     await challonge_channel.send(embed=embed)
         except sqlite3.Error as e:
-            print('An sql error occurred when checking for new events: {}'.format(e))
+            # print('An sql error occurred when checking for new events: {}'.format(e))
+            pass
         except Exception as e:
             print('An unexpected error occurred when checking for new events: {}'.format(e))
 
@@ -281,55 +280,77 @@ class Chall(commands.Cog):
         try:
             conn, c = await load_db()
             r = requests.get('https://{}:{}@api.challonge.com/v1/tournaments.json?subdomain=lm'.format(username, api))
-            challonge_tournaments = json.loads(r.content)
+            challonge_tournaments = [value['tournament'] for value in json.loads(r.content)]
             for tournament in challonge_tournaments:
-                start_at = tournament['tournament']['start_at'].split('.')[0]
-                tourney_id = tournament['tournament']['id']
-                name = tournament['tournament']['name']
+                start_at = tournament.get('start_at').split('.')[0]
+                tourney_id = tournament.get('id')
+                tournament_name = tournament.get('name')
+                sign_up_url = tournament.get('sign_up_url')
                 if start_at is not None:
                     start_at = datetime.strptime(start_at, '%Y-%m-%dT%H:%M:%S')
                     time_until_start = start_at - datetime.now()
                     days_full, time = time_until_start.__str__().split(',')
-                    days = days_full.split()[0]
-                    embed = Embed(title='{} is {} away!'.format(name, days_full), color=Color.blue())
-                    embed.add_field(name='Remember to sign up!', value=tournament['tournament']['sign_up_url'])
-                    challonge_notification_channels = await self.get_challonge_notification_channels()
-                    if int(days) == 7:
+                    days = int(days_full.split()[0])
+                    messages = []
+                    name = '{} is {} day away!'.format(tournament_name, days)
+                    if days != 1:
+                        name = '{} is {} days away!'.format(tournament_name, days)
+                    messages.append([name, 'Remember to [sign up]({})!'.format(sign_up_url)])
+                    embed = await self.multi_msg(
+                        color=self.color_info,
+                        thumb_url=thumb,
+                        title='A Tournament is Fast Approaching!',
+                        messages=messages
+                    )
+
+                    if days == 7:
                         c.execute("SELECT one_week_notify FROM tournament_list WHERE id = (:id)", {'id': tourney_id})
                         if c.fetchone()[0] != 1:
                             with conn:
                                 c.execute("UPDATE tournament_list SET one_week_notify=1 WHERE id = (:id)",
                                           {'id': tourney_id})
+                            challonge_notification_channels = await self.get_challonge_notification_channels()
                             for challonge_channel in challonge_notification_channels:
                                 await challonge_channel.send(embed=embed)
-                    elif int(days) == 1:
+
+                    elif days == 1:
                         c.execute("SELECT one_day_notify FROM tournament_list WHERE id = (:id)", {'id': tourney_id})
                         if c.fetchone()[0] != 1:
                             with conn:
                                 c.execute("UPDATE tournament_list SET one_day_notify=1 WHERE id = (:id)",
                                           {'id': tourney_id})
+                            challonge_notification_channels = await self.get_challonge_notification_channels()
                             for challonge_channel in challonge_notification_channels:
                                 await challonge_channel.send(embed=embed)
-        except sqlite3.Error as e:
-            print('Check tournament countdown', e)
+        except sqlite3.Error:
             pass
+        except Exception as e:
+            print('An unexpected error occurred when checking event countdowns: {}'.format(e))
 
     @staticmethod
-    async def msg(color=Color.dark_grey(), title='Alert', thumb_url=None, msg=None):
-        embed = Embed(color=color)
-        if thumb_url is not None:
-            embed.set_thumbnail(url=thumb_url)
-        embed.add_field(name=title, value=msg, inline=False)
-        return embed
+    async def msg(color=Color.dark_grey(), title=None, url=None, thumb_url=None, msg=None):
+        try:
+            embed = Embed(color=color, title=title, url=url)
+            if thumb_url is not None:
+                embed.set_thumbnail(url=thumb_url)
+            name, value = msg
+            embed.add_field(name=name, value=value, inline=False)
+            return embed
+        except Exception as e:
+            print('An unexpected error occurred when processing a message embed: {}'.format(e))
 
     @staticmethod
     async def multi_msg(color=Color.dark_grey(), url=None, title='Alert', thumb_url=None, messages=None):
-        embed = Embed(color=color, title=title, url=url)
-        if thumb_url is not None:
-            embed.set_thumbnail(url=thumb_url)
-        for msg in messages:
-            embed.add_field(name=msg[0], value=msg[1], inline=False)
-        return embed
+        try:
+            embed = Embed(color=color, title=title, url=url)
+            if thumb_url is not None:
+                embed.set_thumbnail(url=thumb_url)
+            for msg in messages:
+                name, value = msg
+                embed.add_field(name=name, value=value, inline=False)
+            return embed
+        except Exception as e:
+            print('An unexpected error occurred when processing a multi-message embed: {}'.format(e))
 
     @staticmethod
     async def format_time(datetime_string):
