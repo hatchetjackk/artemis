@@ -185,8 +185,7 @@ class Chall(commands.Cog):
                         user = participant.get('challonge_username')
                         if user is None:
                             user = participant.get('name')
-                        msg = [tournament_name.upper(), '"{}" has signed up!'.format(user)]
-                        messages.append(msg)
+                        messages.append([tournament_name.upper(), '"{}" has signed up!'.format(user)])
                         with conn:
                             c.execute("INSERT INTO tournament_members VALUES (:id, :member_id)",
                                       {'id': tournament_id, 'member_id': participant.get('id')})
@@ -214,24 +213,25 @@ class Chall(commands.Cog):
             tournament_database = c.fetchall()
             r = requests.get('https://{}:{}@api.challonge.com/v1/tournaments.json?subdomain=lm'.format(username, api))
             challonge_tournaments = [str(tournament['tournament']['id']) for tournament in json.loads(r.content)]
-            for row in tournament_database:
-                db_id, name, one_week_notify, one_day_notify = row
-                if db_id not in challonge_tournaments:
+            messages = []
+            for tournament in tournament_database:
+                tournament_id, tournament_name, one_week_notify, one_day_notify = tournament
+                if tournament_id not in challonge_tournaments:
                     with conn:
-                        c.execute("DELETE FROM tournament_list WHERE id = (:id)", {'id': db_id})
-
-                    embed = Embed(color=Color.red())
-                    embed.add_field(name='A Challonge Event has been removed',
-                                    value=name.title())
-                    embed.set_thumbnail(url='https://s3.amazonaws.com/challonge_app/organizations/images/'
-                                            '000/094/501/xlarge/redacted.png?1549047416')
-                    challonge_notification_channels = await self.get_challonge_notification_channels()
-                    for challonge_channel in challonge_notification_channels:
-                        await challonge_channel.send(embed=embed)
-                    print('A Challonge Event has been removed: {}'.format(name.upper()))
+                        c.execute("DELETE FROM tournament_list WHERE id = (:id)", {'id': tournament_id})
+                    messages.append(['A Challonge Event Has Been Removed', tournament_name.title()])
+            if len(messages) > 0:
+                embed = await self.multi_msg(
+                    color=self.color_info,
+                    thumb_url=thumb,
+                    messages=messages
+                )
+                challonge_notification_channels = await self.get_challonge_notification_channels()
+                for challonge_channel in challonge_notification_channels:
+                    await challonge_channel.send(embed=embed)
         except sqlite3.Error as e:
             print('Check for removed events', e)
-            pass
+            raise
 
     async def check_for_new_events(self):
         try:
