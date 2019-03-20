@@ -2,10 +2,10 @@ import json
 import requests
 import asyncio
 import sqlite3
+import discord
+import cogs.utilities as utilities
 from datetime import datetime
-from artemis import load_db
 from collections import OrderedDict, defaultdict
-from discord import Embed, Color, utils
 from discord.ext import commands
 
 with open('files/credentials.json') as f:
@@ -18,9 +18,6 @@ thumb = challonge_data['challonge']['thumb']
 class Chall(commands.Cog):
     def __init__(self, client):
         self.client = client
-        self.color_alert = Color.orange()
-        self.color_info = Color.dark_blue()
-        self.color_help = Color.dark_green()
 
     @commands.group(aliases=['chall', 'challonge'])
     async def tourney(self, ctx):
@@ -29,8 +26,8 @@ class Chall(commands.Cog):
 
     @tourney.group()
     async def help(self, ctx):
-        embed = await self.msg(
-            color=self.color_help,
+        embed = await utilities.embed_msg(
+            color=utilities.color_help,
             thumb_url=self.client.user.avatar_url,
             msg=['Challonge Help',
                  '`chall index` View all tournaments\n'
@@ -41,67 +38,68 @@ class Chall(commands.Cog):
     @tourney.group()
     async def index(self, ctx):
         try:
-            r = requests.get('https://{0}:{1}@api.challonge.com/v1/tournaments.json?subdomain=lm'.format(username, api))
-            tournaments = json.loads(r.content)
+            r = requests.get(f'https://{username}:{api}@api.challonge.com/v1/tournaments.json?subdomain=lm')
+            tournaments = [value['tournament'] for value in json.loads(r.content)]
             embed_messages = []
             for tournament in tournaments:
-                tourney_name = tournament['tournament']['name'].upper()
-                state = tournament['tournament']['state']
-                style = tournament['tournament']['tournament_type']
-                sign_up = tournament['tournament']['sign_up_url']
-                url = tournament['tournament']['full_challonge_url']
+                tourney_name = tournament['name'].upper()
+                state = tournament['state']
+                style = tournament['tournament_type']
+                sign_up = tournament['sign_up_url']
+                url = tournament['full_challonge_url']
                 if sign_up is None:
                     sign_up = 'No sign up page'
-                game = tournament['tournament']['game_name']
+                game = tournament['game_name']
                 if game is None:
                     game = 'No Game Selected'
-                num_participants = tournament['tournament']['participants_count']
-                tourney_id = tournament['tournament']['id']
+                num_participants = tournament['participants_count']
+                tourney_id = tournament['id']
                 args = (sign_up, url, style.title(), num_participants, tourney_id)
-                name = '{0} - {1} ({2})'.format(tourney_name, game, state)
+                name = f'{tourney_name} - {game} ({state})'
                 if state != 'complete':
                     value = '[Sign Up]({0}) / [View]({1})\n{2}\nPlayers: {3}\nid: *{4}*'.format(*args)
                 else:
                     value = '[View]({1})\n{2}\nPlayers: {3}\nid: *{4}*'.format(*args)
                 embed_messages.append([name, value])
 
-            embed = await self.multi_msg(
-                color=self.color_info,
+            embed = await utilities.multi_embed(
+                color=utilities.color_info,
                 title='Challonge Tournaments',
                 thumb_url=thumb,
                 messages=embed_messages
             )
             await ctx.send(embed=embed)
         except Exception as e:
-            print('An error occurred when retrieving tournament data: {}'.format(e))
+            print(f'An error occurred when retrieving tournament data: {e}')
+            raise
 
     @tourney.group()
     async def show(self, ctx, tourney_id):
         try:
             # get the challonge api
-            r = requests.get('https://{}:{}@api.challonge.com/v1/tournaments/'
-                             '{}.json?subdomain=lm&include_participants=1'.format(username, api, tourney_id))
+            r = requests.get(f'https://{username}:{api}@api.challonge.com/v1/'
+                             f'tournaments/{tourney_id}.json?subdomain=lm&include_participants=1')
 
             # parse api data into meaningful variables
-            tournament = json.loads(r.content)
-            tourney_name = tournament['tournament']['name'].upper()
-            state = tournament['tournament']['state']
-            style = tournament['tournament']['tournament_type'].title()
-            sign_up = tournament['tournament']['sign_up_url']
-            url = tournament['tournament']['full_challonge_url']
-            date_object = tournament['tournament']['start_at']
-            tourney_id = tournament['tournament']['id']
+            tournament = json.loads(r.content).get('tournament')
+            tourney_name = tournament.get('name').upper()
+            state = tournament.get('state')
+            style = tournament.get('tournament_type').title()
+            sign_up = tournament.get('sign_up_url')
+            url = tournament.get('full_challonge_url')
+            date_object = tournament.get('start_at')
+            tourney_id = tournament.get('id')
             date, time = date_object.split('T')
             if sign_up is None:
                 sign_up = 'No sign up page'
-            game = tournament['tournament']['game_name']
+            game = tournament.get('game_name')
             if game is None:
                 game = 'No Game Selected'
 
             # parse players into a meaningful dictionary
             seeded_players = {}
             final_standings = defaultdict(list)
-            for player in tournament['tournament']['participants']:
+            for player in tournament.get('participants'):
                 player = player['participant']
                 if state == 'complete':
                     if player['name'] != '' and player['name'] is not None:
@@ -118,10 +116,10 @@ class Chall(commands.Cog):
             sorted_standings = OrderedDict(sorted(final_standings.items(), key=lambda x: x[0]))
             sorted_seed = OrderedDict(sorted(seeded_players.items(), key=lambda x: x[0]))
 
-            name = 'Status: {0}\nScheduled for {1}'.format(state, date)
-            value = '{0}\nTourney ID: *{1}*'.format(style, tourney_id)
+            name = f'Status: {state}\nScheduled for {date}'
+            value = f'{style}\nTourney ID: *{id}*'
             if state != 'complete':
-                value = '[Sign Up]({0}) / [View]({3})\n{1}\nTourney ID: *{2}*'.format(sign_up, style, tourney_id, url)
+                value = f'[Sign Up]({sign_up}) / [View]({url})\n{style}\nTourney ID: *{tourney_id}*'
             embed_messages = [[name, value]]
 
             # generate message based on tourney state
@@ -130,20 +128,20 @@ class Chall(commands.Cog):
                 value = '\n'.join('{0}: {1}'.format(seed, player) for seed, player in sorted_seed.items())
                 embed_messages.append([name, value])
             else:
-                standings = ['{}: {}'.format(place, ', '.join(player)) for place, player in sorted_standings.items()]
+                standings = ['{0}: {1}'.format(place, ', '.join(player)) for place, player in sorted_standings.items()]
                 name = 'Final Results'
                 value = '\n'.join(standings)
                 embed_messages.append([name, value])
-            embed = await self.multi_msg(
-                color=self.color_info,
-                title='{0} - {1}'.format(tourney_name, game),
+            embed = await utilities.multi_embed(
+                color=utilities.color_info,
+                title=f'{tourney_name} - {game}',
                 thumb_url=thumb,
                 url=url,
                 messages=embed_messages
             )
             await ctx.send(embed=embed)
         except Exception as e:
-            print('An error occurred when showing challonge tourney {}: {}'.format(tourney_id, e))
+            print(f'An error occurred when showing challonge tourney {tourney_id}: {e}')
 
     async def check_for_challonge_changes(self):
         await self.client.wait_until_ready()
@@ -157,14 +155,14 @@ class Chall(commands.Cog):
     async def get_challonge_notification_channels(self):
         challonge_notification_channels = []
         for guild in self.client.guilds:
-            channel = utils.get(guild.channels, name='challonge_notifications')
+            channel = discord.utils.get(guild.channels, name='challonge_notifications')
             if channel is not None:
                 challonge_notification_channels.append(channel)
         return challonge_notification_channels
 
     async def check_for_new_participants(self):
         try:
-            conn, c = await load_db()
+            conn, c = await utilities.load_db()
             c.execute("SELECT * FROM tournament_members")
             member_database = c.fetchall()
 
@@ -185,12 +183,12 @@ class Chall(commands.Cog):
                         user = participant.get('challonge_username')
                         if user is None:
                             user = participant.get('name')
-                        messages.append([tournament_name.upper(), '"{}" has signed up!'.format(user)])
+                        messages.append([tournament_name.upper(), f'"{user}" has signed up!'])
                         with conn:
                             c.execute("INSERT INTO tournament_members VALUES (:id, :member_id)",
                                       {'id': tournament_id, 'member_id': participant.get('id')})
             if len(messages) > 0:
-                embed = await self.multi_msg(
+                embed = await utilities.multi_embed(
                     color=self.color_info,
                     title='A New Challenger Approaches!',
                     thumb_url=thumb,
@@ -200,15 +198,15 @@ class Chall(commands.Cog):
                 for challonge_channel in challonge_notification_channels:
                     await challonge_channel.send(embed=embed)
         except sqlite3.Error as e:
-            print('An sql error occurred when checking for new participants: {}'.format(e))
+            print(f'An sql error occurred when checking for new participants: {e}')
         except NameError as e:
-            print('A NameError occurred when checking for new participants: {}'.format(e))
+            print(f'A NameError occurred when checking for new participants: {e}')
         except Exception as e:
-            print('An unknown error occurred when checking for new participants: {}'.format(e))
+            print(f'An unknown error occurred when checking for new participants: {e}')
 
     async def check_for_removed_events(self):
         try:
-            conn, c = await load_db()
+            conn, c = await utilities.load_db()
             c.execute("SELECT * FROM tournament_list")
             tournament_database = c.fetchall()
             r = requests.get('https://{}:{}@api.challonge.com/v1/tournaments.json?subdomain=lm'.format(username, api))
@@ -221,7 +219,7 @@ class Chall(commands.Cog):
                         c.execute("DELETE FROM tournament_list WHERE id = (:id)", {'id': tournament_id})
                     messages.append(['A Challonge Event Has Been Removed', tournament_name.title()])
             if len(messages) > 0:
-                embed = await self.multi_msg(
+                embed = await utilities.multi_embed(
                     color=self.color_info,
                     thumb_url=thumb,
                     messages=messages
@@ -236,10 +234,10 @@ class Chall(commands.Cog):
 
     async def check_for_new_events(self):
         try:
-            conn, c = await load_db()
+            conn, c = await utilities.load_db()
             c.execute("SELECT * FROM tournament_list")
             tournament_database = c.fetchall()
-            r = requests.get('https://{}:{}@api.challonge.com/v1/tournaments.json?subdomain=lm'.format(username, api))
+            r = requests.get(f'https://{username}:{api}@api.challonge.com/v1/tournaments.json?subdomain=lm')
             challonge_tournaments = [value['tournament'] for value in json.loads(r.content)]
             messages = []
             for tournament in challonge_tournaments:
@@ -259,10 +257,10 @@ class Chall(commands.Cog):
                         c.execute("INSERT INTO tournament_list VALUES (:id, :name, :one_week_notify, :one_day_notify)",
                                   {'id': tournament_id, 'name': name, 'one_week_notify': None, 'one_day_notify': None})
                     msg_name = 'A new Challonge event has been created!'
-                    value = '[{}]({})\nDate: {}\n[Sign Up]({})'.format(name.upper(), url, date, sign_up_url)
+                    value = f'[{name.upper()}]({url})\nDate: {date}\n[Sign Up]({sign_up_url})'
                     messages.append([msg_name, value])
             if len(messages) > 0:
-                embed = await self.multi_msg(
+                embed = await utilities.multi_embed(
                     color=self.color_info,
                     thumb_url=thumb,
                     messages=messages
@@ -270,16 +268,16 @@ class Chall(commands.Cog):
                 challonge_notification_channels = await self.get_challonge_notification_channels()
                 for challonge_channel in challonge_notification_channels:
                     await challonge_channel.send(embed=embed)
-        except sqlite3.Error as e:
+        except sqlite3.Error:
             # print('An sql error occurred when checking for new events: {}'.format(e))
             pass
         except Exception as e:
-            print('An unexpected error occurred when checking for new events: {}'.format(e))
+            print(f'An unexpected error occurred when checking for new events: {e}')
 
     async def check_tournament_countdown(self):
         try:
-            conn, c = await load_db()
-            r = requests.get('https://{}:{}@api.challonge.com/v1/tournaments.json?subdomain=lm'.format(username, api))
+            conn, c = await utilities.load_db()
+            r = requests.get(f'https://{username}:{api}@api.challonge.com/v1/tournaments.json?subdomain=lm')
             challonge_tournaments = [value['tournament'] for value in json.loads(r.content)]
             for tournament in challonge_tournaments:
                 start_at = tournament.get('start_at').split('.')[0]
@@ -292,11 +290,11 @@ class Chall(commands.Cog):
                     days_full, time = time_until_start.__str__().split(',')
                     days = int(days_full.split()[0])
                     messages = []
-                    name = '{} is {} day away!'.format(tournament_name, days)
+                    name = f'{tournament_name} is {days} day away!'
                     if days != 1:
-                        name = '{} is {} days away!'.format(tournament_name, days)
-                    messages.append([name, 'Remember to [sign up]({})!'.format(sign_up_url)])
-                    embed = await self.multi_msg(
+                        name = f'{tournament_name} is {days} days away!'
+                    messages.append([name, f'Remember to [sign up]({sign_up_url})!'])
+                    embed = await utilities.multi_embed(
                         color=self.color_info,
                         thumb_url=thumb,
                         title='A Tournament is Fast Approaching!',
@@ -325,32 +323,7 @@ class Chall(commands.Cog):
         except sqlite3.Error:
             pass
         except Exception as e:
-            print('An unexpected error occurred when checking event countdowns: {}'.format(e))
-
-    @staticmethod
-    async def msg(color=Color.dark_grey(), title=None, url=None, thumb_url=None, msg=None):
-        try:
-            embed = Embed(color=color, title=title, url=url)
-            if thumb_url is not None:
-                embed.set_thumbnail(url=thumb_url)
-            name, value = msg
-            embed.add_field(name=name, value=value, inline=False)
-            return embed
-        except Exception as e:
-            print('An unexpected error occurred when processing a message embed: {}'.format(e))
-
-    @staticmethod
-    async def multi_msg(color=Color.dark_grey(), url=None, title='Alert', thumb_url=None, messages=None):
-        try:
-            embed = Embed(color=color, title=title, url=url)
-            if thumb_url is not None:
-                embed.set_thumbnail(url=thumb_url)
-            for msg in messages:
-                name, value = msg
-                embed.add_field(name=name, value=value, inline=False)
-            return embed
-        except Exception as e:
-            print('An unexpected error occurred when processing a multi-message embed: {}'.format(e))
+            print(f'An unexpected error occurred when checking event countdowns: {e}')
 
     @staticmethod
     async def format_time(datetime_string):
