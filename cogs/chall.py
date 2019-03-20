@@ -179,17 +179,17 @@ class Chall(commands.Cog):
                 chall_api = 'https://{}:{}@api.challonge.com/v1/tournaments/{}/participants.json'
                 r = requests.get(chall_api.format(username, api, tournament_id))
 
-                tournament_participants = json.loads(r.content)
+                tournament_participants = [value['participant'] for value in json.loads(r.content)]
                 for participant in tournament_participants:
-                    if participant.get('participant').get('id') not in tournament_members:
-                        user = participant.get('participant').get('challonge_username')
+                    if participant.get('id') not in tournament_members:
+                        user = participant.get('challonge_username')
                         if user is None:
-                            user = participant.get('participant').get('name')
+                            user = participant.get('name')
                         msg = [tournament_name.upper(), '"{}" has signed up!'.format(user)]
                         messages.append(msg)
                         with conn:
                             c.execute("INSERT INTO tournament_members VALUES (:id, :member_id)",
-                                      {'id': tournament_id, 'member_id': participant.get('participant').get('id')})
+                                      {'id': tournament_id, 'member_id': participant.get('id')})
             if len(messages) > 0:
                 embed = await self.multi_msg(
                     color=self.color_info,
