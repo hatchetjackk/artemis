@@ -200,11 +200,11 @@ class Chall(commands.Cog):
                 for challonge_channel in challonge_notification_channels:
                     await challonge_channel.send(embed=embed)
         except sqlite3.Error as e:
-            print('Check for new participants', e)
-            raise
+            print('An sql error occurred when checking for new participants: {}'.format(e))
         except NameError as e:
             print('A NameError occurred when checking for new participants: {}'.format(e))
-            raise
+        except Exception as e:
+            print('An unknown error occurred when checking for new participants: {}'.format(e))
 
     async def check_for_removed_events(self):
         try:
@@ -230,8 +230,9 @@ class Chall(commands.Cog):
                 for challonge_channel in challonge_notification_channels:
                     await challonge_channel.send(embed=embed)
         except sqlite3.Error as e:
-            print('Check for removed events', e)
-            raise
+            print('An sql error occurred when checking for removed events: {}'.format(e))
+        except Exception as e:
+            print('An unknown error occurred when checking for removed events: {}'.format(e))
 
     async def check_for_new_events(self):
         try:
@@ -255,8 +256,10 @@ class Chall(commands.Cog):
                     sign_up_url = 'No Sign Up Page yet'
                 if tournament_id not in tournament_database:
                     with conn:
-                        c.execute("INSERT INTO tournament_list VALUES (:id, :name, :one_week_notify, :one_day_notify)",
-                                  {'id': tournament_id, 'name': name, 'one_week_notify': None, 'one_day_notify': None})
+                        c.execute("""
+                        INSERT OR IGNORE INTO tournament_list 
+                        VALUES (:id, :name, :one_week_notify, :one_day_notify)
+                        """, {'id': tournament_id, 'name': name, 'one_week_notify': None, 'one_day_notify': None})
                     msg_name = 'A new Challonge event has been created!'
                     value = '[{}]({})\nDate: {}\n[Sign Up]({})'.format(name.upper(), url, date, sign_up_url)
                     messages.append([msg_name, value])
@@ -270,8 +273,9 @@ class Chall(commands.Cog):
                 for challonge_channel in challonge_notification_channels:
                     await challonge_channel.send(embed=embed)
         except sqlite3.Error as e:
-            print(e)
-            raise
+            print('An sql error occurred when checking for new events: {}'.format(e))
+        except Exception as e:
+            print('An unexpected error occurred when checking for new events: {}'.format(e))
 
     async def check_tournament_countdown(self):
         try:
