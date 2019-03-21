@@ -189,7 +189,7 @@ class Chall(commands.Cog):
                                       {'id': tournament_id, 'member_id': participant.get('id')})
             if len(messages) > 0:
                 embed = await utilities.multi_embed(
-                    color=self.color_info,
+                    color=utilities.color_info,
                     title='A New Challenger Approaches!',
                     thumb_url=thumb,
                     messages=messages
@@ -220,7 +220,7 @@ class Chall(commands.Cog):
                     messages.append(['A Challonge Event Has Been Removed', tournament_name.title()])
             if len(messages) > 0:
                 embed = await utilities.multi_embed(
-                    color=self.color_info,
+                    color=utilities.color_info,
                     thumb_url=thumb,
                     messages=messages
                 )
@@ -261,7 +261,7 @@ class Chall(commands.Cog):
                     messages.append([msg_name, value])
             if len(messages) > 0:
                 embed = await utilities.multi_embed(
-                    color=self.color_info,
+                    color=utilities.color_info,
                     thumb_url=thumb,
                     messages=messages
                 )
@@ -295,7 +295,7 @@ class Chall(commands.Cog):
                         name = f'{tournament_name} is {days} days away!'
                     messages.append([name, f'Remember to [sign up]({sign_up_url})!'])
                     embed = await utilities.multi_embed(
-                        color=self.color_info,
+                        color=utilities.color_info,
                         thumb_url=thumb,
                         title='A Tournament is Fast Approaching!',
                         messages=messages
