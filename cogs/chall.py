@@ -26,21 +26,20 @@ class Chall(commands.Cog):
 
     @tourney.group()
     async def help(self, ctx):
-        embed = await utilities.embed_msg(
+        await utilities.embed_msg(
             color=utilities.color_help,
-            thumb_url=self.client.user.avatar_url,
-            msg=['Challonge Help',
-                 '`chall index` View all tournaments\n'
-                 '`chall show [id]` Show details about a tournament']
+            name='**Challonge Help**',
+            value='`chall index` View all tournaments\n'
+                  '`chall show [id]` Show details about a tournament',
+            channel=ctx
         )
-        await ctx.send(embed=embed)
 
     @tourney.group()
     async def index(self, ctx):
         try:
             r = requests.get(f'https://{username}:{api}@api.challonge.com/v1/tournaments.json?subdomain=lm')
             tournaments = [value['tournament'] for value in json.loads(r.content)]
-            embed_messages = []
+            messages = []
             for tournament in tournaments:
                 tourney_name = tournament['name'].upper()
                 state = tournament['state']
@@ -60,15 +59,14 @@ class Chall(commands.Cog):
                     value = '[Sign Up]({0}) / [View]({1})\n{2}\nPlayers: {3}\nid: *{4}*'.format(*args)
                 else:
                     value = '[View]({1})\n{2}\nPlayers: {3}\nid: *{4}*'.format(*args)
-                embed_messages.append([name, value])
+                messages.append([name, value])
 
-            embed = await utilities.multi_embed(
-                color=utilities.color_info,
+            await utilities.multi_embed(
                 title='Challonge Tournaments',
                 thumb_url=thumb,
-                messages=embed_messages
+                messages=messages,
+                channel=ctx
             )
-            await ctx.send(embed=embed)
         except Exception as e:
             print(f'An error occurred when retrieving tournament data: {e}')
             raise
@@ -132,14 +130,13 @@ class Chall(commands.Cog):
                 name = 'Final Results'
                 value = '\n'.join(standings)
                 embed_messages.append([name, value])
-            embed = await utilities.multi_embed(
-                color=utilities.color_info,
+            await utilities.multi_embed(
                 title=f'{tourney_name} - {game}',
                 thumb_url=thumb,
                 url=url,
-                messages=embed_messages
+                messages=embed_messages,
+                channel=ctx
             )
-            await ctx.send(embed=embed)
         except Exception as e:
             print(f'An error occurred when showing challonge tourney {tourney_id}: {e}')
 
@@ -187,18 +184,19 @@ class Chall(commands.Cog):
                         with conn:
                             c.execute("INSERT INTO tournament_members VALUES (:id, :member_id)",
                                       {'id': tournament_id, 'member_id': participant.get('id')})
-            if len(messages) > 0:
-                embed = await utilities.multi_embed(
-                    color=utilities.color_info,
-                    title='A New Challenger Approaches!',
-                    thumb_url=thumb,
-                    messages=messages
-                )
-                challonge_notification_channels = await self.get_challonge_notification_channels()
-                for challonge_channel in challonge_notification_channels:
-                    await challonge_channel.send(embed=embed)
+
+                if len(messages) > 0:
+                    challonge_notification_channels = await self.get_challonge_notification_channels()
+                    for challonge_channel in challonge_notification_channels:
+                        await utilities.multi_embed(
+                            title='A New Challenger Approaches!',
+                            thumb_url=thumb,
+                            messages=messages,
+                            channel=challonge_channel
+                        )
         except sqlite3.Error as e:
             print(f'An sql error occurred when checking for new participants: {e}')
+            pass
         except NameError as e:
             print(f'A NameError occurred when checking for new participants: {e}')
         except Exception as e:
@@ -219,14 +217,13 @@ class Chall(commands.Cog):
                         c.execute("DELETE FROM tournament_list WHERE id = (:id)", {'id': tournament_id})
                     messages.append(['A Challonge Event Has Been Removed', tournament_name.title()])
             if len(messages) > 0:
-                embed = await utilities.multi_embed(
-                    color=utilities.color_info,
-                    thumb_url=thumb,
-                    messages=messages
-                )
                 challonge_notification_channels = await self.get_challonge_notification_channels()
                 for challonge_channel in challonge_notification_channels:
-                    await challonge_channel.send(embed=embed)
+                    await utilities.multi_embed(
+                        thumb_url=thumb,
+                        messages=messages,
+                        channel=challonge_channel
+                    )
         except sqlite3.Error as e:
             print('An sql error occurred when checking for removed events: {}'.format(e))
         except Exception as e:
@@ -260,14 +257,13 @@ class Chall(commands.Cog):
                     value = f'[{name.upper()}]({url})\nDate: {date}\n[Sign Up]({sign_up_url})'
                     messages.append([msg_name, value])
             if len(messages) > 0:
-                embed = await utilities.multi_embed(
-                    color=utilities.color_info,
-                    thumb_url=thumb,
-                    messages=messages
-                )
                 challonge_notification_channels = await self.get_challonge_notification_channels()
                 for challonge_channel in challonge_notification_channels:
-                    await challonge_channel.send(embed=embed)
+                    await utilities.multi_embed(
+                        thumb_url=thumb,
+                        messages=messages,
+                        channel=challonge_channel
+                    )
         except sqlite3.Error:
             # print('An sql error occurred when checking for new events: {}'.format(e))
             pass
@@ -289,17 +285,9 @@ class Chall(commands.Cog):
                     time_until_start = start_at - datetime.now()
                     days_full, time = time_until_start.__str__().split(',')
                     days = int(days_full.split()[0])
-                    messages = []
                     name = f'{tournament_name} is {days} day away!'
                     if days != 1:
                         name = f'{tournament_name} is {days} days away!'
-                    messages.append([name, f'Remember to [sign up]({sign_up_url})!'])
-                    embed = await utilities.multi_embed(
-                        color=utilities.color_info,
-                        thumb_url=thumb,
-                        title='A Tournament is Fast Approaching!',
-                        messages=messages
-                    )
 
                     if days == 7:
                         c.execute("SELECT one_week_notify FROM tournament_list WHERE id = (:id)", {'id': tourney_id})
@@ -309,7 +297,14 @@ class Chall(commands.Cog):
                                           {'id': tourney_id})
                             challonge_notification_channels = await self.get_challonge_notification_channels()
                             for challonge_channel in challonge_notification_channels:
-                                await challonge_channel.send(embed=embed)
+                                await utilities.embed_msg(
+                                    color=utilities.color_info,
+                                    thumb_url=thumb,
+                                    title='A Tournament is Fast Approaching!',
+                                    name=name,
+                                    value=f'Remember to [sign up]({sign_up_url})!',
+                                    channel=challonge_channel
+                                )
 
                     elif days == 1:
                         c.execute("SELECT one_day_notify FROM tournament_list WHERE id = (:id)", {'id': tourney_id})
@@ -319,7 +314,14 @@ class Chall(commands.Cog):
                                           {'id': tourney_id})
                             challonge_notification_channels = await self.get_challonge_notification_channels()
                             for challonge_channel in challonge_notification_channels:
-                                await challonge_channel.send(embed=embed)
+                                await utilities.embed_msg(
+                                    color=utilities.color_info,
+                                    thumb_url=thumb,
+                                    title='A Tournament is Fast Approaching!',
+                                    name=name,
+                                    value=f'Remember to [sign up]({sign_up_url})!',
+                                    channel=challonge_channel
+                                )
         except sqlite3.Error:
             pass
         except Exception as e:
