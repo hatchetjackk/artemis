@@ -23,13 +23,13 @@ class Automod(commands.Cog):
     async def roles(self, ctx):
         roles = ['`{}`'.format(value.name) for value in ctx.guild.roles if value.name != '@everyone']
         fmt = [ctx.guild.name, '\n'.join(roles)]
-        embed = await utilities.embed_msg(
+        await utilities.embed_msg(
             color=utilities.color_info,
-            title='Roles',
             thumb_url=ctx.guild.icon_url,
-            msg='The roles for {0} include:\n{1}'.format(*fmt)
+            name='**Roles**',
+            value='The roles for {0} include:\n{1}'.format(*fmt),
+            channel=ctx
         )
-        await ctx.send(embed=embed)
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
@@ -42,27 +42,28 @@ class Automod(commands.Cog):
                 autorole = discord.utils.get(member.guild.roles, id=autorole_id)
                 await member.add_roles(autorole)
 
-            spam_channel_id = await utilities.get_spam_channel(member.guild.id)
-            if spam_channel_id is not None:
-                channel = member.guild.get_channel(spam_channel_id)
-                embed = await utilities.embed_msg(
-                    color=utilities.color_alert,
-                    thumb_url=member.avatar_url,
-                    title='A New User Has Joined the Server',
-                    msg='{0.name} joined {0.guild}.'.format(member)
-                )
-                await channel.send(embed=embed)
-                embed = await utilities.embed_msg(
-                    color=utilities.color_alert,
-                    thumb_url=member.avatar_url,
-                    title='Autorole Assigned',
-                    msg=f'{member.name} was assigned the role {autorole.name}'
-                )
-                await channel.send(embed=embed)
+            await utilities.alert_embed(
+                color=utilities.color_alert,
+                thumb_url=member.avatar_url,
+                name='**A New User Has Joined the Server**',
+                value='{0.name} joined {0.guild}.'.format(member),
+                guildid=member.guild.id
+            )
+            await utilities.alert_embed(
+                color=utilities.color_alert,
+                thumb_url=member.avatar_url,
+                name='**Autorole Assigned**',
+                value=f'{member.name} was assigned the role {autorole.name}',
+                guildid=member.guild.id
+            )
             general_channel = discord.utils.get(member.guild.channels, name='general')
             guild_blacklist = await self.guild_blacklist()
             if member.guild.name not in guild_blacklist:
-                await general_channel.send('Welcome to {0.guild.name}, {0.name}!'.format(member))
+                await utilities.embed_msg(
+                    color=utilities.color_info,
+                    title='Welcome to {0.guild.name}, {0.name}!'.format(member),
+                    channel=general_channel
+                )
         except sqlite3.OperationalError as e:
             print(f'An error occurred with the database: {e}')
         except Exception as e:
@@ -71,16 +72,12 @@ class Automod(commands.Cog):
     @commands.Cog.listener()
     async def on_member_remove(self, member):
         try:
-            spam_channel_id = await utilities.get_spam_channel(member.guild.id)
-            if spam_channel_id is not None:
-                embed = await utilities.embed_msg(
-                    color=utilities.color_alert,
-                    title='A Member Has Left',
-                    thumb_url=member.avatar_url,
-                    msg='{0.name} has left {0.guild}.'.format(member)
-                )
-                spam_channel = member.guild.get_channel(spam_channel_id)
-                await spam_channel.send(embed=embed)
+            await utilities.alert_embed(
+                name='**A Member Has Left**',
+                thumb_url=member.avatar_url,
+                value='{0.name} has left {0.guild}.'.format(member),
+                guildid=member.guild.id
+            )
         except Exception as e:
             print(f'An error occurred when removing a user: {e}')
             raise
@@ -96,16 +93,16 @@ class Automod(commands.Cog):
                 return
             spam_channel_id = await utilities.get_spam_channel(before.guild.id)
             if spam_channel_id is not None:
-                embed = await utilities.embed_msg(
+                spam_channel = before.guild.get_channel(spam_channel_id)
+                await utilities.embed_msg(
                     color=utilities.color_alert,
                     thumb_url=after.author.avatar_url,
                     name=f'{after.author.name} edited a message',
-                    msg=f'**Channel**: {before.channel.mention}\n'
-                        f'**Before**: {before.content}\n'
-                        f'**After**: {after.content}'
+                    value=f'**Channel**: {before.channel.mention}\n'
+                          f'**Before**: {before.content}\n'
+                          f'**After**: {after.content}',
+                    channel=spam_channel
                 )
-                spam_channel = before.guild.get_channel(spam_channel_id)
-                await spam_channel.send(embed=embed)
         except Exception as e:
             print(f'An error occurred when parsing an edited message: {e}')
 
@@ -113,17 +110,14 @@ class Automod(commands.Cog):
     async def on_message_delete(self, message):
         if message.author.bot:
             return
-        spam_channel_id = await utilities.get_spam_channel(message.guild.id)
-        if spam_channel_id is not None:
-            embed = await utilities.embed_msg(
-                color=utilities.color_alert,
-                thumb_url=message.author.avatar_url,
-                name=f'{message.author.name}\'s message was deleted',
-                msg='**Channel**: {0.channel.mention}\n'
-                    '**Content**: {0.content}'.format(message)
-            )
-            spam_channel = message.guild.get_channel(spam_channel_id)
-            await spam_channel.send(embed=embed)
+        await utilities.alert_embed(
+            color=utilities.color_alert,
+            thumb_url=message.author.avatar_url,
+            name=f'{message.author.name}\'s message was deleted',
+            value='**Channel**: {0.channel.mention}\n'
+                  '**Content**: {0.content}'.format(message),
+            guildid=message.guild.id
+        )
 
     @commands.Cog.listener()
     async def on_message_error(self, ctx, error):
