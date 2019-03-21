@@ -1,8 +1,9 @@
 import requests
 import aiohttp
 import json
+import sqlite3
+import cogs.utilities as utilities
 from bs4 import BeautifulSoup
-from artemis import load_db
 from discord import Embed, Color
 from math import sqrt
 from datetime import datetime
@@ -21,15 +22,16 @@ class EliteDangerous(commands.Cog):
 
     @elite.group()
     async def help(self, ctx):
-        embed = Embed(color=Color.blue())
-        embed.add_field(name='Elite Help',
-                        value='`wanted` List Wanted CMDRs for this guild\n'
-                              '`wanted add [cmdr], [reason]` Add a CMDR to the Wanted list\n'
-                              '`wanted remove [cmdr]` Remove a CMDR from the Wanted list\n'
-                              '`faction [faction_name]` Get details about a faction\n'
-                              '`system [system_name]` Get details about a system name\n'
-                              '`dist [system1], [system2]` Get the distance between two systems\n'
-                              '`cmdr [cmdr_name]` Get details about a CMDR (must be in INARA)')
+        embed = await utilities.embed_msg(
+            color=utilities.color_help,
+            name='Elite Help',
+            msg='`wanted` List Wanted CMDRs for this guild\n'
+                '`wanted add` Add a CMDR to the Wanted list\n'
+                '`wanted remove` Remove a CMDR from the Wanted list\n'
+                '`faction [faction_name]` Get details about a faction\n'
+                '`system [system_name]` Get details about a system name\n'
+                '`dist [system1], [system2]` Get the distance between two systems\n'
+                '`cmdr [cmdr_name]` Get details about a CMDR (must be in INARA)')
         await ctx.send(embed=embed)
 
     @staticmethod
@@ -42,49 +44,70 @@ class EliteDangerous(commands.Cog):
         if ctx.guild.name in self.wanted_blacklist:
             return
         if ctx.invoked_subcommand is None:
-            conn, c = await load_db()
-            embed = Embed(title='Wanted CMDRs', color=Color.orange())
+            messages = []
+            conn, c = await utilities.load_db()
             c.execute("SELECT * FROM ed_wanted WHERE guild_id = (:guild_id)", {'guild_id': ctx.guild.id})
             wanted_commanders = c.fetchall()
             if len(wanted_commanders) < 1:
-                embed.add_field(name='No CMDRs on the WANTED list.',
-                                value='Nothing to see here.',
-                                inline=False)
+                messages.append(['No CMDRs on the WANTED list.', 'Nothing to see here.'])
             else:
                 for cmdr in wanted_commanders:
                     cmdr_name, reason, inara_page, guild_id, member_id = cmdr
-                    fmt = (reason, inara_page)
-                    embed.add_field(name=cmdr_name.title(),
-                                    value='Reason: {}\n{}'.format(*fmt),
-                                    inline=False)
+                    messages.append([cmdr_name.title(), f'Reason: {reason}\n{inara_page}'])
+            embed = await utilities.multi_embed(
+                color=utilities.color_info,
+                title='Wanted CMDRs',
+                messages=messages
+            )
             await ctx.send(embed=embed)
 
     @wanted.group()
-    async def add(self, ctx, *args):
-        try:
-            if ctx.guild.name == any(self.wanted_blacklist):
-                return
-            wanted_cmdr, reason = (value.strip() for value in ' '.join(args).split(','))
-            inara_page = await self.get_pilot_information(wanted_cmdr)
-            conn, c = await load_db()
-            c = conn.cursor()
-            with conn:
-                c.execute("INSERT INTO ed_wanted VALUES(:cmdr_name, :reason, :inara_page, :guild_id, :member_id)",
-                          {'cmdr_name': wanted_cmdr.lower(), 'reason': reason, 'inara_page': inara_page,
-                           'guild_id': ctx.guild.id, 'member_id': ctx.author.id})
-            embed = Embed(title='{} added to WANTED list'.format(wanted_cmdr.title()),
-                          color=Color.red())
-            await ctx.send(embed=embed)
-        except Exception as e:
-            print('[{}] Error when adding a pilot to Wanted list: {}'.format(datetime.now(), e))
-            raise
+    async def add(self, ctx):
+        if ctx.guild.name == any(self.wanted_blacklist):
+            return
+        embed = await utilities.embed_msg(
+            color=utilities.color_info,
+            name='Add a CMDR to the Wanted List',
+            msg='What is the CMDR\'s name?'
+        )
+        await ctx.send(embed=embed)
+
+        def check(m):
+            return m.author == ctx.message.author and m.channel == ctx.channel
+        msg = await self.client.wait_for('message', check=check)
+        wanted_cmdr = msg.content
+        await ctx.channel.purge(limit=2)
+
+        embed = await utilities.embed_msg(
+            color=utilities.color_info,
+            name='Add a CMDR to the Wanted List',
+            msg='Why are you adding them to the list?'
+        )
+        await ctx.send(embed=embed)
+        msg = await self.client.wait_for('message', check=check)
+        reason = msg.content
+        await ctx.channel.purge(limit=2)
+        inara_page = await self.get_pilot_information(wanted_cmdr)
+        if inara_page is None:
+            inara_page = 'CMDR not found in INARA'
+        conn, c = await utilities.load_db()
+        with conn:
+            c.execute("INSERT INTO ed_wanted VALUES(:cmdr_name, :reason, :inara_page, :guild_id, :member_id)",
+                      {'cmdr_name': wanted_cmdr.lower(), 'reason': reason, 'inara_page': inara_page,
+                       'guild_id': ctx.guild.id, 'member_id': ctx.author.id})
+        embed = await utilities.embed_msg(
+            color=utilities.color_info,
+            name=f'{wanted_cmdr.title()} added to the Wanted List.',
+            msg='View the list with `wanted`.'
+        )
+        await ctx.send(embed=embed)
 
     @wanted.group(aliases=['delete', 'del'])
     async def remove(self, ctx, *, wanted_cmdr: str):
         try:
             if ctx.guild.name == any(self.wanted_blacklist):
                 return
-            conn, c = await load_db()
+            conn, c = await utilities.load_db()
             c = conn.cursor()
             with conn:
                 c.execute("DELETE FROM ed_wanted WHERE cmdr_name = (:cmdr_name) AND guild_id = (:guild_id)",
@@ -99,7 +122,7 @@ class EliteDangerous(commands.Cog):
     @commands.command()
     async def faction(self, ctx, *, faction: str):
         async with aiohttp.ClientSession() as session:
-            url = 'http://elitebgs.kodeblox.com/api/eddb/v3/factions?name={}'.format(faction)
+            url = f'http://elitebgs.kodeblox.com/api/eddb/v3/factions?name={faction.lower()}'
             f = await self.fetch(session, url)
             values = json.loads(f)['docs'][0]
             faction_name = values['name']
@@ -428,13 +451,12 @@ class EliteDangerous(commands.Cog):
         try:
             with open('files/credentials.json') as f:
                 data = json.load(f)
-            inara_api = data['inara']
             json_data = {
                 "header": {
                     "appName": "Artemis_Bot",
                     "appVersion": "0.7",
                     "isDeveloped": True,
-                    "APIkey": inara_api,
+                    "APIkey": data['inara'],
                     "commanderName": "Hatchet Jackk"
                 },
                 "events": [
@@ -448,9 +470,10 @@ class EliteDangerous(commands.Cog):
                 ]
             }
             json_string = json.dumps(json_data)
-            url = 'https://inara.cz/inapi/v1/'
-            r = requests.post(url, json_string)
+            r = requests.post('https://inara.cz/inapi/v1/', json_string)
             pilot_data = list(r.json()['events'])[0]
+            # pilot_name = pilot_data['eventData']['commanderName']
+
             pilot_page = pilot_data['eventData']['inaraURL']
             if pilot_page is None:
                 return None
