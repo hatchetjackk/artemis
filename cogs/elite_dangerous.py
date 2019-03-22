@@ -1,10 +1,7 @@
-import requests
 import aiohttp
 import json
-import sqlite3
 import cogs.utilities as utilities
 from bs4 import BeautifulSoup
-from discord import Embed, Color
 from math import sqrt
 from datetime import datetime
 from discord.ext import commands
@@ -18,25 +15,34 @@ class EliteDangerous(commands.Cog):
     @commands.group(aliases=['ed'])
     async def elite(self, ctx):
         if ctx.invoked_subcommand is None:
-            pass
+            await utilities.single_embed(
+                color=utilities.color_alert,
+                title='Try `elite help` for more options.',
+                channel=ctx
+            )
 
     @elite.group()
     async def help(self, ctx):
-        embed = await utilities.embed_msg(
+        await utilities.single_embed(
+            channel=ctx,
             color=utilities.color_help,
             name='Elite Help',
-            msg='`wanted` List Wanted CMDRs for this guild\n'
-                '`wanted add` Add a CMDR to the Wanted list\n'
-                '`wanted remove` Remove a CMDR from the Wanted list\n'
-                '`faction [faction_name]` Get details about a faction\n'
-                '`system [system_name]` Get details about a system name\n'
-                '`dist [system1], [system2]` Get the distance between two systems\n'
-                '`cmdr [cmdr_name]` Get details about a CMDR (must be in INARA)')
-        await ctx.send(embed=embed)
+            value='`wanted` List Wanted CMDRs for this guild\n'
+                  '`wanted add` Add a CMDR to the Wanted list\n'
+                  '`wanted remove` Remove a CMDR from the Wanted list\n'
+                  '`faction [faction_name]` Get details about a faction\n'
+                  '`system [system_name]` Get details about a system name\n'
+                  '`dist [system1], [system2]` Get the distance between two systems\n'
+                  '`cmdr [cmdr_name]` Get details about a CMDR (must be in INARA)')
 
     @staticmethod
     async def fetch(session, url):
         async with session.get(url) as response:
+            return await response.text()
+
+    @staticmethod
+    async def post(session, url, payload):
+        async with session.post(url, json=payload) as response:
             return await response.text()
 
     @commands.group()
@@ -48,79 +54,93 @@ class EliteDangerous(commands.Cog):
             conn, c = await utilities.load_db()
             c.execute("SELECT * FROM ed_wanted WHERE guild_id = (:guild_id)", {'guild_id': ctx.guild.id})
             wanted_commanders = c.fetchall()
-            if len(wanted_commanders) < 1:
+            if len(wanted_commanders) == 0:
                 messages.append(['No CMDRs on the WANTED list.', 'Nothing to see here.'])
             else:
                 for cmdr in wanted_commanders:
                     cmdr_name, reason, inara_page, guild_id, member_id = cmdr
                     messages.append([cmdr_name.title(), f'Reason: {reason}\n{inara_page}'])
-            embed = await utilities.multi_embed(
-                color=utilities.color_info,
+            await utilities.multi_embed(
+                color=utilities.color_elite,
                 title='Wanted CMDRs',
-                messages=messages
+                messages=messages,
+                channel=ctx
             )
-            await ctx.send(embed=embed)
 
     @wanted.group()
     async def add(self, ctx):
-        if ctx.guild.name == any(self.wanted_blacklist):
-            return
-        embed = await utilities.embed_msg(
-            color=utilities.color_info,
-            name='Add a CMDR to the Wanted List',
-            msg='What is the CMDR\'s name?'
-        )
-        await ctx.send(embed=embed)
+        try:
+            if ctx.guild.name == any(self.wanted_blacklist):
+                return
+            await utilities.single_embed(
+                color=utilities.color_elite,
+                name='Add a CMDR to the Wanted List',
+                value='What is the CMDR\'s name?',
+                channel=ctx
+            )
 
-        def check(m):
-            return m.author == ctx.message.author and m.channel == ctx.channel
-        msg = await self.client.wait_for('message', check=check)
-        wanted_cmdr = msg.content
-        await ctx.channel.purge(limit=2)
+            def check(m):
+                return m.author == ctx.message.author and m.channel == ctx.channel
+            msg = await self.client.wait_for('message', check=check)
+            wanted_cmdr = msg.content
+            await ctx.channel.purge(limit=2)
 
-        embed = await utilities.embed_msg(
-            color=utilities.color_info,
-            name='Add a CMDR to the Wanted List',
-            msg='Why are you adding them to the list?'
-        )
-        await ctx.send(embed=embed)
-        msg = await self.client.wait_for('message', check=check)
-        reason = msg.content
-        await ctx.channel.purge(limit=2)
-        inara_page = await self.get_pilot_information(wanted_cmdr)
-        if inara_page is None:
-            inara_page = 'CMDR not found in INARA'
-        conn, c = await utilities.load_db()
-        with conn:
-            c.execute("INSERT INTO ed_wanted VALUES(:cmdr_name, :reason, :inara_page, :guild_id, :member_id)",
-                      {'cmdr_name': wanted_cmdr.lower(), 'reason': reason, 'inara_page': inara_page,
-                       'guild_id': ctx.guild.id, 'member_id': ctx.author.id})
-        embed = await utilities.embed_msg(
-            color=utilities.color_info,
-            name=f'{wanted_cmdr.title()} added to the Wanted List.',
-            msg='View the list with `wanted`.'
-        )
-        await ctx.send(embed=embed)
+            await utilities.single_embed(
+                color=utilities.color_elite,
+                name='Add a CMDR to the Wanted List',
+                value='Why are you adding them to the list?',
+                channel=ctx
+            )
+            msg = await self.client.wait_for('message', check=check)
+            reason = msg.content
+            await ctx.channel.purge(limit=2)
+            inara_page = await self.get_pilot_information(wanted_cmdr)
+            if inara_page is None:
+                inara_page = 'CMDR not found in INARA'
+            conn, c = await utilities.load_db()
+            with conn:
+                c.execute("INSERT INTO ed_wanted VALUES(:cmdr_name, :reason, :inara_page, :guild_id, :member_id)",
+                          {'cmdr_name': wanted_cmdr.lower(), 'reason': reason, 'inara_page': inara_page,
+                           'guild_id': ctx.guild.id, 'member_id': ctx.author.id})
+            await utilities.single_embed(
+                color=utilities.color_elite,
+                name=f'{wanted_cmdr.title()} added to the Wanted List.',
+                value='View the list with `wanted`.',
+                channel=ctx
+            )
+        except Exception as e:
+            await utilities.err_embed(
+                name=f'An unexpected error occurred when adding a CMDR to the WANTED list', value=e, channel=ctx
+            )
+            raise
 
     @wanted.group(aliases=['delete', 'del'])
     async def remove(self, ctx, *, wanted_cmdr: str):
+        # todo add check to see if the cmdr is in the database before trying to remove
         try:
             if ctx.guild.name == any(self.wanted_blacklist):
                 return
             conn, c = await utilities.load_db()
-            c = conn.cursor()
             with conn:
                 c.execute("DELETE FROM ed_wanted WHERE cmdr_name = (:cmdr_name) AND guild_id = (:guild_id)",
                           {'cmdr_name': wanted_cmdr.lower(), 'guild_id': ctx.guild.id})
-            embed = Embed(title='{} removed from WANTED list'.format(wanted_cmdr.title()),
-                          color=Color.orange())
-            await ctx.send(embed=embed)
+            await utilities.single_embed(
+                color=utilities.color_elite,
+                title=f'{wanted_cmdr.title()} removed from WANTED list.',
+                channel=ctx
+            )
         except Exception as e:
-            print('[{}] Error when removing a pilot from the Wanted list: {}'.format(datetime.now(), e))
+            print(f'[{datetime.now()}] Error when removing a pilot from the Wanted list: {e}')
             raise
 
     @commands.command()
     async def faction(self, ctx, *, faction: str):
+        await utilities.single_embed(
+            color=utilities.color_elite,
+            title='Please wait a moment while I gather faction data...',
+            channel=ctx,
+            delete_after=4
+        )
         async with aiohttp.ClientSession() as session:
             url = f'http://elitebgs.kodeblox.com/api/eddb/v3/factions?name={faction.lower()}'
             f = await self.fetch(session, url)
@@ -142,21 +162,13 @@ class EliteDangerous(commands.Cog):
                 home_system_name = 'None'
             fmt = (government, allegiance, player_faction, home_system_name)
 
-            embed = Embed(title=faction_name,
-                          color=Color.orange(),
-                          description='Government: {}\n'
-                                      'Allegiance: {}\n'
-                                      'Player Faction: {}\n'
-                                      'Home System: {}'.format(*fmt))
-
+            messages = []
             if faction_id is not None:
                 url = 'https://eddb.io/faction/{}'.format(faction_id)
                 f = await self.fetch(session, url)
                 soup = BeautifulSoup(f, 'lxml')
                 faction_system_information = soup.findAll('tr', class_='systemRow')
                 for system in faction_system_information:
-                    # print(system)
-                    # print([value for value in system.findAll('span')])
                     faction_system_name = system.find('a').contents[0]
                     faction_system_state = [value for value in system.findAll('span')[3]]
                     faction_system_pop = [value for value in system.findAll('span')[5]]
@@ -167,9 +179,7 @@ class EliteDangerous(commands.Cog):
                     faction_system_sec = 'Security:  {}'.format(faction_system_sec[0])
                     faction_system_power = 'Controlling Power:  {}'.format(faction_system_power[0])
                     fmt = (faction_system_state, faction_system_pop, faction_system_sec, faction_system_power)
-                    embed.add_field(name=faction_system_name,
-                                    value='\n'.join(fmt),
-                                    inline=False)
+                    messages.append([faction_system_name, '\n'.join(fmt)])
 
             thumbs = {'Independent': 'https://i.imgur.com/r4d7tPt.png',
                       'Alliance': 'https://i.imgur.com/OWf0P6u.png',
@@ -177,17 +187,29 @@ class EliteDangerous(commands.Cog):
                       'Federation': 'https://i.imgur.com/3oT7gr0.png',
                       'Pilots Federation': 'https://i.imgur.com/tshl8xE.png',
                       'Guardian': 'https://edassets.org/static/img/power-ethos/Covert.png'}
-            embed.set_thumbnail(url=thumbs[allegiance])
-            embed.set_footer(text='Last Updated: {}'.format(last_update))
-            await ctx.send(embed=embed)
+            await utilities.multi_embed(
+                color=utilities.color_elite,
+                title=faction_name,
+                description='Government: {}\nAllegiance: {}\nPlayer Faction: {}\nHome System: {}'.format(*fmt),
+                messages=messages,
+                thumb_url=thumbs[allegiance],
+                channel=ctx,
+                footer=f'Last Updated: {last_update}'
+            )
 
     @commands.command()
     async def system(self, ctx, *args):
+        await utilities.single_embed(
+            color=utilities.color_elite,
+            title='Please wait a moment while I gather system data...',
+            channel=ctx,
+            delete_after=4
+        )
         args = ' '.join(args).split(',')
         async with aiohttp.ClientSession() as session:
             if len(args) > 1:
                 system, station_name = args[0].strip(), args[1].strip()
-                url = 'https://www.edsm.net/api-system-v1/stations?sysname={}'.format(system)
+                url = f'https://www.edsm.net/api-system-v1/stations?sysname={system}'
                 f = await self.fetch(session, url)
                 values = json.loads(f)
                 system = values['name']
@@ -213,28 +235,31 @@ class EliteDangerous(commands.Cog):
                         faction_abbr = ''.join([word[0] for word in controlling_faction.split(' ')])
                         fmt = (station_type, controlling_faction, faction_abbr, government,
                                allegiance, economy, market, shipyard, outfitting)
-                        embed = Embed(title='{}, {}'.format(name, system),
-                                      color=Color.orange(),
-                                      description='Station Type: {}\n'
-                                                  'Controlling Faction: {} ({})\n'
-                                                  'Government: {}\n'
-                                                  'Allegiance: {}\n'
-                                                  'Economy: {}\n'
-                                                  'Market: {}\n'
-                                                  'Shipyard: {}\n'
-                                                  'Outfitting: {}'.format(*fmt))
-                        thumbnail = 'https://edassets.org/static/img/stations/Outpost.png'
+                        thumb_url = 'https://edassets.org/static/img/stations/Outpost.png'
                         if station_type in thumbs:
-                            thumbnail = thumbs[station_type]
-                        embed.set_thumbnail(url=thumbnail)
-                        embed.set_footer(text='Distance from arrival star: {} LS'.format(distance_from_star))
-                        await ctx.send(embed=embed)
+                            thumb_url = thumbs[station_type]
+
+                        await utilities.single_embed(
+                            color=utilities.color_elite,
+                            footer=f'Distance from arrival star: {distance_from_star} LS',
+                            thumb_url=thumb_url,
+                            channel=ctx,
+                            title=f'{name}, {system}',
+                            description='Station Type: {}\n'
+                                        'Controlling Faction: {} ({})\n'
+                                        'Government: {}\n'
+                                        'Allegiance: {}\n'
+                                        'Economy: {}\n'
+                                        'Market: {}\n'
+                                        'Shipyard: {}\n'
+                                        'Outfitting: {}'.format(*fmt)
+                        )
                         return
             else:
                 try:
                     system = args[0].strip()
-                    url = 'https://www.edsm.net/api-v1/system?sysname={}' \
-                          '&coords=1&showInformation=1&showPrimaryStar=1'.format(system)
+                    url = f'https://www.edsm.net/api-v1/system?sysname={system}' \
+                        f'&coords=1&showInformation=1&showPrimaryStar=1'
                     f = await self.fetch(session, url)
                     system_data = json.loads(f)
                     system_name = system_data['name']
@@ -244,10 +269,7 @@ class EliteDangerous(commands.Cog):
                         allegiance = system_data['information']['allegiance']
                         faction = system_data['information']['faction']
                         government = system_data['information']['government']
-                        if 'factionState' not in system_data['information']:
-                            faction_state = None
-                        else:
-                            faction_state = system_data['information']['factionState']
+                        faction_state = system_data.get('information').get('factionState')
                         faction_abbr = ''.join([word[0] for word in faction.split(' ')])
                         primary_start_scoopable = system_data['primaryStar']['isScoopable']
                         fmt = (faction, faction_abbr, government, faction_state, allegiance, primary_start_scoopable)
@@ -256,10 +278,9 @@ class EliteDangerous(commands.Cog):
                                              '**State**: {}\n' \
                                              '**Allegiance**: {}\n' \
                                              '**Primary Star Scoopable**: {}'.format(*fmt)
-                    embed = Embed(title=system_name,
-                                  color=Color.orange(),
-                                  description=system_information)
-                    url = 'https://www.edsm.net/api-system-v1/stations?sysname={}'.format(system)
+
+                    messages = []
+                    url = f'https://www.edsm.net/api-system-v1/stations?sysname={system}'
                     f = await self.fetch(session, url)
                     stations_data = json.loads(f)
                     for station in stations_data['stations']:
@@ -278,36 +299,43 @@ class EliteDangerous(commands.Cog):
                                        'Empire': '<:empirew:511914466418360331',
                                        'Independent': '<:independentw:511915084612632586>',
                                        'Pilots Federation': '<:pilots_federationw:511916795641331732>'}
-                        all_logo = ''
+                        allegiance_logo = ''
                         if station['allegiance'] in allegiances:
-                            all_logo = allegiances[station['allegiance']]
-                        fmt = (all_logo, station_name, controlling_faction, faction_abbreviation)
-                        embed.add_field(name='{} {} ◆ {} ({})'.format(*fmt),
-                                        value='→ Services: {}'.format(', '.join(options)),
-                                        inline=False)
+                            allegiance_logo = allegiances[station['allegiance']]
+                        fmt = (allegiance_logo, station_name, controlling_faction, faction_abbreviation)
+                        messages.append(['{} {} ◆ {} ({})'.format(*fmt), '→ Services: {}'.format(', '.join(options))])
                     thumbs = {'Independent': 'https://i.imgur.com/r4d7tPt.png',
                               'Alliance': 'https://i.imgur.com/OWf0P6u.png',
                               'Empire': 'https://i.imgur.com/KTmp5MF.png',
                               'Federation': 'https://i.imgur.com/3oT7gr0.png',
                               'Pilots Federation': 'https://i.imgur.com/tshl8xE.png',
                               'Guardian': 'https://edassets.org/static/img/power-ethos/Covert.png'}
-                    embed.set_footer(text='Use system {}, <station name> for more details'.format(system_name))
-                    embed.set_thumbnail(url=thumbs[allegiance])
-                    await ctx.send(embed=embed)
+                    await utilities.multi_embed(
+                        color=utilities.color_elite,
+                        channel=ctx,
+                        thumb_url=thumbs[allegiance],
+                        title=system_name,
+                        description=system_information,
+                        messages=messages,
+                        footer=f'Use system {system_name} for more details.'
+                    )
                 except Exception as e:
-                    await ctx.send('System not found')
-                    print('[{}] An error occurred when retrieving data for a system: {}'.format(datetime.now(), e))
+                    await utilities.single_embed(
+                        color=utilities.color_alert,
+                        title=f'System "{system}"" not found!',
+                        description='Please check your spelling.',
+                        channel=ctx
+                    )
+                    print(f'[{datetime.now()}] An error occurred when retrieving data for a system: {e}')
                     raise
 
-    @commands.command()
-    async def dist(self, ctx, *args):
+    @commands.command(aliases=['dist', 'distance'])
+    async def distance_calculator(self, ctx, *args):
         async with aiohttp.ClientSession() as session:
             systems = ' '.join(args).split(',')
             system1, system2 = (systems[0].strip(), systems[1].strip())
-            system1_fetch = await self.fetch(session,
-                                             'http://www.edsm.net/api-v1/system?sysname=' + system1 + '&coords=1')
-            system2_fetch = await self.fetch(session,
-                                             'http://www.edsm.net/api-v1/system?sysname=' + system2 + '&coords=1')
+            system1_fetch = await self.fetch(session, f'http://www.edsm.net/api-v1/system?sysname={system1}&coords=1')
+            system2_fetch = await self.fetch(session, f'http://www.edsm.net/api-v1/system?sysname={system2}&coords=1')
 
             system1_json = json.loads(system1_fetch)
             system2_json = json.loads(system2_fetch)
@@ -330,22 +358,27 @@ class EliteDangerous(commands.Cog):
 
             courier = '<:courier:511301675198447616>'
 
-            embed = Embed(
-                description='{} {} {}: {} LY'.format(system1_name, courier, system2_name, distance),
-                color=Color.blue())
-            await ctx.send(embed=embed)
+            await utilities.single_embed(
+                color=utilities.color_elite,
+                title=f'{system1_name} {courier} {system2_name}: {distance} LY',
+                channel=ctx
+            )
 
-    @commands.command(aliases=['cmdr', 'CMDR'])
-    async def pilot(self, ctx, *, pilot_name: str):
+    @commands.command(aliases=['cmdr', 'CMDR', 'pilot'])
+    async def pilot_information(self, ctx, *, pilot_name: str):
+        await utilities.single_embed(
+            color=utilities.color_elite,
+            title='Please wait a moment while I gather CMDR data...',
+            channel=ctx,
+            delete_after=3
+        )
         try:
-            with open('files/credentials.json') as f:
-                data = json.load(f)
             json_data = {
                 "header": {
                     "appName": "Artemis_Bot",
                     "appVersion": "0.7",
                     "isDeveloped": True,
-                    "APIkey": data['inara'],
+                    "APIkey": utilities.inara_api,
                     "commanderName": "Hatchet Jackk"
                 },
                 "events": [
@@ -358,105 +391,111 @@ class EliteDangerous(commands.Cog):
                     }
                 ]
             }
-            json_string = json.dumps(json_data)
-            url = 'https://inara.cz/inapi/v1/'
-            r = requests.post(url, json_string)
-            pilot_data = list(r.json()['events'])[0]
-            pilot_name = pilot_data['eventData']['commanderName']
+            async with aiohttp.ClientSession() as session:
+                f = json.loads(await self.post(session, 'https://inara.cz/inapi/v1/', json_data))
 
-            # get wing information
-            if 'commanderWing' in pilot_data['eventData']:
-                wing_name = pilot_data['eventData']['commanderWing']['wingName']
-                wing_role = pilot_data['eventData']['commanderWing']['wingMemberRank']
-            else:
-                wing_name = 'No Wing'
-                wing_role = 'No Role'
-            try:
-                preferred_role = pilot_data['eventData']['preferredGameRole']
-            except Exception as e:
-                print('An error occurred when retrieving preferred role for {}: {}'.format(pilot_name, e))
-                preferred_role = None
-            pilot_page = pilot_data['eventData']['inaraURL']
+                pilot_data = list(f['events'])[0]
+                pilot_name = pilot_data['eventData']['commanderName']
 
-            # get pilot data by scraping pilot_page
-            r = requests.get(pilot_page)
-            soup = BeautifulSoup(r.content, 'lxml')
-            table = soup.find('table', class_='pfl')
-            table_data = []
-            current_ship, ship_id, allegiance, credit_bal = '', '', '', ''
-            pilot_information = table.find_all('tr')
-            for row in pilot_information:
-                cols = [value.text.strip() for value in row.find_all('td') if 'CMDR' not in value]
-                table_data.append([value for value in cols if value])
-            # remove cmdr from list
-            del table_data[0]
-            for value in table_data:
-                if value[0].startswith('Registered ship name'):
-                    current_ship = value[0].replace('Registered ship name', '')
-                if value[0].startswith('Registered ship ID'):
-                    ship_id = value[0].replace('Registered ship ID', '')
-                if value[2].startswith('Credit Balance'):
-                    credit_bal = value[2].replace('Credit Balance', '')
-                if value[1].startswith('Allegiance'):
-                    allegiance = value[1].replace('Allegiance', '')
-
-            # get rank data
-            rank_table_data = []
-            rank_information = soup.findAll('div', class_='mainblock subblock textcenter')
-            for rank in rank_information[0]:
-                span = rank.find_all('span')
-                span = [value.text.strip() for value in span]
-                if span[0] == wing_name:
-                    pass
+                # get wing information
+                if 'commanderWing' in pilot_data['eventData']:
+                    wing_name = pilot_data['eventData']['commanderWing']['wingName']
+                    wing_role = pilot_data['eventData']['commanderWing']['wingMemberRank']
                 else:
-                    rank_text = '{}: {}'.format(span[0], span[1])
-                    rank_table_data.append(rank_text)
-            action_ranks = '\n'.join(rank_table_data)
+                    wing_name = 'No Wing'
+                    wing_role = 'No Role'
+                try:
+                    preferred_role = pilot_data['eventData']['preferredGameRole']
+                except Exception as e:
+                    print('An error occurred when retrieving preferred role for {}: {}'.format(pilot_name, e))
+                    preferred_role = None
+                pilot_page = pilot_data['eventData']['inaraURL']
 
-            # get allegiance data
-            allegiance_table_data = []
-            for value in rank_information[1]:
-                span = [value.text.strip() for value in value.find_all('span')]
-                allegiance_table_data.append('{}: {}'.format(span[0], span[1]))
-            allegiance_ranks = '\n'.join(allegiance_table_data)
+                # get pilot data by scraping pilot_page
+                r = await self.fetch(session, pilot_page)
+                soup = BeautifulSoup(r, 'lxml')
+                table = soup.find('table', class_='pfl')
+                table_data = []
+                current_ship, ship_id, allegiance, credit_bal = '', '', '', ''
+                pilot_information = table.find_all('tr')
+                for row in pilot_information:
+                    cols = [value.text.strip() for value in row.find_all('td') if 'CMDR' not in value]
+                    table_data.append([value for value in cols if value])
+                # remove cmdr from list
+                del table_data[0]
+                for value in table_data:
+                    if value[0].startswith('Registered ship name'):
+                        current_ship = value[0].replace('Registered ship name', '')
+                    if value[0].startswith('Registered ship ID'):
+                        ship_id = value[0].replace('Registered ship ID', '')
+                    if value[2].startswith('Credit Balance'):
+                        credit_bal = value[2].replace('Credit Balance', '')
+                    if value[1].startswith('Allegiance'):
+                        allegiance = value[1].replace('Allegiance', '')
 
-            fmt = (wing_name, wing_role.title(), preferred_role, allegiance, credit_bal, current_ship, ship_id,
-                   action_ranks, allegiance_ranks, pilot_page)
+                # get rank data
+                rank_table_data = []
+                rank_information = soup.findAll('div', class_='mainblock subblock textcenter')
+                for rank in rank_information[0]:
+                    span = rank.find_all('span')
+                    span = [value.text.strip() for value in span]
+                    if span[0] == wing_name:
+                        pass
+                    else:
+                        rank_text = '{}: {}'.format(span[0], span[1])
+                        rank_table_data.append(rank_text)
+                action_ranks = '\n'.join(rank_table_data)
 
-            pilot_info = Embed(title='CMDR {}'.format(pilot_name),
-                               color=Color.orange(),
-                               description='**{}**, *{}*\n'
-                                           '{}\n'
-                                           'Allegiance: {}\n'
-                                           'Balance: {}\n'
-                                           'Current Ship: {} ({})\n\n'
-                                           '__Ranks__\n'
-                                           '{}\n\n'
-                                           '__Reputation__\n'
-                                           '{}\n\n'
-                                           '{}'.format(*fmt))
+                # get allegiance data
+                allegiance_table_data = []
+                for value in rank_information[1]:
+                    span = [value.text.strip() for value in value.find_all('span')]
+                    allegiance_table_data.append('{}: {}'.format(span[0], span[1]))
+                allegiance_ranks = '\n'.join(allegiance_table_data)
 
-            pilot_info.set_thumbnail(url='https://inara.cz/images/weblogo2.png')
-            if 'avatarImageURL' in pilot_data['eventData']:
-                pilot_info.set_thumbnail(url=pilot_data['eventData']['avatarImageURL'])
-            await ctx.send(embed=pilot_info)
+                avatar = pilot_data.get('eventData').get('avatarImageURL')
+                if avatar is None:
+                    avatar = 'https://inara.cz/images/weblogo2.png'
 
-        except Exception as e:
-            await ctx.send('Pilot not found.')
-            print('An error occurred when retrieving pilot data for {}: {}'.format(pilot_name, e))
+                await utilities.single_embed(
+                    color=utilities.color_elite,
+                    title=f'CMDR {pilot_name}',
+                    description=''
+                    f'**{wing_name}**, *{wing_role.title()}*\n'
+                    f'{preferred_role}\n'
+                    f'Allegiance: {allegiance}\n'
+                    f'Balance: {credit_bal}\n'
+                    f'Current Ship: {current_ship} ({ship_id})\n'
+                    f'\n'
+                    f'__Ranks__\n'
+                    f'{action_ranks}\n'
+                    f'\n'
+                    f'__Reputation__\n'
+                    f'{allegiance_ranks}\n'
+                    f'\n'
+                    f'{pilot_page}',
+                    channel=ctx,
+                    thumb_url=avatar
+                )
+
+        except Exception:
+            await utilities.single_embed(
+                color=utilities.color_alert,
+                title=f'Pilot "{pilot_name}" not found!',
+                description='Please check your spelling.\n'
+                            'It is possible this CMDR is not in INARA.',
+                channel=ctx
+            )
             raise
 
-    @staticmethod
-    async def get_pilot_information(cmdr_name):
+    async def get_pilot_information(self, cmdr_name):
         try:
-            with open('files/credentials.json') as f:
-                data = json.load(f)
             json_data = {
                 "header": {
                     "appName": "Artemis_Bot",
                     "appVersion": "0.7",
                     "isDeveloped": True,
-                    "APIkey": data['inara'],
+                    "APIkey": utilities.inara_api,
                     "commanderName": "Hatchet Jackk"
                 },
                 "events": [
@@ -469,15 +508,13 @@ class EliteDangerous(commands.Cog):
                     }
                 ]
             }
-            json_string = json.dumps(json_data)
-            r = requests.post('https://inara.cz/inapi/v1/', json_string)
-            pilot_data = list(r.json()['events'])[0]
-            # pilot_name = pilot_data['eventData']['commanderName']
-
-            pilot_page = pilot_data['eventData']['inaraURL']
-            if pilot_page is None:
-                return None
-            return pilot_page
+            async with aiohttp.ClientSession() as session:
+                f = json.loads(await self.post(session, 'https://inara.cz/inapi/v1/', json_data))
+                pilot_data = list(f['events'])[0]
+                pilot_page = pilot_data['eventData']['inaraURL']
+                if pilot_page is None:
+                    return None
+                return pilot_page
         except Exception as e:
             print('[{}] An error occurred when retrieving pilot information error: {}'.format(datetime.now(), e))
             return None
