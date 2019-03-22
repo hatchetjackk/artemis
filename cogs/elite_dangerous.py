@@ -27,23 +27,14 @@ class EliteDangerous(commands.Cog):
             channel=ctx,
             color=utilities.color_help,
             name='Elite Help',
-            value='`wanted` List Wanted CMDRs for this guild\n'
+            value='`elite help` This menu!\n'
+                  '`wanted` List Wanted CMDRs for this guild\n'
                   '`wanted add` Add a CMDR to the Wanted list\n'
-                  '`wanted remove` Remove a CMDR from the Wanted list\n'
+                  '`wanted remove [cmdr]` Remove a CMDR from the Wanted list\n'
                   '`faction [faction_name]` Get details about a faction\n'
                   '`system [system_name]` Get details about a system name\n'
                   '`dist [system1], [system2]` Get the distance between two systems\n'
                   '`cmdr [cmdr_name]` Get details about a CMDR (must be in INARA)')
-
-    @staticmethod
-    async def fetch(session, url):
-        async with session.get(url) as response:
-            return await response.text()
-
-    @staticmethod
-    async def post(session, url, payload):
-        async with session.post(url, json=payload) as response:
-            return await response.text()
 
     @commands.group()
     async def wanted(self, ctx):
@@ -142,8 +133,8 @@ class EliteDangerous(commands.Cog):
             delete_after=4
         )
         async with aiohttp.ClientSession() as session:
-            url = f'http://elitebgs.kodeblox.com/api/eddb/v3/factions?name={faction.lower()}'
-            f = await self.fetch(session, url)
+            url = f'http://elitebgs.kodeblox.com/api/eddb/v3/factions?name={faction}'
+            f = await utilities.fetch(session, url)
             values = json.loads(f)['docs'][0]
             faction_name = values['name']
             faction_id = values['id']
@@ -155,7 +146,7 @@ class EliteDangerous(commands.Cog):
 
             if home_system_id is not None:
                 url = 'http://elitebgs.kodeblox.com/api/eddb/v3/systems?eddbid={}'.format(home_system_id)
-                f = await self.fetch(session, url)
+                f = await utilities.fetch(session, url)
                 values = json.loads(f)['docs'][0]
                 home_system_name = values['name']
             else:
@@ -165,7 +156,7 @@ class EliteDangerous(commands.Cog):
             messages = []
             if faction_id is not None:
                 url = 'https://eddb.io/faction/{}'.format(faction_id)
-                f = await self.fetch(session, url)
+                f = await utilities.fetch(session, url)
                 soup = BeautifulSoup(f, 'lxml')
                 faction_system_information = soup.findAll('tr', class_='systemRow')
                 for system in faction_system_information:
@@ -210,7 +201,7 @@ class EliteDangerous(commands.Cog):
             if len(args) > 1:
                 system, station_name = args[0].strip(), args[1].strip()
                 url = f'https://www.edsm.net/api-system-v1/stations?sysname={system}'
-                f = await self.fetch(session, url)
+                f = await utilities.fetch(session, url)
                 values = json.loads(f)
                 system = values['name']
                 for station in values['stations']:
@@ -260,7 +251,7 @@ class EliteDangerous(commands.Cog):
                     system = args[0].strip()
                     url = f'https://www.edsm.net/api-v1/system?sysname={system}' \
                         f'&coords=1&showInformation=1&showPrimaryStar=1'
-                    f = await self.fetch(session, url)
+                    f = await utilities.fetch(session, url)
                     system_data = json.loads(f)
                     system_name = system_data['name']
                     system_information = ''
@@ -281,7 +272,7 @@ class EliteDangerous(commands.Cog):
 
                     messages = []
                     url = f'https://www.edsm.net/api-system-v1/stations?sysname={system}'
-                    f = await self.fetch(session, url)
+                    f = await utilities.fetch(session, url)
                     stations_data = json.loads(f)
                     for station in stations_data['stations']:
                         station_name = station['name']
@@ -331,24 +322,30 @@ class EliteDangerous(commands.Cog):
 
     @commands.command(aliases=['dist', 'distance'])
     async def distance_calculator(self, ctx, *args):
+        systems = ' '.join(args).split(',')
+        system1, system2 = (systems[0].strip(), systems[1].strip())
+
+        await utilities.single_embed(
+            color=utilities.color_elite,
+            title=f'Calculating distance between {system1.title()} and {system2.title()}',
+            channel=ctx,
+            delete_after=3
+        )
+
         async with aiohttp.ClientSession() as session:
-            systems = ' '.join(args).split(',')
-            system1, system2 = (systems[0].strip(), systems[1].strip())
-            system1_fetch = await self.fetch(session, f'http://www.edsm.net/api-v1/system?sysname={system1}&coords=1')
-            system2_fetch = await self.fetch(session, f'http://www.edsm.net/api-v1/system?sysname={system2}&coords=1')
+            url = 'http://www.edsm.net/api-v1/system?sysname={0}&coords=1'
+            system1 = json.loads(await utilities.fetch(session, url.format(system1)))
+            system2 = json.loads(await utilities.fetch(session, url.format(system2)))
 
-            system1_json = json.loads(system1_fetch)
-            system2_json = json.loads(system2_fetch)
+            system1_name = system1['name']
+            x1 = system1['coords']['x']
+            y1 = system1['coords']['y']
+            z1 = system1['coords']['z']
 
-            system1_name = system1_json['name']
-            x1 = system1_json['coords']['x']
-            y1 = system1_json['coords']['y']
-            z1 = system1_json['coords']['z']
-
-            system2_name = system2_json['name']
-            x2 = system2_json['coords']['x']
-            y2 = system2_json['coords']['y']
-            z2 = system2_json['coords']['z']
+            system2_name = system2['name']
+            x2 = system2['coords']['x']
+            y2 = system2['coords']['y']
+            z2 = system2['coords']['z']
 
             x = x2 - x1
             y = y2 - y1
@@ -356,11 +353,9 @@ class EliteDangerous(commands.Cog):
 
             distance = round(sqrt(x ** 2 + y ** 2 + z ** 2) * 100) / 100
 
-            courier = '<:courier:511301675198447616>'
-
             await utilities.single_embed(
                 color=utilities.color_elite,
-                title=f'{system1_name} {courier} {system2_name}: {distance} LY',
+                title=f':rocket: {system1_name} to {system2_name}: {distance} LY',
                 channel=ctx
             )
 
@@ -392,7 +387,7 @@ class EliteDangerous(commands.Cog):
                 ]
             }
             async with aiohttp.ClientSession() as session:
-                f = json.loads(await self.post(session, 'https://inara.cz/inapi/v1/', json_data))
+                f = json.loads(await utilities.post(session, 'https://inara.cz/inapi/v1/', json_data))
 
                 pilot_data = list(f['events'])[0]
                 pilot_name = pilot_data['eventData']['commanderName']
@@ -412,7 +407,7 @@ class EliteDangerous(commands.Cog):
                 pilot_page = pilot_data['eventData']['inaraURL']
 
                 # get pilot data by scraping pilot_page
-                r = await self.fetch(session, pilot_page)
+                r = await utilities.fetch(session, pilot_page)
                 soup = BeautifulSoup(r, 'lxml')
                 table = soup.find('table', class_='pfl')
                 table_data = []
@@ -488,7 +483,8 @@ class EliteDangerous(commands.Cog):
             )
             raise
 
-    async def get_pilot_information(self, cmdr_name):
+    @staticmethod
+    async def get_pilot_information(cmdr_name):
         try:
             json_data = {
                 "header": {
@@ -509,7 +505,7 @@ class EliteDangerous(commands.Cog):
                 ]
             }
             async with aiohttp.ClientSession() as session:
-                f = json.loads(await self.post(session, 'https://inara.cz/inapi/v1/', json_data))
+                f = json.loads(await utilities.post(session, 'https://inara.cz/inapi/v1/', json_data))
                 pilot_data = list(f['events'])[0]
                 pilot_page = pilot_data['eventData']['inaraURL']
                 if pilot_page is None:
