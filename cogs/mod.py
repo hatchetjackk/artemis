@@ -1,7 +1,9 @@
 import discord
 import os
 import sys
-from artemis import load_db
+import time
+import aiohttp
+import cogs.utilities as utilities
 from discord.ext import commands
 
 
@@ -18,15 +20,22 @@ class Mod(commands.Cog):
 
     @admin.group()
     async def help(self, ctx):
-        embed = discord.Embed(color=discord.Color.blue())
-        embed.add_field(name='Admin Help',
-                        value='`admin stop` Stop Artemis\n'
+        embed = discord.Embed(color=discord.Color.blue(), title='Admin Help')
+        embed.add_field(name='These commands are only accessible by the bot owner!',
+                        value='`admin help` This menu!\n'
+                              '`admin ping` Issue a verbose ping\n'
+                              '`admin guild` Retrieve guild data\n'
+                              '`admin clear [num]` Clear x number of messages\n'
+                              '`admin stop` Stop Artemis\n'
                               '`admin reboot` Reboot Artemis\n'
                               '`admin emoji` Print server emoji list\n'
                               '`admin gavatar` Print the guild icon url\n'
                               '`admin spam [channel]` Change the guild\'s spam channel\n'
                               '`admin prefix [new_prefix]` Change the guild\'s prefix\n'
-                              '`admin autorole [role name]` Set a new autorole or remove it with `remove`')
+                              '`admin autorole [role name]` Set a new autorole\n'
+                              '`admin autorole remove` Remove the set autorole\n'
+                              '`admin modrole [role name]` Set the moderator role\n'
+                              '`admin modrole remove` Remove the moderator role')
         await ctx.send(embed=embed)
 
     @admin.group()
@@ -41,9 +50,37 @@ class Mod(commands.Cog):
         os.execl(python, python, *sys.argv)
 
     @admin.group()
+    async def ping(self, ctx):
+        start = time.monotonic()
+        before = time.monotonic()
+        content = await ctx.send("Pinging..")
+        after = time.monotonic()
+        ping = round((after - before) * 1000)
+        await content.edit(content=f"Pong! \nMessage:`{ping}ms")
+        latency = round(self.client.latency * 1000)
+        await content.edit(content=f"Pong! \nMessage: `{ping}ms`\nLatency: `{latency}ms`")
+        meh = time.monotonic()
+        async with aiohttp.ClientSession() as session:
+            url = "https://discordapp.com/"
+            async with session.get(url) as resp:
+                if resp.status is 200:
+                    k = time.monotonic()
+                    dp = round((k - meh) * 1000)
+                    dp = f"`{dp}ms`"
+                else:
+                    dp = "Failed"
+        await content.edit(content=f"Pong! \nMessage: `{ping}ms`\nLatency: `{latency}ms`\nDiscord: {dp}")
+        end = time.monotonic()
+        ov = round((end - start) * 1000)
+        await content.edit(
+            content=f"Pong! \nMessage: `{ping}ms`\nLatency: `{latency}ms`\nDiscord: {dp}\nOverall: `{ov}ms`")
+
+    @admin.group(aliases=['emojis'])
     async def emoji(self, ctx):
         emojis = ctx.guild.emojis
-        await ctx.send(', '.join(emojis))
+        for em in emojis:
+            print(em)
+        await ctx.send(emojis)
 
     @admin.group(aliases=['gavatar'])
     async def print_guild_avatar(self, ctx):
@@ -51,7 +88,7 @@ class Mod(commands.Cog):
 
     @admin.group(aliases=['spam'])
     async def botspam(self, ctx, *, channel: str):
-        conn, c = await load_db()
+        conn, c = await utilities.load_db()
         channel = discord.utils.get(ctx.guild.channels, name=channel)
         with conn:
             c.execute("UPDATE guilds SET spam = (:spam) WHERE id = (:id)", {'spam': channel.id, 'id': ctx.guild.id})
@@ -64,14 +101,14 @@ class Mod(commands.Cog):
         if len(prefix) > 1:
             await ctx.send('Please use single character prefixes only.')
             return
-        conn, c = await load_db()
+        conn, c = await utilities.load_db()
         with conn:
             c.execute("UPDATE guilds SET prefix = (:prefix) WHERE id = (:id)", {'prefix': prefix, 'id': ctx.guild.id})
         await ctx.send('Changed guild prefix to `{}`'.format(prefix))
 
     @admin.group()
     async def autorole(self, ctx, *, role=None):
-        conn, c = await load_db()
+        conn, c = await utilities.load_db()
         if role == 'remove':
             with conn:
                 c.execute("UPDATE guilds SET autorole = (:autorole) WHERE id = (:id)",
@@ -93,7 +130,7 @@ class Mod(commands.Cog):
 
     @admin.group()
     async def modrole(self, ctx, *, role=None):
-        conn, c = await load_db()
+        conn, c = await utilities.load_db()
         if role == 'remove':
             with conn:
                 c.execute("UPDATE guilds SET mod_role = (:mod_role) WHERE id = (:id)",
@@ -124,7 +161,7 @@ class Mod(commands.Cog):
 
     @commands.command(aliases=['server'])
     async def guild(self, ctx):
-        conn, c = await load_db()
+        conn, c = await utilities.load_db()
         c.execute("SELECT guild, mod_role, autorole, prefix FROM guilds WHERE id = (:id)", {'id': ctx.guild.id})
         guild, mod_role, autorole, prefix = c.fetchone()
         autorole = discord.utils.get(ctx.guild.roles, id=autorole)
@@ -137,7 +174,7 @@ class Mod(commands.Cog):
         await ctx.send(embed=embed)
 
     async def spam(self, ctx, message):
-        conn, c = await load_db()
+        conn, c = await utilities.load_db()
         c.execute("SELECT guild, spam FROM guilds WHERE id = (:id)", {'id': ctx.guild.id})
         guild, spam = c.fetchone()
         if spam is not None:
@@ -157,7 +194,6 @@ class Mod(commands.Cog):
     @prefix.error
     @modrole.error
     @botspam.error
-    # @commands.Cog.listener()
     async def on_message_error(self, ctx, error):
         if isinstance(error, commands.CommandOnCooldown):
             msg = 'You\'ve triggered a cool down. Please try again in {} sec.'.format(int(error.retry_after))
