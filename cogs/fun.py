@@ -4,6 +4,7 @@ import urllib.request
 import urllib.parse
 import discord
 import requests
+import cogs.utilities as utilities
 from datetime import datetime
 from discord.ext.commands import BucketType, CommandNotFound
 from PyDictionary import PyDictionary
@@ -17,37 +18,42 @@ class Fun(commands.Cog):
     @commands.group()
     async def fun(self, ctx):
         if ctx.invoked_subcommand is None:
-            pass
+            await utilities.single_embed(
+                color=utilities.color_alert,
+                title='Try `fun help` for more options.',
+                channel=ctx
+            )
 
     @fun.group()
     async def help(self, ctx):
-        embed = discord.Embed(color=discord.Color.blue())
-        embed.add_field(name='Fun Help',
-                        value='`playing` View all current statuses\n'
-                              '`ping` Check if Artemis is reactive\n'
-                              '`roll ndn` Roll n dice\n'
-                              '`draw` Draw a random card. High/low anyone?\n'
-                              '`hello` Say hi to Artemis\n'
-                              '`define [word]` Get a definition\n'
-                              '`google [topic]` Retrieve the first link from Google\n'
-                              '`r/[subreddit]` Retrieve a subreddit link\n'
-                              '`youtube [topic]` Retrieve the first video from YouTube\n'
-                              '`rps [rock/paper/scissors]` Play against Artemis')
-        await ctx.send(embed=embed)
+        await utilities.single_embed(
+            color=utilities.color_help,
+            title='Fun Help',
+            channel=ctx,
+            description='`playing` View all current statuses\n'
+                        '`ping` Check if Artemis is reactive\n'
+                        '`roll ndn` Roll n dice\n'
+                        '`draw` Draw a random card. High/low anyone?\n'
+                        '`hello` Say hi to Artemis\n'
+                        '`define [word]` Get a definition\n'
+                        '`google [topic]` Retrieve the first link from Google\n'
+                        '`r/[subreddit]` Retrieve a subreddit link\n'
+                        '`youtube [topic]` Retrieve the first video from YouTube\n'
+                        '`rps [rock/paper/scissors]` Play against Artemis'
+        )
 
     @commands.command()
     async def playing(self, ctx, *, game_match='all'):
         if game_match == 'all':
-            games_currently_being_played = [member.game.name for member in ctx.guild.members
-                                            if member.game is not None
-                                            and member.id != self.client.user.id]
-            if len(games_currently_being_played) < 1:
-                embed = discord.Embed(title='No one is playing anything!')
-                await ctx.send(embed=embed)
+            games_being_played = [member.game.name for member in ctx.guild.members
+                                  if member.game is not None
+                                  and member.id != self.client.user.id]
+            if len(games_being_played) < 1:
+                await utilities.single_embed(title='No ones is playing anything!', channel=ctx)
             else:
-                embed = discord.Embed(title='Games currently being played'.format(game_match),
-                                      description='\n'.join(games_currently_being_played))
-                await ctx.send(embed=embed)
+                await utilities.single_embed(title='Current Games',
+                                             description='\n'.join(games_being_played),
+                                             channel=ctx)
         else:
             members_playing_game = []
             pattern = re.compile(r'' + re.escape(game_match.lower()))
@@ -61,47 +67,45 @@ class Fun(commands.Cog):
                         else:
                             members_playing_game.append(game)
             if len(members_playing_game) < 1:
-                embed = discord.Embed(title='No members are playing "{}"'.format(game_match))
-                await ctx.send(embed=embed)
+                await utilities.single_embed(title=f'No one is playing {game_match}.', channel=ctx)
             else:
-                embed = discord.Embed(title='Members currently playing "{}"'.format(game_match),
-                                      description='\n'.join(members_playing_game))
-                await ctx.send(embed=embed)
+                await utilities.single_embed(title=f'{len(members_playing_game)} members are playing {game_match}.',
+                                             description='\n'.join(members_playing_game),
+                                             channel=ctx)
 
     @commands.command()
     async def ping(self, ctx):
-        await ctx.send(':ping_pong: Pong')
+        await utilities.single_embed(title=':ping_pong: Pong!', channel=ctx, color=utilities.color_alert)
 
     @commands.command()
     async def roll(self, ctx, dice: str):
         try:
             rolls, limit = map(int, dice.split('d'))
-        except Exception as e:
-            print('An error occurred when rolling dice', e)
-            await ctx.send('Please use the format "NdN" when rolling dice. Thanks!')
-            return
+        except Exception:
+            await utilities.single_embed(title='Please use the format "NdN" when rolling dice. Thanks!', channel=ctx)
+            raise
         rolls = [random.randint(1, limit) for _ in range(rolls)]
         result = ', '.join(str(roll) for roll in rolls)
-        await ctx.send(result)
+        await utilities.single_embed(title=f'You rolled {result} for a total of {sum(rolls)}!', channel=ctx)
 
     @commands.command(aliases=['hi', 'bonjour', 'hola'])
     async def hello(self, ctx):
-        responses = ["Hi, {0.author.mention}!",
-                     "Ahoy, {0.author.mention}!",
-                     "Hey there, {0.author.mention}!",
+        responses = ["Hi, {0.author.name}!",
+                     "Ahoy, {0.author.name}!",
+                     "Hey there, {0.author.name}!",
                      "*[insert traditional greeting here]*",
                      "*0100100001000101010011000100110001001111*\nAhem, I mean: hello!",
                      "Hello. Fine weather we're having.",
                      "Hello, fellow human!"]
-        msg = random.choice(responses).format(ctx.message)
-        await ctx.send(msg)
+        msg = random.choice(responses).format(ctx)
+        await utilities.single_embed(title=msg, channel=ctx)
 
     @commands.command()
     async def define(self, ctx, word: str):
         try:
             dictionary = PyDictionary()
             results = dictionary.meaning(word)
-            embed = discord.Embed(title=word.upper(), color=discord.Color.blue())
+            messages = []
             for key, definition in results.items():
                 definitions = []
                 num = 1
@@ -109,15 +113,23 @@ class Fun(commands.Cog):
                     definitions.append(str(num) + ') ' + value)
                     num += 1
                 all_def = '\n'.join(definitions)
-                embed.add_field(name=key, value=all_def)
-            await ctx.send(embed=embed)
+                messages.append([key, all_def])
+            await utilities.multi_embed(
+                title=word.upper(),
+                messages=messages,
+                channel=ctx
+            )
         except Exception as e:
             print('[{}] The definition for {} could not be found: {}'.format(datetime.now(), word, e))
-            await ctx.send('Sorry, I could not find the definition for {}!'.format(word))
+            await utilities.single_embed(
+                color=utilities.color_alert,
+                title=f'Sorry, I could not find the definition for {word}!',
+                channel=ctx
+            )
 
     @commands.command(aliases=['g'])
     async def google(self, ctx, *, search: str):
-        r = requests.get('http://www.google.com/search?q="{}"&btnI'.format(search))
+        r = requests.get(f'http://www.google.com/search?q="{search}"&btnI')
         await ctx.send(r.url)
 
     @commands.Cog.listener()
@@ -133,18 +145,21 @@ class Fun(commands.Cog):
         win = {'paper': 'rock', 'rock': 'scissors', 'scissors': 'paper'}
 
         if choice not in rps:
-            await ctx.send('You have to pick rock, paper, or scissors.')
+            await utilities.single_embed(
+                color=utilities.color_alert,
+                title='You have to pick rock, paper, or scissors.',
+                channel=ctx
+            )
 
         bot_choice = random.choice(rps)
         if bot_choice == choice:
-            await ctx.send('Artemis chose {0}! It\'s a tie!'.format(bot_choice))
-            print('{0} played rock, paper, scissors and tied with Artemis.'.format(ctx.author.name))
+            await utilities.single_embed(title=f'Artemis chose {bot_choice}! It\'s a tie!', channel=ctx)
         if choice == lose.get(bot_choice):
-            await ctx.send('Artemis chose {0}! You lost!'.format(bot_choice))
-            print('{0} played rock, paper, scissors and lost to Artemis.'.format(ctx.author.name))
+            await utilities.single_embed(color=utilities.color_alert, title=f'Artemis chose {bot_choice}! You lost!',
+                                         channel=ctx)
         if choice == win.get(bot_choice):
-            await ctx.send('Artemis chose {0}! You win!'.format(bot_choice))
-            print('{0} played rock, paper, scissors and beat Artemis!'.format(ctx.author.name))
+            await utilities.single_embed(color=utilities.color_help, title=f'Artemis chose {bot_choice}! You won!',
+                                         channel=ctx)
 
     @commands.command(aliases=['yt'])
     @commands.cooldown(rate=1, per=15, type=BucketType.user)
@@ -153,9 +168,8 @@ class Fun(commands.Cog):
         html_content = urllib.request.urlopen("http://www.youtube.com/results?" + query_string)
         search_results = re.findall(r'href=\"\/watch\?v=(.{11})', html_content.read().decode())
         await ctx.send("http://www.youtube.com/watch?v=" + search_results[0])
-        print('{0} searched Youtube for "{1}".'.format(ctx.author.name, ' '.join(args)))
 
-    @commands.command()
+    @commands.command(aliases=['draw'])
     async def card(self, ctx):
         """ draw a random card from a deck """
         card = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 'Ace', 'King', 'Queen', 'Jack']
@@ -164,27 +178,37 @@ class Fun(commands.Cog):
         rcard = random.choice(card)
         rstyle = random.choice(style)
 
-        fmt = 'You drew the {0} of {1}!'
-        await ctx.send(fmt.format(rcard, rstyle))
-        print('{0} drew the {1} of {2}.'.format(ctx.author.name, rcard, rstyle))
+        await utilities.single_embed(title=f'You drew the {rcard} of {rstyle}!', channel=ctx)
 
     @rps.error
     @youtube.error
     @commands.Cog.listener()
     async def on_message_error(self, ctx, error):
         if isinstance(error, commands.CommandOnCooldown):
-            msg = 'You\'ve triggered a cool down. Please try again in {} sec.'.format(
-                int(error.retry_after))
-            await ctx.send(msg)
+            msg = f'You\'ve triggered a cool down. Please try again in {error.retry_after} sec.'
+            await utilities.single_embed(
+                color=utilities.color_alert,
+                title=msg,
+                channel=ctx
+            )
         if isinstance(error, commands.CheckFailure):
-            msg = 'You do not have permission to run this command.'
-            await ctx.send(msg)
+            await utilities.single_embed(
+                color=utilities.color_alert,
+                title='You do not have permission to run this command.',
+                channel=ctx
+            )
         if isinstance(error, commands.MissingRequiredArgument):
-            msg = 'A critical argument is missing from the command.'
-            await ctx.send(msg)
+            await utilities.single_embed(
+                color=utilities.color_alert,
+                title='A critical argument is missing from the command.',
+                channel=ctx
+            )
         if isinstance(error, CommandNotFound):
-            msg = 'Did you mean to try another command?'
-            await ctx.send(msg)
+            await utilities.single_embed(
+                color=utilities.color_alert,
+                title='Did you mean to try another command?',
+                channel=ctx
+            )
 
 
 def setup(client):
