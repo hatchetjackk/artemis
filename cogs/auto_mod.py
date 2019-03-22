@@ -23,8 +23,7 @@ class Automod(commands.Cog):
     async def roles(self, ctx):
         roles = ['`{}`'.format(value.name) for value in ctx.guild.roles if value.name != '@everyone']
         fmt = [ctx.guild.name, '\n'.join(roles)]
-        await utilities.embed_msg(
-            color=utilities.color_info,
+        await utilities.single_embed(
             thumb_url=ctx.guild.icon_url,
             name='**Roles**',
             value='The roles for {0} include:\n{1}'.format(*fmt),
@@ -43,24 +42,21 @@ class Automod(commands.Cog):
                 await member.add_roles(autorole)
 
             await utilities.alert_embed(
-                color=utilities.color_alert,
                 thumb_url=member.avatar_url,
                 name='**A New User Has Joined the Server**',
                 value='{0.name} joined {0.guild}.'.format(member),
-                guildid=member.guild.id
+                obj=member
             )
             await utilities.alert_embed(
-                color=utilities.color_alert,
                 thumb_url=member.avatar_url,
                 name='**Autorole Assigned**',
                 value=f'{member.name} was assigned the role {autorole.name}',
-                guildid=member.guild.id
+                obj=member
             )
             general_channel = discord.utils.get(member.guild.channels, name='general')
             guild_blacklist = await self.guild_blacklist()
             if member.guild.name not in guild_blacklist:
-                await utilities.embed_msg(
-                    color=utilities.color_info,
+                await utilities.single_embed(
                     title='Welcome to {0.guild.name}, {0.name}!'.format(member),
                     channel=general_channel
                 )
@@ -76,7 +72,7 @@ class Automod(commands.Cog):
                 name='**A Member Has Left**',
                 thumb_url=member.avatar_url,
                 value='{0.name} has left {0.guild}.'.format(member),
-                guildid=member.guild.id
+                obj=member
             )
         except Exception as e:
             print(f'An error occurred when removing a user: {e}')
@@ -94,8 +90,7 @@ class Automod(commands.Cog):
             spam_channel_id = await utilities.get_spam_channel(before.guild.id)
             if spam_channel_id is not None:
                 spam_channel = before.guild.get_channel(spam_channel_id)
-                await utilities.embed_msg(
-                    color=utilities.color_alert,
+                await utilities.single_embed(
                     thumb_url=after.author.avatar_url,
                     name=f'{after.author.name} edited a message',
                     value=f'**Channel**: {before.channel.mention}\n'
@@ -111,12 +106,11 @@ class Automod(commands.Cog):
         if message.author.bot:
             return
         await utilities.alert_embed(
-            color=utilities.color_alert,
             thumb_url=message.author.avatar_url,
             name=f'{message.author.name}\'s message was deleted',
             value='**Channel**: {0.channel.mention}\n'
                   '**Content**: {0.content}'.format(message),
-            guildid=message.guild.id
+            obj=message
         )
 
     @commands.Cog.listener()

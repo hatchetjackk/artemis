@@ -68,6 +68,7 @@ class Database(commands.Cog):
     @staticmethod
     @commands.Cog.listener()
     async def on_guild_join(guild):
+        # todo
         # get channels
         # find general
         # ask for !Artemis init

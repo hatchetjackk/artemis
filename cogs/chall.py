@@ -26,7 +26,7 @@ class Chall(commands.Cog):
 
     @tourney.group()
     async def help(self, ctx):
-        await utilities.embed_msg(
+        await utilities.single_embed(
             color=utilities.color_help,
             name='**Challonge Help**',
             value='`chall index` View all tournaments\n'
@@ -86,7 +86,6 @@ class Chall(commands.Cog):
             sign_up = tournament.get('sign_up_url')
             url = tournament.get('full_challonge_url')
             date_object = tournament.get('start_at')
-            tourney_id = tournament.get('id')
             date, time = date_object.split('T')
             if sign_up is None:
                 sign_up = 'No sign up page'
@@ -115,26 +114,26 @@ class Chall(commands.Cog):
             sorted_seed = OrderedDict(sorted(seeded_players.items(), key=lambda x: x[0]))
 
             name = f'Status: {state}\nScheduled for {date}'
-            value = f'{style}\nTourney ID: *{id}*'
+            value = f'{style}\nTourney ID: *{tourney_id}*'
             if state != 'complete':
                 value = f'[Sign Up]({sign_up}) / [View]({url})\n{style}\nTourney ID: *{tourney_id}*'
-            embed_messages = [[name, value]]
+            messages = [[name, value]]
 
             # generate message based on tourney state
             if len(seeded_players) > 0 and state != 'complete':
                 name = 'Players (by seed)'
                 value = '\n'.join('{0}: {1}'.format(seed, player) for seed, player in sorted_seed.items())
-                embed_messages.append([name, value])
+                messages.append([name, value])
             else:
                 standings = ['{0}: {1}'.format(place, ', '.join(player)) for place, player in sorted_standings.items()]
                 name = 'Final Results'
                 value = '\n'.join(standings)
-                embed_messages.append([name, value])
+                messages.append([name, value])
             await utilities.multi_embed(
                 title=f'{tourney_name} - {game}',
                 thumb_url=thumb,
                 url=url,
-                messages=embed_messages,
+                messages=messages,
                 channel=ctx
             )
         except Exception as e:
@@ -285,9 +284,9 @@ class Chall(commands.Cog):
                     time_until_start = start_at - datetime.now()
                     days_full, time = time_until_start.__str__().split(',')
                     days = int(days_full.split()[0])
-                    name = f'{tournament_name} is {days} day away!'
-                    if days != 1:
-                        name = f'{tournament_name} is {days} days away!'
+                    remaining_time = f'{tournament_name} is {days} day away!'
+                    if remaining_time != 1:
+                        remaining_time = f'{tournament_name} is {days} days away!'
 
                     if days == 7:
                         c.execute("SELECT one_week_notify FROM tournament_list WHERE id = (:id)", {'id': tourney_id})
@@ -297,11 +296,10 @@ class Chall(commands.Cog):
                                           {'id': tourney_id})
                             challonge_notification_channels = await self.get_challonge_notification_channels()
                             for challonge_channel in challonge_notification_channels:
-                                await utilities.embed_msg(
-                                    color=utilities.color_info,
+                                await utilities.single_embed(
                                     thumb_url=thumb,
                                     title='A Tournament is Fast Approaching!',
-                                    name=name,
+                                    name=remaining_time,
                                     value=f'Remember to [sign up]({sign_up_url})!',
                                     channel=challonge_channel
                                 )
@@ -314,11 +312,10 @@ class Chall(commands.Cog):
                                           {'id': tourney_id})
                             challonge_notification_channels = await self.get_challonge_notification_channels()
                             for challonge_channel in challonge_notification_channels:
-                                await utilities.embed_msg(
-                                    color=utilities.color_info,
+                                await utilities.single_embed(
                                     thumb_url=thumb,
                                     title='A Tournament is Fast Approaching!',
-                                    name=name,
+                                    name=remaining_time,
                                     value=f'Remember to [sign up]({sign_up_url})!',
                                     channel=challonge_channel
                                 )
