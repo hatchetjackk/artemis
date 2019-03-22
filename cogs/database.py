@@ -8,100 +8,98 @@ class Database(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @staticmethod
     @commands.Cog.listener()
-    async def on_member_join(member):
+    async def on_member_join(self, member):
         conn, c = await utilities.load_db()
-        try:
-            with conn:
+        with conn:
+            try:
                 c.execute("INSERT INTO members VALUES (:id, :member_name, :karma, :last_karma_given)",
-                          {'id': member.id, 'member_name': member.name, 'karma': 0, 'last_karma_given': None})
-        except Exception as e:
-            fmt = (datetime.now(), member.name, e)
-            print('[{}] An error occurred when importing {} into the members database: {}'.format(*fmt))
-            raise
-        try:
-            with conn:
+                          {'id': member.id, 'member_name': member.name, 'karma': 0, 'last_karma_given': None}
+                          )
+            except sqlite3.Error:
+                pass
+            try:
                 c.execute("INSERT INTO guild_members VALUES (:id, :guild, :member_id, :member_name, :member_nick)",
                           {'id': member.guild.id, 'guild': member.guild.name, 'member_id': member.id,
                            'member_name': member.name, 'member_nick': member.nick})
-        except Exception as e:
-            fmt = (datetime.now(), member.name, member.guild.name, e)
-            print('[{}] An error occurred when adding {} to {}: {}'.format(*fmt))
-            raise
+            except sqlite3.Error as e:
+                print(f'An error occurred when joining {member} to {member.guild}: {e}')
+                raise
 
-    @staticmethod
     @commands.Cog.listener()
-    async def on_member_remove(member):
+    async def on_member_remove(self, member):
         conn, c = await utilities.load_db()
-        try:
-            with conn:
+        with conn:
+            try:
                 c.execute("DELETE FROM guild_members WHERE id = (:id) and member_id = (:member_id)",
                           {'id': member.guild.id, 'member_id': member.id})
-                print('[{0}] {1.name} has been removed from from {1.guild.name}.'.format(datetime.now(), member))
-        except sqlite3.DatabaseError as e:
-            fmt = (datetime.now(), member.name, member.guild.name, e)
-            print('[{}] An error occurred when removing {} from {}: {}'.format(*fmt))
-            raise
+            except sqlite3.DatabaseError as e:
+                fmt = (datetime.now(), member.name, member.guild.name, e)
+                print('[{}] An error occurred when removing {} from {}: {}'.format(*fmt))
+                raise
 
-    @staticmethod
     @commands.Cog.listener()
-    async def on_member_update(before, after):
+    async def on_member_update(self, before, after):
         conn, c = await utilities.load_db()
-        try:
-            if before.name != after.name or before.nick != after.nick:
-                with conn:
-                    c.execute("SELECT karma, last_karma_given FROM members WHERE id = (:id)",
-                              {'id': before.id})
-                    karma, last_karma = c.fetchall()[0]
+        if before.name != after.name or before.nick != after.nick:
+            with conn:
+                c.execute("SELECT karma, last_karma_given FROM members WHERE id = (:id)",
+                          {'id': before.id})
+                karma, last_karma = c.fetchall()[0]
+                try:
                     c.execute("REPLACE INTO members VALUES (:id, :member_name, :karma, :last_karma_given)",
                               {'id': before.id, 'member_name': after.name, 'karma': karma,
                                'last_karma_given': last_karma})
+                except sqlite3.Error as e:
+                    print(f'An error occurred when updating {before.member}: {e}')
+
+                try:
                     c.execute("REPLACE INTO guild_members VALUES (:id, :guild, :member_id, :member_name, :member_nick)",
                               {'id': before.guild.id, 'guild': before.guild.name, 'member_id': before.id,
                                'member_name': after.name, 'member_nick': after.nick})
                     fmt = (datetime.now(), before.guild.name, before.name, before.nick, after.name, after.nick)
                     print('[{}] (Guild: {}) {}/{} has changed to {}/{}.'.format(*fmt))
-        except Exception as e:
-            print(f'An error occurred when updating {before.name}in the database: {e}')
+                except sqlite3.Error as e:
+                    print(f'An error occurred when updating {before.member}: {e}')
 
-    @staticmethod
     @commands.Cog.listener()
-    async def on_guild_join(guild):
+    async def on_guild_join(self, guild):
         # todo
         # get channels
         # find general
         # ask for !Artemis init
         # begin initialization
         conn, c = await utilities.load_db()
-        try:
-            with conn:
+        with conn:
+            try:
                 c.execute("INSERT INTO guilds VALUES (:id, :guild, :mod_role, :autorole, :prefix, :spam, :thumbnail)",
                           {'id': guild.id, 'guild': guild.name, 'mod_role': None,
                            'autorole': None, 'prefix': '!', 'spam': None, 'thumbnail': None})
                 print(f'[{datetime.now()}] Artemis has joined the {guild.name} guild!')
-        except sqlite3.DatabaseError as e:
-            print(f'An error occurred when Artemis joined {guild.name}: {e}')
+            except sqlite3.DatabaseError as e:
+                print(f'An error occurred when Artemis joined {guild.name}: {e}')
 
-    @staticmethod
     @commands.Cog.listener()
-    async def on_guild_remove(guild):
+    async def on_guild_remove(self, guild):
         print(f'[{datetime.now()}] Artemis has been removed from {guild.name}.')
 
-    @staticmethod
     @commands.Cog.listener()
-    async def on_guild_update(before, after):
+    async def on_guild_update(self, before, after):
         conn, c = await utilities.load_db()
         if before.name != after.name:
             with conn:
                 c.execute("SELECT mod_role, autorole, prefix, spam, thumbnail FROM guilds WHERE id = (:id)",
                           {'id': before.id})
                 mod_role, autorole, prefix, spam, thumbnail = c.fetchall()[0]
-                c.execute(
-                    "REPLACE INTO guilds VALUES (:id, :guild, :mod_role, :autorole, :prefix, :spam, :thumbnail)",
-                    {'id': before.id, 'guild': after.name, 'mod_role': mod_role, 'autorole': autorole, 'prefix': prefix,
-                     'spam': spam, 'thumbnail': thumbnail})
-                print(f'[{datetime.now()}] The {before.name} guild changed its name to {after.name}.')
+                try:
+                    c.execute(
+                        "REPLACE INTO guilds VALUES (:id, :guild, :mod_role, :autorole, :prefix, :spam, :thumbnail)",
+                        {'id': before.id, 'guild': after.name, 'mod_role': mod_role, 'autorole': autorole,
+                         'prefix': prefix, 'spam': spam, 'thumbnail': thumbnail}
+                    )
+                    print(f'[{datetime.now()}] The {before.name} guild changed its name to {after.name}.')
+                except sqlite3.Error as e:
+                    print(f'An error occurred on guild update: {e}')
 
     @commands.command()
     @commands.is_owner()
