@@ -19,7 +19,7 @@ async def prefix(bot, message):
     c.execute("SELECT prefix FROM guilds WHERE id = (:id)", {'id': message.guild.id})
     bot_prefix = c.fetchone()[0]
     return bot_prefix
-client = commands.Bot(command_prefix=prefix)
+client = commands.Bot(command_prefix=prefix, case_insensitive=True)
 client.remove_command('help')
 
 

@@ -18,6 +18,8 @@ class Chat(commands.Cog):
         content = message.content.lower()
         conn, c = await utilities.load_db()
 
+        # todo add responses when @artemis
+
         c.execute("SELECT * FROM bot_responses WHERE message_type = 'status_changing_word_good'")
         good_keys = [value[1] for value in c.fetchall()]
         c.execute("SELECT * FROM bot_responses WHERE message_type = 'status_changing_word_negative'")
