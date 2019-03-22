@@ -27,8 +27,9 @@ class Karma(commands.Cog):
         await utilities.single_embed(
             color=utilities.color_help,
             name='Karma Help',
-            value='`karma check` Check your own Karma\n'
-                  '`karma check [username]` Check a member\'s Karma\n'
+            value='`karma help` This menu!\n'
+                  '`karma check` Check your own Karma\n'
+                  '`karma check [user]` Check a member\'s Karma\n'
                   '`karma board` Check top 10 Karma leaders\n'
                   '`thanks [@user]` Give a member Karma\n',
             channel=ctx

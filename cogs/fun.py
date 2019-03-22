@@ -2,7 +2,6 @@ import random
 import re
 import urllib.request
 import urllib.parse
-import discord
 import requests
 import cogs.utilities as utilities
 from datetime import datetime
@@ -30,7 +29,8 @@ class Fun(commands.Cog):
             color=utilities.color_help,
             title='Fun Help',
             channel=ctx,
-            description='`playing` View all current statuses\n'
+            description='`fun help` This menu!\n'
+                        '`playing` View all current statuses\n'
                         '`ping` Check if Artemis is reactive\n'
                         '`roll ndn` Roll n dice\n'
                         '`draw` Draw a random card. High/low anyone?\n'

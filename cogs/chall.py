@@ -29,7 +29,8 @@ class Chall(commands.Cog):
         await utilities.single_embed(
             color=utilities.color_help,
             name='**Challonge Help**',
-            value='`chall index` View all tournaments\n'
+            value='`chall help` This menu!\n'
+                  '`chall index` View all tournaments\n'
                   '`chall show [id]` Show details about a tournament',
             channel=ctx
         )
