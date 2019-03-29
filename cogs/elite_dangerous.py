@@ -48,8 +48,8 @@ class EliteDangerous(commands.Cog):
             if len(wanted_commanders) == 0:
                 messages.append(['No CMDRs on the WANTED list.', 'Nothing to see here.'])
             else:
-                for cmdr in wanted_commanders:
-                    cmdr_name, reason, inara_page, guild_id, member_id = cmdr
+                for commander in wanted_commanders:
+                    cmdr_name, reason, inara_page, guild_id, member_id = commander
                     messages.append([cmdr_name.title(), f'Reason: {reason}\n{inara_page}'])
             await utilities.multi_embed(
                 color=utilities.color_elite,
@@ -359,7 +359,7 @@ class EliteDangerous(commands.Cog):
                 channel=ctx
             )
 
-    @commands.command(aliases=['cmdr', 'CMDR', 'pilot'])
+    @commands.command(aliases=['cmdr', 'pilot'])
     async def pilot_information(self, ctx, *, pilot_name: str):
         await utilities.single_embed(
             color=utilities.color_elite,
@@ -388,6 +388,7 @@ class EliteDangerous(commands.Cog):
             }
             async with aiohttp.ClientSession() as session:
                 f = json.loads(await utilities.post(session, 'https://inara.cz/inapi/v1/', json_data))
+                print(f)
 
                 pilot_data = list(f['events'])[0]
                 pilot_name = pilot_data['eventData']['commanderName']
@@ -473,7 +474,8 @@ class EliteDangerous(commands.Cog):
                     thumb_url=avatar
                 )
 
-        except Exception:
+        except Exception as e:
+            print(e)
             await utilities.single_embed(
                 color=utilities.color_alert,
                 title=f'Pilot "{pilot_name}" not found!',
