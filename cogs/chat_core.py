@@ -14,6 +14,9 @@ class Chat(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
+        if message.author.id == self.client.user.id:
+            return
+
         msg = [word.lower() for word in message.content.split()]
         content = message.content.lower()
         conn, c = await utilities.load_db()
@@ -41,7 +44,7 @@ class Chat(commands.Cog):
             if word in bad_keys:
                 await self.emotional_level(-1)
         for value in good_morning:
-            if value in content and message.author.id != self.client.user.id and self.morning_check:
+            if value in content and self.morning_check:
                 morning_response = ['Good morning!', 'Mornin!', '*yawn" What time is it?']
                 await message.channel.send(random.choice(morning_response))
                 self.morning_check = False
