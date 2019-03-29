@@ -1,9 +1,11 @@
 # ARTEMIS
-Discord Bot written in Python\
+
+Discord Bot written in Python
 Artemis is a multi-function Discord Bot originally created from inspiration to 
 reward members with a point system for performing helpful tasks in my college's
 Discord server. From there it grew into an experiment to push my programming
-skills from fundamental to professional.\
+skills from fundamental to professional.
+
 Artemis includes these capabilities:
 - Google and Youtube searches
 - Dictionary definitions
@@ -12,6 +14,9 @@ Artemis includes these capabilities:
 - Elite Dangerous integration
 - Challonge integration 
 - Auto moderation
+
+## Version
+version 0.9.0
 
 ## Author
 Rob Marshall (Hatchet Jackk)
