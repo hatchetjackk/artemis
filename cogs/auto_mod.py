@@ -1,7 +1,9 @@
-import discord
 import sqlite3
-import cogs.utilities as utilities
+
+import discord
 from discord.ext import commands
+
+import cogs.utilities as utilities
 
 
 class Automod(commands.Cog):
@@ -21,7 +23,7 @@ class Automod(commands.Cog):
 
     @commands.command()
     async def roles(self, ctx):
-        roles = ['`{}`'.format(value.name) for value in ctx.guild.roles if value.name != '@everyone']
+        roles = [f'`{value.name}`' for value in ctx.guild.roles if value.name != '@everyone']
         fmt = [ctx.guild.name, '\n'.join(roles)]
         await utilities.single_embed(
             thumb_url=ctx.guild.icon_url,
@@ -33,7 +35,7 @@ class Automod(commands.Cog):
     @commands.Cog.listener()
     async def on_member_join(self, member):
         conn, c = await utilities.load_db()
-        c.execute("SELECT autorole, thumbnail FROM guilds WHERE id = (:id)", {'id': member.guild.id})
+        c.execute("SELECT autorole, thumbnail FROM guilds WHERE gid = (:gid)", {'gid': member.guild.id})
         autorole_id, thumbnail_url = c.fetchone()
         autorole = None
         try:
@@ -112,6 +114,13 @@ class Automod(commands.Cog):
                   '**Content**: {0.content}'.format(message),
             obj=message
         )
+
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        if message.author.id == self.client.user.id:
+            return
+        if message.content == '@artemis config':
+            await utilities.new_guild_config(message, self.client)
 
     @commands.Cog.listener()
     async def on_message_error(self, ctx, error):
