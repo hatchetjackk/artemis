@@ -1,22 +1,25 @@
 #! /usr/bin/python3
-import os
-import random
-import discord
 import json
 import logging
-import cogs.utilities as utilities
+import os
+import random
 from datetime import datetime
+
+import discord
 from discord.ext import commands
 from discord.ext.commands import CommandNotFound
 
+import cogs.utilities as utilities
+
 logging.basicConfig(filename='files/artemis.log', format='%(asctime)s %(message)s', level=logging.INFO)
 logging.info('Starting')
+artemis_version = '0.9.0'
 
 
 # noinspection PyUnusedLocal
 async def prefix(bot, message):
     conn, c = await utilities.load_db()
-    c.execute("SELECT prefix FROM guilds WHERE id = (:id)", {'id': message.guild.id})
+    c.execute("SELECT prefix FROM guilds WHERE gid = (:gid)", {'gid': message.guild.id})
     bot_prefix = c.fetchone()[0]
     return bot_prefix
 client = commands.Bot(command_prefix=prefix, case_insensitive=True)
@@ -25,7 +28,8 @@ client.remove_command('help')
 
 @client.event
 async def on_ready():
-    print(f'{"Logged in as":<15} {client.user.name}')
+    print('---------------------------------------')
+    print(f'{"Logged in as":<15} {client.user.name}{artemis_version}')
     print(f'{"Client":<15} {client.user.id}')
     print(f'{"Discordpy ver.":<15} {discord.__version__}')
     print('---------------------------------------')
@@ -56,11 +60,16 @@ if __name__ == '__main__':
     for extension in [f.replace('.py', '') for f in os.listdir('cogs/') if not f.startswith('_')]:
         try:
             client.load_extension('cogs.' + extension)
-        except discord.ClientException:
-            # skip cogs without setup functions
+        except discord.ClientException as e:
+            print(e)
+            pass
+        except AttributeError as e:
+            print('attribute error', extension, e)
             pass
         except Exception as e:
-            print(f'[{datetime.now()}] {extension} cannot be loaded: {e}')
+            print('exception:', extension, e)
+            # raise
+            pass
     with open('files/credentials.json', 'r') as f:
         credentials = json.load(f)
     client.run(credentials['token'])
