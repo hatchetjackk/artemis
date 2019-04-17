@@ -1,20 +1,20 @@
+import asyncio
 import json
+import sqlite3
+from collections import OrderedDict, defaultdict
+from datetime import datetime
 
 import aiohttp
-import requests
-import asyncio
-import sqlite3
 import discord
-import cogs.utilities as utilities
-from datetime import datetime
-from collections import OrderedDict, defaultdict
 from discord.ext import commands
+
+import cogs.utilities as utilities
 
 with open('files/credentials.json') as f:
     challonge_data = json.load(f)
 username = challonge_data['challonge']['username']
 api = challonge_data['challonge']['API']
-thumb = challonge_data['challonge']['thumb']
+thumb = 'https://i.imgur.com/3jgXHzX.png'
 
 
 class Chall(commands.Cog):
@@ -188,10 +188,15 @@ class Chall(commands.Cog):
                                 user = participant.get('name')
                             messages.append([tournament_name.upper(), f'"{user}" has signed up!'])
                             with conn:
-                                c.execute("INSERT INTO tournament_members VALUES (:id, :member_id)",
-                                          {'id': tournament_id, 'member_id': participant.get('id')})
+                                try:
+                                    c.execute("INSERT INTO tournament_members VALUES (:id, :member_id)",
+                                              {'id': tournament_id, 'member_id': participant.get('id')})
+                                except sqlite3.Error as e:
+                                    print(e)
+                                    raise
 
                     if len(messages) > 0:
+                        print('\n'.join([' '.join(message) for message in messages]))
                         challonge_notification_channels = await self.get_challonge_notification_channels()
                         for challonge_channel in challonge_notification_channels:
                             await utilities.multi_embed(
@@ -244,10 +249,10 @@ class Chall(commands.Cog):
             c.execute("SELECT * FROM tournament_list")
             tournament_database = c.fetchall()
             url = f'https://{username}:{api}@api.challonge.com/v1/tournaments.json?subdomain=lm'
+            messages = []
             async with aiohttp.ClientSession() as session:
                 r = json.loads(await utilities.fetch(session, url))
                 challonge_tournaments = [value['tournament'] for value in r]
-                messages = []
                 for tournament in challonge_tournaments:
                     name = tournament.get('name')
                     tournament_id = tournament.get('id')
@@ -261,14 +266,22 @@ class Chall(commands.Cog):
                     if sign_up_url is None:
                         sign_up_url = 'No Sign Up Page yet'
                     if tournament_id not in tournament_database:
-                        with conn:
-                            c.execute(
-                                """INSERT INTO tournament_list 
-                                VALUES (:id, :name, :one_week_notify, :one_day_notify)""",
-                                {'id': tournament_id, 'name': name, 'one_week_notify': None, 'one_day_notify': None})
-                        msg_name = 'A new Challonge event has been created!'
-                        value = f'[{name.upper()}]({url})\nDate: {date}\n[Sign Up]({sign_up_url})'
-                        messages.append([msg_name, value])
+                        try:
+                            with conn:
+                                c.execute(
+                                    """
+                                    INSERT INTO tournament_list
+                                    VALUES (:id, :name, :one_week_notify, :one_day_notify)
+                                    """,
+                                    {'id': tournament_id,
+                                     'name': name,
+                                     'one_week_notify': None,
+                                     'one_day_notify': None})
+                            msg_name = 'A new Challonge event has been created!'
+                            value = f'[{name.upper()}]({url})\nDate: {date}\n[Sign Up]({sign_up_url})'
+                            messages.append([msg_name, value])
+                        except sqlite3.Error:
+                            pass
                 if len(messages) > 0:
                     challonge_notification_channels = await self.get_challonge_notification_channels()
                     for challonge_channel in challonge_notification_channels:
@@ -277,9 +290,6 @@ class Chall(commands.Cog):
                             messages=messages,
                             channel=challonge_channel
                         )
-        except sqlite3.Error:
-            # print('An sql error occurred when checking for new events: {}'.format(e))
-            pass
         except Exception as e:
             print(f'An unexpected error occurred when checking for new events: {e}')
 
