@@ -1,13 +1,15 @@
 import random
 import re
-import urllib.request
 import urllib.parse
-import requests
-import cogs.utilities as utilities
+import urllib.request
 from datetime import datetime
-from discord.ext.commands import BucketType, CommandNotFound
+
+import requests
 from PyDictionary import PyDictionary
 from discord.ext import commands
+from discord.ext.commands import BucketType, CommandNotFound
+
+import cogs.utilities as utilities
 
 
 class Fun(commands.Cog):
@@ -32,14 +34,14 @@ class Fun(commands.Cog):
             description='`fun help` This menu!\n'
                         '`playing` View all current statuses\n'
                         '`ping` Check if Artemis is reactive\n'
-                        '`roll ndn` Roll n dice\n'
+                        '`roll ndn [modifier]` Roll n number of dice +- modifier\n'
                         '`draw` Draw a random card. High/low anyone?\n'
                         '`hello` Say hi to Artemis\n'
-                        '`define [word]` Get a definition\n'
-                        '`google [topic]` Retrieve the first link from Google\n'
-                        '`r/[subreddit]` Retrieve a subreddit link\n'
-                        '`youtube [topic]` Retrieve the first video from YouTube\n'
-                        '`rps [rock/paper/scissors]` Play against Artemis'
+                        '`define word` Get a definition\n'
+                        '`google topic` Retrieve the first link from Google\n'
+                        '`r/subreddit` Retrieve a subreddit link\n'
+                        '`youtube topic` Retrieve the first video from YouTube\n'
+                        '`rps rock/paper/scissors` Play against Artemis'
         )
 
     @commands.command()
@@ -61,7 +63,7 @@ class Fun(commands.Cog):
                 if member.game is not None:
                     matches = pattern.findall(member.game.name.lower())
                     for _ in matches:
-                        game = '{} - {}'.format(member.name, member.game.name)
+                        game = '{0.name} - {0.game.name}'.format(member)
                         if game in members_playing_game:
                             pass
                         else:
@@ -75,10 +77,11 @@ class Fun(commands.Cog):
 
     @commands.command()
     async def ping(self, ctx):
+        print('pong')
         await utilities.single_embed(title=':ping_pong: Pong!', channel=ctx, color=utilities.color_alert)
 
     @commands.command()
-    async def roll(self, ctx, dice: str):
+    async def roll(self, ctx, dice: str, modifier: int = 0):
         try:
             rolls, limit = map(int, dice.split('d'))
         except Exception:
@@ -86,7 +89,16 @@ class Fun(commands.Cog):
             raise
         rolls = [random.randint(1, limit) for _ in range(rolls)]
         result = ', '.join(str(roll) for roll in rolls)
-        await utilities.single_embed(title=f'You rolled {result} for a total of {sum(rolls)}!', channel=ctx)
+        msg = f'You rolled {result} for a total of **{sum(rolls)}**!'
+        if modifier is not 0:
+            string_mod = modifier
+            if modifier > 0:
+                string_mod = f'+{modifier}'
+            msg = f'You rolled {result} ({string_mod}) for a total of **{sum(rolls) + modifier}**!'
+        await utilities.single_embed(
+            title=msg,
+            channel=ctx
+        )
 
     @commands.command(aliases=['hi', 'bonjour', 'hola'])
     async def hello(self, ctx):
