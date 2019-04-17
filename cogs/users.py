@@ -1,13 +1,44 @@
 import sqlite3
-
 from discord.ext import commands
 
 import cogs.utilities as utilities
 
 
-class Users(commands.Cogs):
+class Users(commands.Cog):
     def __init__(self, client):
         self.client = client
+
+    @commands.command(aliases=['user'])
+    async def user_data(self, ctx, user=None):
+        """
+        Mention @member to return data about that user. If no user is passed, return data about the author
+        :param ctx:
+        :param user: the username to check
+        :return:
+        """
+        if user is None:
+            user = ctx.author
+
+        for member in ctx.guild.members:
+            if member.mention == user:
+                user = member
+
+        conc, c = await utilities.load_db()
+        c.execute("SELECT uid, karma FROM members WHERE uid = (:uid)", {'uid': user.id})
+        uid, karma = c.fetchall()[0]
+
+        await utilities.single_embed(
+            channel=ctx,
+            title='User Info',
+            thumb_url=user.avatar_url,
+            name=user.name,
+            value=f'**Nickname**: {user.nick}\n'
+            f'**Karma**: {karma}\n'
+            f'**User ID**: {user.id}\n'
+            f'**Joined Discord**: {user.created_at}\n'
+            f'**Joined {user.guild.name}**: {user.joined_at}\n'
+            f'**Roles**: {", ".join([role.name for role in user.roles if role.name != "@everyone"])}'
+        )
 
     def xp(self):
         pass
@@ -26,14 +57,22 @@ class Users(commands.Cogs):
         conn, c = await utilities.load_db()
         with conn:
             try:
-                c.execute("INSERT INTO members VALUES (:id, :member_name, :karma, :last_karma_given)",
-                          {'id': member.id, 'member_name': member.name, 'karma': 0, 'last_karma_given': None})
+                c.execute("INSERT INTO members VALUES (:uid, :name, :karma, :last_karma)", {
+                    'uid': member.uid,
+                    'name': member.name,
+                    'karma': member.karma,
+                    'last_karma': member.last_karma
+                })
             except sqlite3.Error:
                 pass
             try:
-                c.execute("INSERT INTO guild_members VALUES (:id, :guild, :member_id, :member_name, :member_nick)",
-                          {'id': member.guild.id, 'guild': member.guild.name, 'member_id': member.id,
-                           'member_name': member.name, 'member_nick': member.nick})
+                c.execute("INSERT INTO guild_members VALUES (:gid, :guild, :uid, :user, :nick)", {
+                    'gid': member.guild.id,
+                    'guild': member.guild.name,
+                    'uid': member.id,
+                    'user': member.name,
+                    'nick': member.nick
+                })
             except sqlite3.Error as e:
                 print(f'An error occurred when joining {member} to {member.guild}: {e}')
                 raise
@@ -43,8 +82,10 @@ class Users(commands.Cogs):
         conn, c = await utilities.load_db()
         with conn:
             try:
-                c.execute("DELETE FROM guild_members WHERE id = (:id) and member_id = (:member_id)",
-                          {'id': member.guild.id, 'member_id': member.id})
+                c.execute("DELETE FROM guild_members WHERE gid = (:gid) and uid = (:uid)", {
+                    'gid': member.guild.id,
+                    'uid': member.id
+                })
             except sqlite3.DatabaseError as e:
                 print(f'An error occurred when removing {member.name} from {member.guild.name}: {e}')
                 raise
@@ -54,20 +95,28 @@ class Users(commands.Cogs):
         conn, c = await utilities.load_db()
         if before.name != after.name or before.nick != after.nick:
             with conn:
-                c.execute("SELECT karma, last_karma_given FROM members WHERE id = (:id)",
-                          {'id': before.id})
+                c.execute("SELECT karma, last_karma FROM members WHERE uid = (:uid)", {
+                    'uid': before.id
+                })
                 karma, last_karma = c.fetchall()[0]
                 try:
-                    c.execute("REPLACE INTO members VALUES (:id, :member_name, :karma, :last_karma_given)",
-                              {'id': before.id, 'member_name': after.name, 'karma': karma,
-                               'last_karma_given': last_karma})
+                    c.execute("REPLACE INTO members VALUES (:uid, :name, :karma, :last_karma)", {
+                        'uid': before.id,
+                        'name': after.name,
+                        'karma': karma,
+                        'last_karma': last_karma
+                    })
                 except sqlite3.Error as e:
                     print(f'An error occurred when updating {before.member}: {e}')
 
                 try:
-                    c.execute("REPLACE INTO guild_members VALUES (:id, :guild, :member_id, :member_name, :member_nick)",
-                              {'id': before.guild.id, 'guild': before.guild.name, 'member_id': before.id,
-                               'member_name': after.name, 'member_nick': after.nick})
+                    c.execute("REPLACE INTO guild_members VALUES (:gid, :guild, :uid, :user, :nick)", {
+                        'gid': before.guild.id,
+                        'guild': before.guild.name,
+                        'uid': before.id,
+                        'user': after.name,
+                        'nick': after.nick
+                    })
                     print('({0.guild.name}) {0.name}/{0.nick} has changed to {1.name}/{1.nick}.'.format(before, after))
                 except sqlite3.Error as e:
                     print(f'An error occurred when updating {before.member}: {e}')
@@ -76,24 +125,35 @@ class Users(commands.Cogs):
     @commands.is_owner()
     async def force_user_update(self, ctx):
         conn, c = await utilities.load_db()
-        c.execute("SELECT member_id FROM guild_members WHERE id = (:id)", {'id': ctx.guild.id})
+        c.execute("SELECT uid FROM guild_members WHERE gid = (:gid)", {'gid': ctx.guild.id})
         guild_members = [mem[0] for mem in c.fetchall()]
         for member in ctx.guild.members:
             if member.id not in guild_members:
                 with conn:
                     try:
-                        c.execute("INSERT INTO members VALUES (:id, :member_name, :karma, :last_karma_given)",
-                                  {'id': member.id, 'member_name': member.name, 'karma': 0, 'last_karma_given': None})
+                        c.execute("INSERT INTO members VALUES (:uid, :name, :karma, :last_karma)", {
+                            'uid': member.id,
+                            'name': member.name,
+                            'karma': 0,
+                            'last_karma': None
+                        })
                     except Exception as e:
                         print(f'An error occurred when adding {member} to the database using force_user_update: {e}')
                     try:
-                        c.execute(
-                            "INSERT INTO guild_members VALUES (:id, :guild, :member_id, :member_name, :member_nick)",
-                            {'id': member.guild.id, 'guild': member.guild.name, 'member_id': member.id,
-                             'member_name': member.name, 'member_nick': member.nick})
+                        c.execute("INSERT INTO guild_members VALUES (:gid, :guild, :uid, :user, :nick)", {
+                            'gid': member.guild.id,
+                            'guild': member.guild.name,
+                            'uid': member.id,
+                            'user': member.name,
+                            'nick': member.nick
+                        })
                         print(f'Successfully added {member.name} to MEMBERS and GUILD_MEMBERS.')
                     except Exception as e:
                         print(f'An error occurred when adding {member} to the database using force_user_update: {e}')
+                await utilities.single_embed(
+                    title=f'{member.name} added to \'members\' and {ctx.guild.name}\'s database.',
+                    channel=ctx
+                )
 
 
 def setup(client):
