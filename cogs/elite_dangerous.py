@@ -388,7 +388,6 @@ class EliteDangerous(commands.Cog):
             }
             async with aiohttp.ClientSession() as session:
                 f = json.loads(await utilities.post(session, 'https://inara.cz/inapi/v1/', json_data))
-                print(f)
 
                 pilot_data = list(f['events'])[0]
                 pilot_name = pilot_data['eventData']['commanderName']

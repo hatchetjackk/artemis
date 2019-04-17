@@ -1,5 +1,4 @@
 import sqlite3
-import sqlalchemy
 
 from discord.ext import commands
 

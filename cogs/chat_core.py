@@ -1,10 +1,12 @@
-import random
 import asyncio
-import discord
+import random
 import sqlite3
-import cogs.utilities as utilities
 from itertools import cycle
+
+import discord
 from discord.ext import commands
+
+import cogs.utilities as utilities
 
 
 class Chat(commands.Cog):

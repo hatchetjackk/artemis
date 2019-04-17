@@ -1,5 +1,6 @@
-import cogs.utilities as utilities
 from discord.ext import commands
+
+import cogs.utilities as utilities
 
 
 class Help(commands.Cog):
