@@ -55,11 +55,23 @@ class Automod(commands.Cog):
                 value=f'{member.name} was assigned the role {autorole.name}',
                 obj=member
             )
+            quarantine = discord.utils.get(member.guild.channels, name='quarantine')
+            if quarantine is not None:
+                guild_blacklist = await self.guild_blacklist()
+                if member.guild.name not in guild_blacklist:
+                    await utilities.single_embed(
+                        title='Welcome to {0.guild.name}, {0.name}!'
+                              ' Please make sure you check the #welcome channel. '
+                              'If you believe you are supposed to be a member and not a guest, '
+                              'ping a mod!'.format(member),
+                        channel=quarantine
+                    )
             general_channel = discord.utils.get(member.guild.channels, name='general')
             guild_blacklist = await self.guild_blacklist()
             if member.guild.name not in guild_blacklist:
                 await utilities.single_embed(
-                    title='Welcome to {0.guild.name}, {0.name}!'.format(member),
+                    title='Welcome to {0.guild.name}, {0.name}! '
+                          'Please make sure you read the welcome channel!'.format(member),
                     channel=general_channel
                 )
         except sqlite3.OperationalError as e:
