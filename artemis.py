@@ -57,18 +57,20 @@ async def on_command_error(ctx, error):
 
 
 if __name__ == '__main__':
-    for extension in [f.replace('.py', '') for f in os.listdir('cogs/') if not f.startswith('_')]:
+    ignore = ['tools', 'database', '__init__', '__pycache__', 'utilities', 'events']
+    cogs = [f.replace('.py', '') for f in os.listdir('cogs/') if f.replace('.py', '') not in ignore]
+    for cog in cogs:
         try:
-            client.load_extension('cogs.' + extension)
+            client.load_extension('cogs.' + cog)
         except discord.ClientException as e:
             print(e)
             pass
         except AttributeError as e:
-            print('attribute error', extension, e)
+            print('attribute error', cog, e)
             pass
         except Exception as e:
-            print('exception:', extension, e)
-            # raise
+            print('exception:', cog, e)
+            raise
             pass
     with open('files/credentials.json', 'r') as f:
         credentials = json.load(f)
