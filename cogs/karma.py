@@ -1,9 +1,11 @@
-import re
 import random
+import re
 import time
-import cogs.utilities as utilities
 from collections import OrderedDict
+
 from discord.ext import commands
+
+import cogs.utilities as utilities
 
 
 class Karma(commands.Cog):
@@ -39,7 +41,7 @@ class Karma(commands.Cog):
     async def check(self, ctx, *, member_check=None):
         conn, c = await utilities.load_db()
         if member_check is None:
-            c.execute("SELECT id, karma FROM members WHERE id = (:id)", {'id': ctx.author.id})
+            c.execute("SELECT uid, karma FROM members WHERE uid = (:uid)", {'uid': ctx.author.id})
             member_id, karma = c.fetchone()
             name = ctx.author.nick
             if name is None:
@@ -72,7 +74,7 @@ class Karma(commands.Cog):
                 for _ in matches:
                     target_member = member_object
 
-        c.execute("SELECT id, karma FROM members WHERE id = (:id)", {'id': target_member.id})
+        c.execute("SELECT uid, karma FROM members WHERE uid = (:uid)", {'uid': target_member.id})
         member_id, karma = c.fetchone()
         name = target_member.name
         if target_member.nick is not None:
@@ -86,11 +88,11 @@ class Karma(commands.Cog):
     async def leaderboard(self, ctx):
         conn, c = await utilities.load_db()
         leaderboard = {}
-        c.execute("SELECT * FROM guild_members WHERE id = (:id)", {'id': ctx.guild.id})
+        c.execute("SELECT * FROM guild_members WHERE gid = (:gid)", {'gid': ctx.guild.id})
         guild_members = c.fetchall()
         for member in guild_members:
             guild_id, guild, member_id, member_name, member_nick = member
-            c.execute("SELECT member_name, karma FROM members WHERE id = (:id)", {'id': member_id})
+            c.execute("SELECT name, karma FROM members WHERE uid = (:uid)", {'uid': member_id})
             member_name, karma = c.fetchone()
             member_identity = member_nick
             if member_identity is None:
@@ -127,7 +129,7 @@ class Karma(commands.Cog):
                 if len(thanked_members) > 0:
                     conn, c = await utilities.load_db()
 
-                    c.execute("SELECT * FROM members WHERE id = (:id)", {'id': message.author.id})
+                    c.execute("SELECT * FROM members WHERE uid = (:uid)", {'uid': message.author.id})
                     member_id, membername, points, last_karma_given = c.fetchone()
 
                     if last_karma_given is not None:
@@ -162,15 +164,15 @@ class Karma(commands.Cog):
                             )
 
                         else:
-                            c.execute("SELECT * FROM members WHERE id = (:id)", {'id': member.id})
+                            c.execute("SELECT * FROM members WHERE uid = (:uid)", {'uid': member.id})
                             member_id, membername, points, last_karma_given = c.fetchone()
-                            last_karma_given = int(time.time())
+                            last_karma = int(time.time())
                             points += 1
                             with conn:
-                                c.execute("UPDATE members SET karma = (:karma) WHERE id = (:id)",
-                                          {'karma': points, 'id': member.id})
-                                c.execute("UPDATE members SET last_karma_given = (:last_karma_given) WHERE id = (:id)",
-                                          {'last_karma_given': last_karma_given, 'id': message.author.id})
+                                c.execute("UPDATE members SET karma = (:karma) WHERE uid = (:uid)",
+                                          {'karma': points, 'uid': member.id})
+                                c.execute("UPDATE members SET last_karma = (:last_karma) WHERE uid = (:uid)",
+                                          {'last_karma': last_karma, 'uid': message.author.id})
                             c.execute("SELECT response FROM bot_responses WHERE message_type = 'good_karma'")
                             good_responses = c.fetchall()
                             msg = random.choice([response[0] for response in good_responses]).format(member_name)
