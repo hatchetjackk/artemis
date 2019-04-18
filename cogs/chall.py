@@ -47,6 +47,7 @@ class Chall(commands.Cog):
                 messages = []
                 for tournament in tournaments:
                     tourney_name = tournament['name'].upper()
+                    start_at = tournament['start_at'].split('.')[0]
                     state = tournament['state']
                     style = tournament['tournament_type']
                     sign_up = tournament['sign_up_url']
@@ -58,13 +59,23 @@ class Chall(commands.Cog):
                         game = 'No Game Selected'
                     num_participants = tournament['participants_count']
                     tourney_id = tournament['id']
-                    args = (sign_up, url, style.title(), num_participants, tourney_id)
-                    name = f'{tourney_name} - {game} ({state})'
-                    if state != 'complete':
-                        value = '[Sign Up]({0}) / [View]({1})\n{2}\nPlayers: {3}\nid: *{4}*'.format(*args)
+
+                    # do not index tourneys longer than 30 days ago
+                    if start_at is not None:
+                        start_at = datetime.strptime(start_at, '%Y-%m-%dT%H:%M:%S')
+                        time_until_start = start_at - datetime.now()
+                        days_full, time = time_until_start.__str__().split(',')
+                        days = int(days_full.split()[0])
+                    if days < -30:
+                        pass
                     else:
-                        value = '[View]({1})\n{2}\nPlayers: {3}\nid: *{4}*'.format(*args)
-                    messages.append([name, value])
+                        args = (sign_up, url, style.title(), num_participants, tourney_id)
+                        name = f'{tourney_name} - {game} ({state})'
+                        if state != 'complete':
+                            value = '[Sign Up]({0}) / [View]({1})\n{2}\nPlayers: {3}\nid: *{4}*'.format(*args)
+                        else:
+                            value = '[View]({1})\n{2}\nPlayers: {3}\nid: *{4}*'.format(*args)
+                        messages.append([name, value])
 
                 await utilities.multi_embed(
                     title='Challonge Tournaments',
