@@ -40,7 +40,7 @@ class Automod(commands.Cog):
         autorole = None
         try:
             if autorole_id is not None:
-                autorole = discord.utils.get(member.guild.roles, id=autorole_id)
+                autorole = disccord.utils.get(member.guild.roles, id=autorole_id)
                 await member.add_roles(autorole)
 
             await utilities.alert_embed(
