@@ -93,7 +93,7 @@ class Mod(commands.Cog):
         conn, c = await utilities.load_db()
         channel = discord.utils.get(ctx.guild.channels, name=channel)
         with conn:
-            c.execute("UPDATE guilds SET spam = (:spam) WHERE id = (:id)", {'spam': channel.id, 'id': ctx.guild.id})
+            c.execute("UPDATE guilds SET spam = (:spam) WHERE gid = (:gid)", {'spam': channel.id, 'gid': ctx.guild.id})
         msg = '{0} changed the botspam channel. It is now {1.mention}'.format(ctx.author.name, channel)
         await ctx.send(msg, delete_after=10)
         await self.spam(ctx, msg)
@@ -105,7 +105,8 @@ class Mod(commands.Cog):
             return
         conn, c = await utilities.load_db()
         with conn:
-            c.execute("UPDATE guilds SET prefix = (:prefix) WHERE id = (:id)", {'prefix': prefix, 'id': ctx.guild.id})
+            c.execute("UPDATE guilds SET prefix = (:prefix) WHERE gid = (:gid)",
+                      {'prefix': prefix, 'gid': ctx.guild.id})
         await ctx.send('Changed guild prefix to `{}`'.format(prefix))
 
     @admin.group()
@@ -113,7 +114,7 @@ class Mod(commands.Cog):
         conn, c = await utilities.load_db()
         if role == 'remove':
             with conn:
-                c.execute("UPDATE guilds SET autorole = (:autorole) WHERE id = (:id)",
+                c.execute("UPDATE guilds SET autorole = (:autorole) WHERE gid = (:gid)",
                           {'autorole': None, 'id': ctx.guild.id})
             msg = '{0} cleared {1}\'s autorole.'.format(ctx.author.name, ctx.guild.name)
             await ctx.send(msg, delete_after=5)
@@ -124,8 +125,8 @@ class Mod(commands.Cog):
             msg = 'Role not found. Please check your spelling. Roles are case-sensitive.'
         else:
             with conn:
-                c.execute("UPDATE guilds SET autorole = (:autorole) WHERE id = (:id)",
-                          {'autorole': role.id, 'id': ctx.guild.id})
+                c.execute("UPDATE guilds SET autorole = (:autorole) WHERE gid = (:gid)",
+                          {'autorole': role.id, 'gid': ctx.guild.id})
             msg = '{0} set {1}\'s autorole to *{2}*.'.format(ctx.author.name, ctx.guild.name, role.name)
         await ctx.send(msg, delete_after=5)
         await self.spam(ctx, msg)
@@ -135,8 +136,8 @@ class Mod(commands.Cog):
         conn, c = await utilities.load_db()
         if role == 'remove':
             with conn:
-                c.execute("UPDATE guilds SET mod_role = (:mod_role) WHERE id = (:id)",
-                          {'mod_role': None, 'id': ctx.guild.id})
+                c.execute("UPDATE guilds SET modrole = (:modrole) WHERE gid = (:gid)",
+                          {'modrole': None, 'gid': ctx.guild.id})
             msg = '{0} cleared {1}\'s mod role.'.format(ctx.author.name, ctx.guild.name)
             await ctx.send(msg, delete_after=5)
             await self.spam(ctx, msg)
@@ -146,15 +147,15 @@ class Mod(commands.Cog):
             msg = 'Role not found. Please check your spelling. Roles are case-sensitive.'
         else:
             with conn:
-                c.execute("UPDATE guilds SET mod_role = (:mod_role) WHERE id = (:id)",
-                          {'mod_role': role.id, 'id': ctx.guild.id})
+                c.execute("UPDATE guilds SET modrole = (:modrole) WHERE gid = (:gid)",
+                          {'modrole': role.id, 'gid': ctx.guild.id})
             msg = '{0} set {1}\'s mod role to *{2}*'.format(ctx.author.name, ctx.guild.name, role.name)
         await ctx.send(msg, delete_after=5)
         await self.spam(ctx, msg)
 
     @admin.group()
     async def clear(self, ctx, amount=0):
-        amount = int(amount)
+        amount = int(amount) + 1
         if 100 < amount or amount < 2:
             embed = await self.msg('`clear [amount]` must be greater than 1 and less than 100.')
             await ctx.send(embed=embed)
@@ -164,7 +165,7 @@ class Mod(commands.Cog):
     @commands.command(aliases=['server'])
     async def guild(self, ctx):
         conn, c = await utilities.load_db()
-        c.execute("SELECT guild, mod_role, autorole, prefix FROM guilds WHERE id = (:id)", {'id': ctx.guild.id})
+        c.execute("SELECT guild, modrole, autorole, prefix FROM guilds WHERE gid = (:gid)", {'gid': ctx.guild.id})
         guild, mod_role, autorole, prefix = c.fetchone()
         autorole = discord.utils.get(ctx.guild.roles, id=autorole)
         fmt = (mod_role, autorole, prefix)
@@ -177,7 +178,7 @@ class Mod(commands.Cog):
 
     async def spam(self, ctx, message):
         conn, c = await utilities.load_db()
-        c.execute("SELECT guild, spam FROM guilds WHERE id = (:id)", {'id': ctx.guild.id})
+        c.execute("SELECT guild, spam FROM guilds WHERE gid = (:gid)", {'gid': ctx.guild.id})
         guild, spam = c.fetchone()
         if spam is not None:
             embed = discord.Embed(color=discord.Color.blue())
