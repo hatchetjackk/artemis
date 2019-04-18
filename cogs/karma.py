@@ -111,6 +111,64 @@ class Karma(commands.Cog):
             channel=ctx
         )
 
+    @karma.group()
+    @commands.is_owner()
+    async def add(self, ctx, points: int, member_check):
+        conn, c = await utilities.load_db()
+        target_member = None
+        for guild_member in ctx.guild.members:
+            member_name = guild_member.name.lower()
+            if guild_member.nick is not None:
+                member_name = guild_member.nick.lower()
+            if guild_member.mention in member_check:
+                target_member = guild_member
+            else:
+                pattern = re.compile(r'' + re.escape(member_check))
+                matches = pattern.findall(member_name)
+                for _ in matches:
+                    target_member = guild_member
+
+        c.execute("SELECT uid, karma FROM members WHERE uid = (:uid)", {'uid': target_member.id})
+        member_id, karma = c.fetchone()
+        karma = karma + points
+        with conn:
+            c.execute("UPDATE members SET karma = (:karma) WHERE uid = (:uid)",
+                      {'karma': karma, 'uid': target_member.id})
+        await utilities.single_embed(
+            title=f'{target_member.name} has gained {points} karma!',
+            channel=ctx
+        )
+
+    @karma.group(aliases=['sub'])
+    @commands.is_owner()
+    async def subtract(self, ctx, points: int, member_check):
+        conn, c = await utilities.load_db()
+        target_member = None
+        for guild_member in ctx.guild.members:
+            member_name = guild_member.name.lower()
+            if guild_member.nick is not None:
+                member_name = guild_member.nick.lower()
+            if guild_member.mention in member_check:
+                target_member = guild_member
+            else:
+                pattern = re.compile(r'' + re.escape(member_check))
+                matches = pattern.findall(member_name)
+                for _ in matches:
+                    target_member = guild_member
+
+        c.execute("SELECT uid, karma FROM members WHERE uid = (:uid)", {'uid': target_member.id})
+        member_id, karma = c.fetchone()
+        karma = karma - points
+        if karma < 0:
+            karma = 0
+        with conn:
+            c.execute("UPDATE members SET karma = (:karma) WHERE uid = (:uid)",
+                      {'karma': karma, 'uid': target_member.id})
+        await utilities.single_embed(
+            title=f'{target_member.name} has lost {points} karma!',
+            channel=ctx
+        )
+
     @commands.Cog.listener()
     async def on_message(self, message):
         try:
