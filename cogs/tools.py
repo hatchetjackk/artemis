@@ -81,7 +81,8 @@ class Tools(commands.Cog):
                         'Remind me is a simple reminder function. It prompts the user for a message and time.'
                         'Eligible time formats include days, months, and years. Once the date is reached, Artemis'
                         'will send a DM to the user reminding them of the message.\n\n'
-                        '`remindme show` Send all current reminders via DM'
+                        '`remindme show` Send all current reminders via DM\n'
+                        '`remindme del <key>` Delete a reminder based on it\'s key integer.'
         )
 
     @remindme.group()
@@ -101,10 +102,33 @@ class Tools(commands.Cog):
                 channel=ctx.author,
                 messages=messages
             )
+            await utilities.single_embed(
+                title='A private message has been sent to your inbox!',
+                channel=ctx
+            )
         except Exception as e:
             await utilities.err_embed(
                 name='An unexpected error occurred when trying to show reminders!', value=e, channel=ctx, delete_after=5
             )
+
+    @remindme.group(aliases=['remove', 'del', 'rem'])
+    async def delete(self, ctx, key: int=None):
+        conn, c = await utilities.load_db()
+        if key is not None:
+            try:
+                with conn:
+                    c.execute("DELETE FROM reminders WHERE id = (:id)", {'id': key})
+                await utilities.single_embed(
+                    title='Reminder deleted!',
+                    channel=ctx,
+                    delete_after=5
+                )
+            except Exception as e:
+                await utilities.err_embed(
+                    name='An error occurred when attempting to remove a reminder.',
+                    value=e,
+                    channel=ctx
+                )
 
     async def check_reminders(self):
         await self.client.wait_until_ready()
