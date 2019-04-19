@@ -9,66 +9,101 @@ class Tools(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @commands.command()
+    @commands.group()
     async def remindme(self, ctx):
         """
         Get user input for simple user reminders
         :param ctx: the message object
         :return:
         """
+        if ctx.invoked_subcommand is None:
+            def check(m):
+                return m.author == ctx.message.author and m.channel == ctx.channel
+            conn, c = await utilities.load_db()
+            d = datetime.today()
 
-        def check(m):
-            return m.author == ctx.message.author and m.channel == ctx.channel
+            try:
+                # get reminder message
+                await utilities.single_embed(
+                    name='Reminder',
+                    value='What do you want to be reminded of?',
+                    channel=ctx
+                )
+                msg = await self.client.wait_for('message', check=check)
+                reminder_contents = msg.content
+                await ctx.channel.purge(limit=3)
+
+                # get reminder date
+                await utilities.single_embed(
+                    name='Reminder',
+                    value='When do you want to be reminded?\n'
+                          '(example: 3 days, 2 months, 1 year)',
+                    channel=ctx
+                )
+                msg = await self.client.wait_for('message', check=check)
+                reminder_date = msg.content
+                await ctx.channel.purge(limit=2)
+
+                num_value, date_value = reminder_date.split()
+                # ensure that date_value matches keys in the dictionary
+                if date_value[-1:] != 's':
+                    date_value += 's'
+                date_dict = {'days': d.day, 'months': d.month, 'years': d.year}
+                date_dict[date_value] += int(num_value)
+
+                with conn:
+                    c.execute("INSERT INTO reminders VALUES(:uid, :message, :month, :day, :year, :clock, :id)",
+                              {'uid': ctx.author.id,
+                               'message': reminder_contents,
+                               'month': date_dict['months'],
+                               'day': date_dict['days'],
+                               'year': date_dict['years'],
+                               'clock': f'{d.hour}:{d.minute}',
+                               'id': None
+                               })
+                await utilities.single_embed(
+                    name='Reminder Set',
+                    value=f'I will remind you about `{reminder_contents}` in `{reminder_date}`!',
+                    channel=ctx
+                )
+            except Exception as e:
+                await utilities.err_embed(
+                    name='An unexpected error occurred when adding a reminder!', value=e, channel=ctx, delete_after=5
+                )
+
+    @remindme.group()
+    async def help(self, ctx):
+        await utilities.single_embed(
+            color=utilities.color_help,
+            title='RemindMe Help',
+            channel=ctx,
+            description='`remindme help` This menu!\n'
+                        'Remind me is a simple reminder function. It prompts the user for a message and time.'
+                        'Eligible time formats include days, months, and years. Once the date is reached, Artemis'
+                        'will send a DM to the user reminding them of the message.\n\n'
+                        '`remindme show` Send all current reminders via DM'
+        )
+
+    @remindme.group()
+    async def show(self, ctx):
         conn, c = await utilities.load_db()
-        d = datetime.today()
-
+        c.execute("SELECT * FROM reminders WHERE uid = (:uid)", {'uid': ctx.author.id})
+        reminders = c.fetchall()
+        messages = []
         try:
-            # get reminder message
-            await utilities.single_embed(
-                name='Reminder',
-                value='What do you want to be reminded of?',
-                channel=ctx
-            )
-            msg = await self.client.wait_for('message', check=check)
-            reminder_contents = msg.content
-            await ctx.channel.purge(limit=3)
-
-            # get reminder date
-            await utilities.single_embed(
-                name='Reminder',
-                value='When do you want to be reminded?\n'
-                      '(example: 3 days, 2 months, 1 year)',
-                channel=ctx
-            )
-            msg = await self.client.wait_for('message', check=check)
-            reminder_date = msg.content
-            await ctx.channel.purge(limit=2)
-
-            num_value, date_value = reminder_date.split()
-            # ensure that date_value matches keys in the dictionary
-            if date_value[-1:] != 's':
-                date_value += 's'
-            date_dict = {'days': d.day, 'months': d.month, 'years': d.year}
-            date_dict[date_value] += int(num_value)
-
-            with conn:
-                c.execute("INSERT INTO reminders VALUES(:uid, :message, :month, :day, :year, :clock, :id)",
-                          {'uid': ctx.author.id,
-                           'message': reminder_contents,
-                           'month': date_dict['months'],
-                           'day': date_dict['days'],
-                           'year': date_dict['years'],
-                           'clock': f'{d.hour}:{d.minute}',
-                           'id': None
-                           })
-            await utilities.single_embed(
-                name='Reminder',
-                value=f'I will remind you about "{reminder_contents}" in {reminder_date}!',
-                channel=ctx
+            for reminder in reminders:
+                uid, msg, month, day, year, clock, key = reminder
+                hour, minute = clock.split(':')
+                value = f'[*key: {key}*], {datetime(year, month, day, int(hour), int(minute))}'
+                messages.append([msg, value])
+            await utilities.multi_embed(
+                title='Reminders',
+                channel=ctx.author,
+                messages=messages
             )
         except Exception as e:
             await utilities.err_embed(
-                name='An unexpected error occurred when adding a reminder!', value=e, channel=ctx, delete_after=5
+                name='An unexpected error occurred when trying to show reminders!', value=e, channel=ctx, delete_after=5
             )
 
     async def check_reminders(self):
