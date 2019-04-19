@@ -78,8 +78,8 @@ class Tools(commands.Cog):
             title='RemindMe Help',
             channel=ctx,
             description='`remindme help` This menu!\n'
-                        'Remind me is a simple reminder function. It prompts the user for a message and time.'
-                        'Eligible time formats include days, months, and years. Once the date is reached, Artemis'
+                        'Remind me is a simple reminder function. It prompts the user for a message and time. '
+                        'Eligible time formats include days, months, and years. Once the date is reached, Artemis '
                         'will send a DM to the user reminding them of the message.\n\n'
                         '`remindme show` Send all current reminders via DM\n'
                         '`remindme del <key>` Delete a reminder based on it\'s key integer.'
