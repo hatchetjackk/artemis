@@ -37,7 +37,7 @@ class Tools(commands.Cog):
             await utilities.single_embed(
                 name='Reminder',
                 value='When do you want to be reminded?\n'
-                      '(example: 3 days)',
+                      '(example: 3 days, 2 months, 1 year)',
                 channel=ctx
             )
             msg = await self.client.wait_for('message', check=check)
@@ -68,7 +68,7 @@ class Tools(commands.Cog):
             )
         except Exception as e:
             await utilities.err_embed(
-                name='An unexpected error occurred when adding a reminder!', value=e, channel=ctx
+                name='An unexpected error occurred when adding a reminder!', value=e, channel=ctx, delete_after=5
             )
 
     async def check_reminders(self):

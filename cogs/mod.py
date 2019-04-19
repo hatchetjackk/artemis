@@ -115,7 +115,7 @@ class Mod(commands.Cog):
         if role == 'remove':
             with conn:
                 c.execute("UPDATE guilds SET autorole = (:autorole) WHERE gid = (:gid)",
-                          {'autorole': None, 'id': ctx.guild.id})
+                          {'autorole': None, 'gid': ctx.guild.id})
             msg = '{0} cleared {1}\'s autorole.'.format(ctx.author.name, ctx.guild.name)
             await ctx.send(msg, delete_after=5)
             return
