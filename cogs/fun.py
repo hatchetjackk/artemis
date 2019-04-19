@@ -41,7 +41,8 @@ class Fun(commands.Cog):
                         '`google topic` Retrieve the first link from Google\n'
                         '`r/subreddit` Retrieve a subreddit link\n'
                         '`youtube topic` Retrieve the first video from YouTube\n'
-                        '`rps rock/paper/scissors` Play against Artemis'
+                        '`rps rock/paper/scissors` Play against Artemis\n'
+                        '`remindme` Create a reminder that will be sent to your DM.'
         )
 
     @commands.command()

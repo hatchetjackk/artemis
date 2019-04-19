@@ -57,10 +57,11 @@ async def on_command_error(ctx, error):
 
 
 if __name__ == '__main__':
-    ignore = ['tools', 'database', '__init__', '__pycache__', 'utilities', 'events']
+    ignore = ['database', '__init__', '__pycache__', 'utilities', 'events']
     cogs = [f.replace('.py', '') for f in os.listdir('cogs/') if f.replace('.py', '') not in ignore]
     for cog in cogs:
         try:
+            print('Loading ' + cog)
             client.load_extension('cogs.' + cog)
         except discord.ClientException as e:
             print(e)
