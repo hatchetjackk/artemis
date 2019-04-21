@@ -58,10 +58,10 @@ class Users(commands.Cog):
         with conn:
             try:
                 c.execute("INSERT INTO members VALUES (:uid, :name, :karma, :last_karma)", {
-                    'uid': member.uid,
+                    'uid': member.id,
                     'name': member.name,
-                    'karma': member.karma,
-                    'last_karma': member.last_karma
+                    'karma': 0,
+                    'last_karma': None
                 })
             except sqlite3.Error:
                 pass
