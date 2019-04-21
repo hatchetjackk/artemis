@@ -65,6 +65,7 @@ class Users(commands.Cog):
                 })
             except sqlite3.Error:
                 pass
+
             try:
                 c.execute("INSERT INTO guild_members VALUES (:gid, :guild, :uid, :user, :nick)", {
                     'gid': member.guild.id,
@@ -73,9 +74,12 @@ class Users(commands.Cog):
                     'user': member.name,
                     'nick': member.nick
                 })
+                await utilities.alert_embed(
+                    title=f'{member.name} has joined {member.guild.name}.'
+                )
             except sqlite3.Error as e:
                 print(f'An error occurred when joining {member} to {member.guild}: {e}')
-                raise
+                pass
 
     @commands.Cog.listener()
     async def on_member_remove(self, member):
@@ -88,7 +92,7 @@ class Users(commands.Cog):
                 })
             except sqlite3.DatabaseError as e:
                 print(f'An error occurred when removing {member.name} from {member.guild.name}: {e}')
-                raise
+                pass
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
@@ -117,7 +121,9 @@ class Users(commands.Cog):
                         'user': after.name,
                         'nick': after.nick
                     })
-                    print('({0.guild.name}) {0.name}/{0.nick} has changed to {1.name}/{1.nick}.'.format(before, after))
+                    await utilities.alert_embed(
+                        title=f'{before.name}/{before.nick} has changed to {after.name}/{after.nick}.'
+                    )
                 except sqlite3.Error as e:
                     print(f'An error occurred when updating {before.member}: {e}')
 
