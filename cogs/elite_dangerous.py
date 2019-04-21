@@ -121,8 +121,11 @@ class EliteDangerous(commands.Cog):
                 channel=ctx
             )
         except Exception as e:
-            print(f'[{datetime.now()}] Error when removing a pilot from the Wanted list: {e}')
-            raise
+            await utilities.err_embed(
+                name='An error occurred when attempting to remove a CMDR from the Wanted List.',
+                value = e,
+                channel=ctx
+            )
 
     @commands.command()
     async def faction(self, ctx, *, faction: str):
@@ -308,12 +311,12 @@ class EliteDangerous(commands.Cog):
                         title=system_name,
                         description=system_information,
                         messages=messages,
-                        footer=f'Use system {system_name} for more details.'
+                        footer=f'Use system [system_name] for more details.'
                     )
                 except Exception as e:
                     await utilities.single_embed(
                         color=utilities.color_alert,
-                        title=f'System "{system}"" not found!',
+                        title=f'System `{system}` not found!',
                         description='Please check your spelling.',
                         channel=ctx
                     )
@@ -365,7 +368,7 @@ class EliteDangerous(commands.Cog):
             color=utilities.color_elite,
             title='Please wait a moment while I gather CMDR data...',
             channel=ctx,
-            delete_after=3
+            delete_after=4
         )
         try:
             json_data = {
