@@ -49,6 +49,20 @@ class Servers(commands.Cog):
             except sqlite3.DatabaseError as e:
                 print(f'An error occurred when Artemis joined {guild.name}: {e}')
 
+            for member in guild.members:
+                try:
+                    c.execute("INSERT INTO guild_members VALUES(:gid, :guild, :uid, :user, :nick)",
+                              {'gid': guild.id,
+                               'guild': guild.name,
+                               'uid': member.id,
+                               'user': member.name,
+                               'nick': member.nick})
+                except Exception as e:
+                    await utilities.err_embed(
+                        name=f'Could not add {member.name} to the database',
+                        value=e
+                    )
+
     @commands.Cog.listener()
     async def on_guild_remove(self, guild):
         print(f'Artemis has been removed from {guild.name}.')
