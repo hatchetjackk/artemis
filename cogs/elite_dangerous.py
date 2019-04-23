@@ -136,60 +136,69 @@ class EliteDangerous(commands.Cog):
             delete_after=4
         )
         async with aiohttp.ClientSession() as session:
-            url = f'http://elitebgs.kodeblox.com/api/eddb/v3/factions?name={faction}'
-            f = await utilities.fetch(session, url)
-            values = json.loads(f)['docs'][0]
-            faction_name = values['name']
-            faction_id = values['id']
-            government = values['government'].title()
-            allegiance = values['allegiance'].title()
-            player_faction = values['is_player_faction']
-            last_update = values['updated_at']
-            home_system_id = values['home_system_id']
-
-            if home_system_id is not None:
-                url = 'http://elitebgs.kodeblox.com/api/eddb/v3/systems?eddbid={}'.format(home_system_id)
+            try:
+                url = f'http://elitebgs.kodeblox.com/api/eddb/v3/factions?name={faction}'
                 f = await utilities.fetch(session, url)
                 values = json.loads(f)['docs'][0]
-                home_system_name = values['name']
-            else:
-                home_system_name = 'None'
-            fmt = (government, allegiance, player_faction, home_system_name)
+                faction_name = values['name']
+                faction_id = values['id']
+                government = values['government'].title()
+                allegiance = values['allegiance'].title()
+                player_faction = values['is_player_faction']
+                last_update = values['updated_at']
+                home_system_id = values['home_system_id']
 
-            messages = []
-            if faction_id is not None:
-                url = 'https://eddb.io/faction/{}'.format(faction_id)
-                f = await utilities.fetch(session, url)
-                soup = BeautifulSoup(f, 'lxml')
-                faction_system_information = soup.findAll('tr', class_='systemRow')
-                for system in faction_system_information:
-                    faction_system_name = system.find('a').contents[0]
-                    faction_system_state = [value for value in system.findAll('span')[3]]
-                    faction_system_pop = [value for value in system.findAll('span')[5]]
-                    faction_system_sec = [value for value in system.findAll('span')[1]]
-                    faction_system_power = [value for value in system.findAll('span')[7]]
-                    faction_system_state = 'State: {}'.format(faction_system_state[0])
-                    faction_system_pop = 'Population: {}'.format(faction_system_pop[0])
-                    faction_system_sec = 'Security:  {}'.format(faction_system_sec[0])
-                    faction_system_power = 'Controlling Power:  {}'.format(faction_system_power[0])
-                    fmt = (faction_system_state, faction_system_pop, faction_system_sec, faction_system_power)
-                    messages.append([faction_system_name, '\n'.join(fmt)])
+                if home_system_id is not None:
+                    url = 'http://elitebgs.kodeblox.com/api/eddb/v3/systems?eddbid={}'.format(home_system_id)
+                    f = await utilities.fetch(session, url)
+                    values = json.loads(f)['docs'][0]
+                    home_system_name = values['name']
+                else:
+                    home_system_name = 'None'
+                fmt = (government, allegiance, player_faction, home_system_name)
 
-            thumbs = {'Independent': 'https://i.imgur.com/r4d7tPt.png',
-                      'Alliance': 'https://i.imgur.com/OWf0P6u.png',
-                      'Empire': 'https://i.imgur.com/KTmp5MF.png',
-                      'Federation': 'https://i.imgur.com/3oT7gr0.png',
-                      'Pilots Federation': 'https://i.imgur.com/tshl8xE.png',
-                      'Guardian': 'https://edassets.org/static/img/power-ethos/Covert.png'}
-            await utilities.multi_embed(
-                color=utilities.color_elite,
-                title=faction_name,
-                description='Government: {}\nAllegiance: {}\nPlayer Faction: {}\nHome System: {}'.format(*fmt),
-                messages=messages,
-                thumb_url=thumbs[allegiance],
-                channel=ctx,
-                footer=f'Last Updated: {last_update}'
-            )
+                messages = []
+                if faction_id is not None:
+                    url = 'https://eddb.io/faction/{}'.format(faction_id)
+                    f = await utilities.fetch(session, url)
+                    soup = BeautifulSoup(f, 'lxml')
+                    faction_system_information = soup.findAll('tr', class_='systemRow')
+                    for system in faction_system_information:
+                        faction_system_name = system.find('a').contents[0]
+                        faction_system_state = [value for value in system.findAll('span')[3]]
+                        faction_system_pop = [value for value in system.findAll('span')[5]]
+                        faction_system_sec = [value for value in system.findAll('span')[1]]
+                        faction_system_power = [value for value in system.findAll('span')[7]]
+                        faction_system_state = 'State: {}'.format(faction_system_state[0])
+                        faction_system_pop = 'Population: {}'.format(faction_system_pop[0])
+                        faction_system_sec = 'Security:  {}'.format(faction_system_sec[0])
+                        faction_system_power = 'Controlling Power:  {}'.format(faction_system_power[0])
+                        fmt = (faction_system_state, faction_system_pop, faction_system_sec, faction_system_power)
+                        messages.append([faction_system_name, '\n'.join(fmt)])
+
+                thumbs = {'Independent': 'https://i.imgur.com/r4d7tPt.png',
+                          'Alliance': 'https://i.imgur.com/OWf0P6u.png',
+                          'Empire': 'https://i.imgur.com/KTmp5MF.png',
+                          'Federation': 'https://i.imgur.com/3oT7gr0.png',
+                          'Pilots Federation': 'https://i.imgur.com/tshl8xE.png',
+                          'Guardian': 'https://edassets.org/static/img/power-ethos/Covert.png'}
+                await utilities.multi_embed(
+                    color=utilities.color_elite,
+                    title=faction_name,
+                    description='Government: {}\nAllegiance: {}\nPlayer Faction: {}\nHome System: {}'.format(*fmt),
+                    messages=messages,
+                    thumb_url=thumbs[allegiance],
+                    channel=ctx,
+                    footer=f'Last Updated: {last_update}'
+                )
+            except Exception as e:
+                await utilities.single_embed(
+                    color=utilities.color_alert,
+                    title=f'Faction `{faction}` not found!',
+                    description='Please check your spelling.',
+                    channel=ctx
+                )
+                print(f'An error occurred when searching for faction {faction}: {e}')
 
     @commands.command()
     async def system(self, ctx, *args):
@@ -288,11 +297,11 @@ class EliteDangerous(commands.Cog):
                             options.append('market')
                         if station['haveOutfitting']:
                             options.append('outfitting')
-                        allegiances = {'Alliance': '<:alliancew:511914466498183178>',
-                                       'Federation': '<:federationw:511911861026029579>',
-                                       'Empire': '<:empirew:511914466418360331',
-                                       'Independent': '<:independentw:511915084612632586>',
-                                       'Pilots Federation': '<:pilots_federationw:511916795641331732>'}
+                        allegiances = {'Alliance': '[all]',
+                                       'Federation': '[fed]',
+                                       'Empire': '[emp]',
+                                       'Independent': '[ind]',
+                                       'Pilots Federation': '[plt]'}
                         allegiance_logo = ''
                         if station['allegiance'] in allegiances:
                             allegiance_logo = allegiances[station['allegiance']]
