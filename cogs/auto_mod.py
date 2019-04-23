@@ -113,7 +113,10 @@ class Automod(commands.Cog):
                     channel=spam_channel
                 )
         except Exception as e:
-            print(f'An error occurred when parsing an edited message: {e}')
+            await utilities.alert_embed(
+                name='An error occurred when parsing an edited message',
+                value=e
+            )
 
     @commands.Cog.listener()
     async def on_message_delete(self, message):
