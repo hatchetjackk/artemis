@@ -20,9 +20,12 @@ thumb = 'https://i.imgur.com/3jgXHzX.png'
 class Chall(commands.Cog):
     def __init__(self, client):
         self.client = client
+        self.karma_blacklist = ['Knights of Karma', 'Ghost Giraffe']
 
     @commands.group(aliases=['chall', 'challonge'])
     async def tourney(self, ctx):
+        if ctx.guild.name in self.karma_blacklist:
+            return
         if ctx.invoked_subcommand is None:
             pass
 
@@ -135,17 +138,23 @@ class Chall(commands.Cog):
                 if state != 'complete':
                     value = f'[Sign Up]({sign_up}) / [View]({url})\n{style}\nTourney ID: *{tourney_id}*'
                 messages = [[name, value]]
-
+                for x in messages:
+                    print(x)
+                # todo fix seeded player missing
+                print(seeded_players)
+                print(1)
                 # generate message based on tourney state
                 if len(seeded_players) > 0 and state != 'complete':
                     name = 'Players (by seed)'
                     value = '\n'.join(f'{seed}: {player}' for seed, player in sorted_seed.items())
+                    print(name, value)
                     messages.append([name, value])
                 else:
                     standings = [f'{place}: {", ".join(player)}'for place, player in sorted_standings.items()]
                     name = 'Final Results'
                     value = '\n'.join(standings)
                     messages.append([name, value])
+                print(2)
                 await utilities.multi_embed(
                     title=f'{tourney_name} - {game}',
                     thumb_url=thumb,
@@ -154,7 +163,12 @@ class Chall(commands.Cog):
                     channel=ctx
                 )
         except Exception as e:
-            print(f'An error occurred when showing challonge tourney {tourney_id}: {e}')
+            print(e)
+            # await utilities.err_embed(
+            #     name=f'An error occurred when showing challonge tourney {tourney_id}',
+            #     value=e
+            # )
+            raise
 
     async def check_for_challonge_changes(self):
         await self.client.wait_until_ready()
