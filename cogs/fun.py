@@ -1,13 +1,10 @@
-import asyncio
 import random
 import re
 import urllib.parse
 import urllib.request
-from datetime import datetime
 
 import requests
 from PyDictionary import PyDictionary
-from dateutil.relativedelta import relativedelta
 from discord.ext import commands
 from discord.ext.commands import BucketType, CommandNotFound
 
