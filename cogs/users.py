@@ -122,7 +122,9 @@ class Users(commands.Cog):
                         'nick': after.nick
                     })
                     await utilities.alert_embed(
-                        title=f'{before.name}/{before.nick} has changed to {after.name}/{after.nick}.'
+                        name=f'{before.name}/{before.nick} has changed to:',
+                        value=f'{after.name}/{after.nick}.',
+                        obj=before
                     )
                 except sqlite3.Error as e:
                     print(f'An error occurred when updating {before.member}: {e}')
