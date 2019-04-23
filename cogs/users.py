@@ -122,8 +122,10 @@ class Users(commands.Cog):
                         'nick': after.nick
                     })
                     await utilities.alert_embed(
-                        name=f'{before.name}/{before.nick} has changed to:',
-                        value=f'{after.name}/{after.nick}.',
+                        thumb_url=before.avatar_url,
+                        title='A user has updated their information.',
+                        name=f'Before: {before.name}/{before.nick}',
+                        value=f'After: {after.name}/{after.nick}',
                         obj=before
                     )
                 except sqlite3.Error as e:
