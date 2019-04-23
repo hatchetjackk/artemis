@@ -1,10 +1,11 @@
 import json
 import sqlite3
+# import aiosqlite
 from datetime import datetime
 
 import discord
 
-# generate helpful colors for embeds
+# generate helpful colors forda embeds
 color_alert = discord.Color.red()
 color_info = discord.Color.blue()
 color_help = discord.Color.green()
@@ -42,10 +43,10 @@ async def post(session, url, payload):
         return await response.text()
 
 
-async def err_embed(color=color_alert, url=None, title='Alert', thumb_url=None, name=None, value=None, channel=None,
+async def err_embed(color=color_alert, url=None, title='Error', thumb_url=None, name=None, value=None, channel=None,
                     delete_after=None):
     """
-    generate an embed and send it to the spam channel if possible, otherwise send it to the specified channel.
+    generate an embed and send it to the current channel if possible, otherwise send it to the spam channel.
     These are high priority alerts that should be displayed whether the spam channel exists or not
     :param color: typically orange but can be overridden
     :param url: an url to link in the title if necessary
@@ -70,13 +71,13 @@ async def err_embed(color=color_alert, url=None, title='Alert', thumb_url=None, 
         await spam_channel.send(embed=embed)
     else:
         pass
-    print(f'[{datetime.now()}] {value}')
+    print(f'[{datetime.now()}] An error was caught in {channel.name}. {name}: {value}')
 
 
 async def alert_embed(color=color_alert, url=None, title='Alert', thumb_url=None, name=None, value=None, obj=None,
                       delete_after=None):
     """
-    generate and embed and send it to the spam channel. If the spam channel does not exist, drop the message.
+    generate an embed and send it to the spam channel. If the spam channel does not exist, drop the message.
     These types of embeds are best for general botspam (message edits, deletes, user joins, etc)
 
     :param color:
@@ -98,6 +99,7 @@ async def alert_embed(color=color_alert, url=None, title='Alert', thumb_url=None
             embed.set_thumbnail(url=thumb_url)
         embed.add_field(name=name, value=value, inline=False)
         await spam_channel.send(embed=embed, delete_after=delete_after)
+    print(f'[{datetime.now()}] An error was caught. {name}: {value}')
 
 
 async def multi_embed(color=color_info, url=None, title=None, description=None, thumb_url=None, messages=None,
@@ -177,7 +179,7 @@ async def get_spam_channel(guild_id):
 
 
 async def load_db():
-    conn = sqlite3.connect('files/artemis.db')
+    conn = sqlite3.connect('files/artemis.db', detect_types=sqlite3.PARSE_DECLTYPES)
     curs = conn.cursor()
     return conn, curs
 
