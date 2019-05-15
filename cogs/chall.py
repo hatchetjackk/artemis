@@ -175,7 +175,9 @@ class Chall(commands.Cog):
         while not self.client.is_closed():
             await self.check_for_new_events()
             await self.check_for_removed_events()
-            await self.check_for_new_participants()
+            check_for_new_players = False
+            if check_for_new_players:
+                await self.check_for_new_participants()
             await self.check_tournament_countdown()
             await asyncio.sleep(60)
 
