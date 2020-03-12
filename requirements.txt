@@ -27,7 +27,7 @@ packaging==19.0
 pep517==0.5.0
 pexpect==4.6.0
 progress==1.5
-psutil==5.6.1
+psutil==5.6.6
 ptyprocess==0.6.0
 pwquality==1.4.0
 pycairo==1.18.0
